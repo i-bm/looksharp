@@ -8,15 +8,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <meta property="og:title" content="{{ config('app.name') }} {{ isset($title) ? " - ".$title  : "" }}">
-    <meta property="og:url" content="https://thrivenshine.org">
+    <meta property="og:url" content="https://thenexcoretech.com">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en-us">
     <meta property="og:site_name" content="{{ config('app.name') }}">
     <meta property="og:image" content="{{ asset('assets/images/logo-1.png') }}">
     <meta property="og:image:url" content="{{ asset('assets/images/logo-1.png') }}">
     <!-- #favicon -->
-    <link rel="shortcut icon" href="{{ asset('assets/images/favicon.png') }}" type="image/x-icon">
-    <link rel="icon" href="{{ asset('assets/images/favicon.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
+    <link rel="icon" href="{{ asset('favicon.png') }}" type="image/x-icon">
     <!-- #title -->
     <title> {{config('app.name')}} {{isset($title) ? " - ". $title : "" }}</title>
 
@@ -25,9 +25,9 @@
     <!-- #description -->
     <meta name="description" content="{{isset($description) ? $description : ""}}">
     <!-- google fonts -->
-    {{--
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> --}}
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Hind+Madurai:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap"
@@ -54,7 +54,11 @@
 
     <style>
         .header-area-7 .header__logo img {
-            max-width: 195px;
+            max-width: 210px;
+        }
+
+        .main-menu ul.dp-menu {
+            width: 320px;
         }
     </style>
 </head>
