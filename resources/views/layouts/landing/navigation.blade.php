@@ -1,42 +1,56 @@
-<!-- Header area start -->
-<header class="header-area-7 header-p-inline-60">
-    <div class="header-main">
-        <div class="container rr-container-1405">
-            <div class="header-area-7__inner">
-                <div class="header__logo">
-                    <a href="{{ url('/') }}">
-                        <img src="{{  asset('assets/imgs/logo/logo-2-light.png')}}" class="normal-logo"
-                            alt="nexcore-logo">
-                    </a>
-                </div>
-                <div class="header__nav pos-center">
-                    <nav class="main-menu">
-                        <ul>
-                            <li>
-                                <a href="#">Home</a>
-                            </li>
-                            <li><a href="about.html">About Us</a></li>
-                            <li class="menu-item-has-children">
-                                <a href="#">Service</a>
-                                <ul class="dp-menu">
+<!-- header begin -->
+<header class="header-static transparent mt-lg-4 pt-lg-2">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="de-flex sm-pt10">
+                    <div class="de-flex-col">
+                        <!-- logo begin -->
+                        <div id="logo">
+                            <a href="{{ url('/') }}">
+                                <img class="logo-main" src="{{ asset('assets/images/logo-white.png') }}"
+                                    alt="logo of {{ config('misc.company') }}">
+                                <img class="logo-scroll" src="{{ asset('assets/images/logo-white.png') }}"
+                                    alt="logo of {{ config('misc.company') }}">
+                                <img class="logo-mobile" src="{{ asset('assets/images/logo-white.png') }}"
+                                    alt="logo of {{ config('misc.company') }}">
+                            </a>
+                        </div>
+                        <!-- logo end -->
+                    </div>
+                    <div class="de-flex-col header-col-mid">
+                        <!-- mainemenu begin -->
+                        <ul id="mainmenu">
+                            <li><a class="menu-item" href="{{ url('/') }}">Home</a></li>
+                            <li><a class="menu-item" href="services.html">Services</a>
+                                <ul>
                                     @foreach (getServices() as $service)
                                     <li><a href="#">{{ $service['name'] }}</a></li>
                                     @endforeach
                                 </ul>
                             </li>
-                            <li><a href="#">Blog</a> </li>
-                            <li><a href="#">Contact</a></li>
+                            <li><a class="menu-item" href="{{ url('/about-us') }}">Company</a>
+                            </li>
+                            <li><a class="menu-item" href="blog.html">Blog</a></li>
+                            <li><a class="menu-item" href="contact.html">Contact</a></li>
                         </ul>
-                    </nav>
-                </div>
-                <div class="header__navicon">
-                    <button class="side-toggle">
-                        <img src="assets/imgs/icon/icon-11.webp" alt="imageimage">
-                        Menu
-                    </button>
+                        <!-- mainmenu end -->
+                    </div>
+                    <div class="de-flex-col">
+                        <div class="menu_side_area">
+                            <a href="{{ url('/contact-us') }}" class="btn-main btn-line fx-slide"><span>Get in
+                                    touch</span></a>
+                            <span id="menu-btn"></span>
+                        </div>
+
+                        <div id="btn-extra">
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </header>
-<!-- Header area end -->
+<!-- header close -->

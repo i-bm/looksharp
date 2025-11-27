@@ -1,141 +1,145 @@
-<!-- footer area start  -->
-<footer class="footer-section footer-2 footer-4 bg-dark-1">
-    <div class="shape"><img src="assets/imgs/it-solution/footer-bg-shape.webp" alt="footer"></div>
-    <div class="container rr-container-1405">
-        <div class="row footer-wrap">
-            <div class="col-lg-3 col-md-6">
-                <div class="footer-widget logo-widget">
-                    <div class="widget-header">
-                        <div class="footer-logo">
-                            <a href="index.html"><img src="assets/imgs/logo/logo-2-light.png" alt="logo"></a>
+<!-- footer begin -->
+<footer class="text-light section-dark">
+    <div class="container">
+        <div class="row g-4 justify-content-between">
+            <div class="col-md-6">
+                <img src="{{ asset('assets/images/logo-white.png') }}" class="w-200px mb-2"
+                    alt="logo of {{ config('misc.company') }}">
+                <div class="spacer-single"></div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="widget">
+                            <h5>Services</h5>
+                            <ul>
+                                @foreach (getServices() as $service)
+                                <li><a href="#">{{ $service['name'] }}</a></li>
+                                @endforeach
+                            </ul>
                         </div>
                     </div>
-                    <p>Deton was born from a fusion of vision
-                        & expertise. Founded with the belief that
-                        every brand has a unique story
-                    </p>
-                    <ul class="social-list list-2">
-                        <li class="facebook">
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        </li>
-                        <li class="pinterest">
-                            <a href="#"><i class="fab fa-pinterest"></i></a>
-                        </li>
-                        <li class="twitter">
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                        </li>
-                        <li class="instagram">
-                            <a href="#"><i class="fab fa-instagram"></i></a>
-                        </li>
-                    </ul>
+
+                    <div class="col-md-6">
+                        <div class="widget">
+                            <h5>Company</h5>
+                            <ul>
+                                <li><a href="index.html">Home</a></li>
+                                <li><a href="about.html">About Us</a></li>
+                                <li><a href="team.html">Our Team</a></li>
+                                <li><a href="careers.html">Careers</a></li>
+                                <li><a href="blog.html">Blog</a></li>
+                                <li><a href="contact.html">Contact</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="social-icons mb-sm-30 text-center">
+                    <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="#"><i class="fa-brands fa-whatsapp"></i></a>
                 </div>
             </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="footer-widget footer-col-2">
-                    <div class="widget-header">
-                        <h3 class="widget-title">Useful Links</h3>
-                    </div>
-                    <ul class="footer-list">
-                        <li><a href="about.html">About Us</a></li>
-                        <li><a href="portfolio.html">Our Gallery</a></li>
-                        <li><a href="services.html">Our Services</a></li>
-                        <li><a href="team.html">Our Team</a></li>
-                    </ul>
+
+            <div class="col-md-6">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h2>Get in Touch</h2>
+                    <img src="{{ asset('assets/images/ui/up-right-arrow.webp') }}" class="w-60px op-5" alt="">
                 </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="footer-widget">
-                    <div class="widget-header">
-                        <h3 class="widget-title">Contact Us</h3>
-                    </div>
-                    <ul class="address-list">
-                        <li><a href="mailto:support@agency.com">support@agency.com</a></li>
-                        <li><a href="tel:+2585492153215">+258 (549) 2158 3215</a></li>
-                        <li>2589 Dorland Street Luke INUA <br> Berlin, Germany</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="footer-widget">
-                    <div class="widget-header">
-                        <h3 class="widget-title">Subscribe newsletter</h3>
-                    </div>
-                    <div class="footer-form mb-20">
-                        <form action="#" class="rr-subscribe-form">
-                            <input class="form-control" type="email" name="email" placeholder="Email address">
-                            <input type="hidden" name="action" value="mailchimpsubscribe">
-                            <button class="submit">Sign Up</button>
-                            <div class="clearfix"></div>
-                        </form>
-                    </div>
-                    <div class="form-check form-item">
-                        <input class="form-check-input" type="checkbox" value="" id="man">
-                        <label class="form-check-label" for="man">
-                            I’m okay with getting emails and having
-                            that tracked to improve my experience
-                        </label>
-                    </div>
+
+                <div class="widget">
+                    <div class="op-5 fs-15">Email</div>
+                    <h3>{{ config('misc.email') }}</h3>
+
+                    <div class="spacer-20"></div>
+
+                    <div class="op-5 fs-15">Phone</div>
+                    <h3>{{ config('misc.phone') }}</h3>
+
+                    <div class="spacer-20"></div>
+
+                    <div class="op-5 fs-15">Office Location</div>
+                    <h3>{{ config('misc.address') }}</h3>
+
+                    <div class="spacer-20"></div>
+
                 </div>
             </div>
         </div>
     </div>
-    <div class="it-copyright-area">
-        <div class="container rr-container-1405">
-            <div class="row copyright-content justify-content-center">
-                <div class="col-lg-6 col-md-12">
-                    <p class="mb-0">© 2025 Redox. All Rights Reserved.</p>
-                </div>
-                <div class="col-lg-6 col-md-12">
-                    <ul class="copyright-list">
-                        <li><a href="contact.html">Security</a></li>
-                        <li><a href="contact.html">Privacy &amp; Cookie Policy</a></li>
-                        <li><a href="contact.html">Terms of Services</a></li>
-                    </ul>
+    <div class="subfooter">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    Copyright &copy; {{ date('Y') }} {{ config('misc.company') }}. All rights reserved.
                 </div>
             </div>
         </div>
     </div>
 </footer>
-<!-- footer area end  -->
-</main>
-
-
-</div>
+<!-- footer close -->
 </div>
 
+<!-- overlay content begin -->
+<div id="extra-wrap" class="text-light">
+    <div id="btn-close">
+        <span></span>
+        <span></span>
+    </div>
+
+    <div id="extra-content">
+        <img src="{{ asset('assets/images/logo-white.webp') }}" class="w-200px" alt="">
+
+        <div class="spacer-30-line"></div>
+
+        <h5>Our Services</h5>
+        <ul class="ul-check">
+            <li>Trucking</li>
+            <li>Air Fright</li>
+            <li>Ship Freight</li>
+            <li>Rail Freight</li>
+            <li>Warehousing</li>
+            <li>Customs Brokerage</li>
+            <li>Last-Mile Delivery</li>
+            <li>Project Cargo</li>
+        </ul>
+
+        <div class="spacer-30-line"></div>
+
+        <h5>Contact Us</h5>
+        <div><i class="icofont-phone me-2 op-5"></i>+929 333 9296</div>
+        <div><i class="icofont-location-pin me-2 op-5"></i>100 S Main St, New York, NY </div>
+        <div><i class="icofont-envelope me-2 op-5"></i>contact@logixpress.com</div>
+
+        <div class="spacer-30-line"></div>
+
+        <h5>About Us</h5>
+        <p>We are a trusted logistics and cargo solutions provider committed to delivering your goods safely,
+            efficiently, and on time. With years of experience in freight forwarding, warehousing, and international
+            shipping.</p>
+
+        <div class="social-icons">
+            <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="#"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#"><i class="fa-brands fa-youtube"></i></a>
+            <a href="#"><i class="fa-brands fa-whatsapp"></i></a>
+        </div>
+    </div>
+</div>
+<!-- overlay content end -->
 
 
-<!-- Vendor JS Files -->
-<script src="{{ asset('assets/vendor/jquery-3.7.1.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/bootstrap.bundle.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/waypoints.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/odometer.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/jquery.magnific-popup.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/swiper-bundle.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/counter.js')}}"></script>
-<script src="{{ asset('assets/vendor/progressbar.js')}}"></script>
-<script src="{{ asset('assets/vendor/gsap.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/ScrollSmoother.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/ScrollTrigger.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/ScrollToPlugin.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/TextPlugin.js')}}"></script>
-<script src="{{ asset('assets/vendor/customEase.js')}}"></script>
-<script src="{{ asset('assets/vendor/jquery.meanmenu.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/backToTop.js')}}"></script>
-<script src="{{ asset('assets/vendor/matter.js')}}"></script>
-<script src="{{ asset('assets/vendor/throwable.js')}}"></script>
-<script src="{{ asset('assets/js/magiccursor.js')}}"></script>
-<script src="{{ asset('assets/vendor/SplitText.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/split-type.min.js')}}"></script>
-<script src="{{ asset('assets/vendor/jquery.carouselTicker.js')}}"></script>
+<!-- Javascript Files
+    ================================================== -->
+<script src="{{ asset('assets/js/plugins.js') }}"></script>
+<script src="{{ asset('assets/js/designesia.js') }}"></script>
+<script src="{{ asset('assets/js/swiper.js') }}"></script>
+<script src="{{ asset('assets/js/custom-swiper-1.js') }}"></script>
+<script src="{{ asset('assets/js/custom-marquee.js') }}"></script>
 
-<!-- Template Main JS File -->
-<script src="{{ asset('assets/js/main.js')}}"></script>
-
-
-
-
-@stack('scripts')
 </body>
 
 </html>

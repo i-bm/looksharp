@@ -1,127 +1,67 @@
-<div class="has-smooth" id="has_smooth"></div>
-<div id="smooth-wrapper">
-    <div id="smooth-content">
+<section class="text-light no-top no-bottom relative rounded-1 overflow-hidden m-3 sm-mt-90">
+    <div class="mh-800">
+        <div class="swiper">
+            <!-- Additional required wrapper -->
+            <div class="swiper-wrapper">
 
-        <main>
 
-            <div class="slider-section">
-                <div class="runok-slider swiper-container">
-                    <div class="swiper-wrapper">
-                        <div class="swiper-slide">
-                            <div class="slider-item">
-                                <div class="overlay"></div>
-                                <div class="shape" data-animation="runok-fadeInUp" data-delay="1000ms"
-                                    data-duration="1200ms"><img src="assets/imgs/it-solution/slider-shape-1.webp"
-                                        alt="shape"></div>
-                                <div class="slide-img-wrap">
-                                    <img decoding="async" src="assets/imgs/it-solution/slider-img-1.webp"
-                                        alt="Home One Business" class="slide-img kenburns kenburns-top">
-                                </div>
-                                <div class="slider-content-wrap">
-                                    <div class="container rr-container-1405">
-                                        <div class="it-hero-content-wrap">
-                                            <div class="it-hero-content">
-                                                <h4 class="sub-title" data-animation="runok-fadeInUp"
-                                                    data-delay="1000ms" data-duration="1200ms">Transforming</h4>
-                                                <h2 class="title" data-animation="runok-fadeInUp" data-delay="1200ms"
-                                                    data-duration="1400ms">Visions into</h2>
-                                                <h3 class="bottom-title mb-0" data-animation="runok-fadeInUp"
-                                                    data-delay="1400ms" data-duration="1600ms">Digital Reality</h3>
+                <!-- Slide 1 -->
+                <div class="swiper-slide">
+                    <div class="swiper-inner" data-bgimage="url({{ asset('assets/images/slider/a1.webp') }})">
+                        <div class="sw-caption">
+                            <div class="container">
+                                <div class="row gx-5 align-items-center justify-content-between">
+                                    <div class="col-lg-6">
+                                        <div class="sw-text-wrapper">
+                                            <h1 class="animated text-uppercase anim-order-1">Cross Country Coverage with
+                                                Reliable Trucking</h1>
+
+                                            <div class="animated anim-order-2">
+                                                <p>We maintain relationships with thousands of vetted carriers across
+                                                    the United States. Whether you need LTL, full truckload, or
+                                                    expedited service, we match you with the right provider and manage
+                                                    the details.</p>
+
+                                                <div class="spacer-half"></div>
+
+                                                <a class="btn-main fx-slide animated fadeInUp anim-order-3"
+                                                    href="{{ url('/booking-shipment') }}"><span>Book Shipment</span></a>
+
                                             </div>
-                                            <div class="slider-btn-wrap" data-animation="runok-fadeInUp"
-                                                data-delay="1200ms" data-duration="1400ms">
-                                                <a href="about.html" class="slider-btn"><i
-                                                        class="fa-solid fa-arrow-right"></i></a>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="abs w-100 bottom-0 z-2 pb-4 sm-hide">
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <h6>Fast Global Shipping</h6>
+                                            </div>
+                                            <div>
+                                                <h6>Reliable Cargo Handling</h6>
+                                            </div>
+                                            <div>
+                                                <h6>End-to-End Tracking</h6>
+                                            </div>
+                                            <div>
+                                                <h6>Cost-Effective Solutions</h6>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="swiper-slide">
-                            <div class="slider-item">
-                                <div class="overlay"></div>
-                                <div class="shape" data-animation="runok-fadeInLeft" data-delay="1000ms"
-                                    data-duration="1200ms"><img src="assets/imgs/it-solution/slider-shape-1.webp"
-                                        alt="shape"></div>
-                                <div class="slide-img-wrap">
-                                    <img decoding="async" src="assets/imgs/it-solution/slider-img-2.webp"
-                                        alt="Home One Business" class="slide-img">
-                                </div>
-                                <div class="slider-content-wrap">
-                                    <div class="container rr-container-1405">
-                                        <div class="it-hero-content-wrap">
-                                            <div class="it-hero-content">
-                                                <h4 class="sub-title" data-animation="runok-fadeInUp"
-                                                    data-delay="1000ms" data-duration="1200ms">Transforming</h4>
-                                                <h2 class="title" data-animation="runok-fadeInUp" data-delay="1200ms"
-                                                    data-duration="1400ms">Visions into</h2>
-                                                <h3 class="bottom-title mb-0" data-animation="runok-fadeInUp"
-                                                    data-delay="1400ms" data-duration="1600ms">Digital Reality</h3>
-                                            </div>
-                                            <div class="slider-btn-wrap" data-animation="runok-fadeInUp"
-                                                data-delay="1200ms" data-duration="1400ms">
-                                                <a href="about.html" class="slider-btn"><i
-                                                        class="fa-solid fa-arrow-right"></i></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="swiper-slide">
-                            <div class="slider-item">
-                                <div class="overlay"></div>
-                                <div class="shape" data-animation="runok-fadeInLeft" data-delay="1000ms"
-                                    data-duration="1200ms"><img src="assets/imgs/it-solution/slider-shape-1.webp"
-                                        alt="shape"></div>
-                                <div class="slide-img-wrap">
-                                    <img decoding="async" src="assets/imgs/it-solution/slider-img-5.webp"
-                                        alt="Home One Business" class="slide-img">
-                                </div>
-                                <div class="slider-content-wrap">
-                                    <div class="container rr-container-1405">
-                                        <div class="it-hero-content-wrap">
-                                            <div class="it-hero-content">
-                                                <h4 class="sub-title" data-animation="runok-fadeInUp"
-                                                    data-delay="1000ms" data-duration="1200ms">Transforming</h4>
-                                                <h2 class="title" data-animation="runok-fadeInUp" data-delay="1200ms"
-                                                    data-duration="1400ms">Visions into</h2>
-                                                <h3 class="bottom-title mb-0" data-animation="runok-fadeInUp"
-                                                    data-delay="1400ms" data-duration="1600ms">Digital Reality</h3>
-                                            </div>
-                                            <div class="slider-btn-wrap" data-animation="runok-fadeInUp"
-                                                data-delay="1200ms" data-duration="1400ms">
-                                                <a href="about.html" class="slider-btn"><i
-                                                        class="fa-solid fa-arrow-right"></i></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="slider-tab-wrap">
-                    <div class="swiper slider-tab">
-                        <div class="swiper-wrapper">
-                            <div class="swiper-slide">
-                                <div class="slider-tab-btn">
-                                    Design Team Meeting
-                                </div>
-                            </div>
-                            <div class="swiper-slide">
-                                <div class="slider-tab-btn">
-                                    Team Development
-                                </div>
-                            </div>
-                            <div class="swiper-slide">
-                                <div class="slider-tab-btn">
-                                    Business Growth Design
-                                </div>
-                            </div>
-                        </div>
+
+                        <div class="sw-overlay op-4"></div>
                     </div>
                 </div>
             </div>
-            <!-- ./ slider-section -->
+        </div>
+    </div>
+</section>
