@@ -1,38 +1,19 @@
-<!-- ==== banner section start ==== -->
-<style>
-    .common-banner1{
-        background-image: url('{{asset('assets/images/banner/banner-bg.png')}}');
-        background-size: cover;
-       /* padding: 120px 0px; */
-    }
-    @media only screen and (min-width: 1400px) {
-    .common-banner1 {
-        padding: 100px 0px;
-        margin-top: 150px;
-    }
-}
-
-    @media (min-width: 992px) {
-    .common-banner1 {
-        padding: 100px 0px;
-        margin-top: 140px;
-    }
-}
-</style>
-<section class="common-banner">
-    <div class="container">
-        <div class="row">
-            <div class="common-banner__content text-center">
-
-                <h2 class="title-animation">{{ $title }}</h2>
+<section id="subheader" class="text-light sm-mt-90 relative rounded-1 overflow-hidden m-3"
+    data-bgimage="url({{ isset($bannerBg) ? asset($bannerBg) : asset('assets/images/banner/banner-bg.png') }}) center">
+    <div class="container relative z-2">
+        <div class="row gy-4 gx-5 align-items-center">
+            <div class="col-lg-12">
+                <h1 class="split">{{ $title }}</h1>
+                <ul class="crumb wow fadeInUp">
+                    <li><a href="{{ url('/') }}">Home</a></li>
+                    @if (isset($parentRoute))
+                    <li><a href="{{ $parentRoute }}">{{ $parentTitle ?? '' }}</a></li>
+                    @endif
+                    <li class="active">{{ $title }}</li>
+                </ul>
             </div>
         </div>
     </div>
-    <div class="banner-bg">
-        <img src="{{isset($bannerBg) ? asset($bannerBg) : asset('assets/images/banner/banner-bg.png')}}" alt="Image">
-    </div>
-    {{-- <div class="shape">
-        <img src="{{asset('assets/images/shape.png')}}" alt="Image">
-    </div> --}}
+    <div class="gradient-edge-bottom op-7 h-80"></div>
+    <div class="sw-overlay op-7"></div>
 </section>
-<!-- ==== / banner section end ==== -->

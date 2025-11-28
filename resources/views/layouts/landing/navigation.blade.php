@@ -22,23 +22,23 @@
                         <!-- mainemenu begin -->
                         <ul id="mainmenu">
                             <li><a class="menu-item" href="{{ url('/') }}">Home</a></li>
-                            <li><a class="menu-item" href="services.html">Services</a>
+                            <li><a class="menu-item" href="{{ route('services') }}">Services</a>
                                 <ul>
                                     @foreach (getServices() as $service)
-                                    <li><a href="#">{{ $service['name'] }}</a></li>
+                                    <li><a href="{{ $service['route'] }}">{{ $service['name'] }}</a></li>
                                     @endforeach
                                 </ul>
                             </li>
-                            <li><a class="menu-item" href="{{ url('/about-us') }}">Company</a>
+                            <li><a class="menu-item" href="{{ route('about') }}">Company</a>
                             </li>
                             <li><a class="menu-item" href="blog.html">Blog</a></li>
-                            <li><a class="menu-item" href="contact.html">Contact</a></li>
+                            <li><a class="menu-item" href="{{ route('contact') }}">Contact</a></li>
                         </ul>
                         <!-- mainmenu end -->
                     </div>
                     <div class="de-flex-col">
                         <div class="menu_side_area">
-                            <a href="{{ url('/contact-us') }}" class="btn-main btn-line fx-slide"><span>Get in
+                            <a href="{{ route('contact') }}" class="btn-main btn-line fx-slide"><span>Get in
                                     touch</span></a>
                             <span id="menu-btn"></span>
                         </div>

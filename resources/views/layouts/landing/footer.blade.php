@@ -12,7 +12,7 @@
                             <h5>Services</h5>
                             <ul>
                                 @foreach (getServices() as $service)
-                                <li><a href="#">{{ $service['name'] }}</a></li>
+                                <li><a href="#">{{ $service['short_name'] }}</a></li>
                                 @endforeach
                             </ul>
                         </div>
@@ -90,28 +90,23 @@
     </div>
 
     <div id="extra-content">
-        <img src="{{ asset('assets/images/logo-white.webp') }}" class="w-200px" alt="">
+        <img src="{{ asset('assets/images/logo-white.png') }}" class="w-200px" alt="">
 
         <div class="spacer-30-line"></div>
 
         <h5>Our Services</h5>
         <ul class="ul-check">
-            <li>Trucking</li>
-            <li>Air Fright</li>
-            <li>Ship Freight</li>
-            <li>Rail Freight</li>
-            <li>Warehousing</li>
-            <li>Customs Brokerage</li>
-            <li>Last-Mile Delivery</li>
-            <li>Project Cargo</li>
+            @foreach (getServices() as $service)
+            <li>{{ $service['name'] }}</li>
+            @endforeach
         </ul>
 
         <div class="spacer-30-line"></div>
 
         <h5>Contact Us</h5>
-        <div><i class="icofont-phone me-2 op-5"></i>+929 333 9296</div>
-        <div><i class="icofont-location-pin me-2 op-5"></i>100 S Main St, New York, NY </div>
-        <div><i class="icofont-envelope me-2 op-5"></i>contact@logixpress.com</div>
+        <div><i class="icofont-phone me-2 op-5"></i>{{ config('misc.phone') }}</div>
+        <div><i class="icofont-location-pin me-2 op-5"></i>{{ config('misc.address') }}</div>
+        <div><i class="icofont-envelope me-2 op-5"></i>{{ config('misc.email') }}</div>
 
         <div class="spacer-30-line"></div>
 
