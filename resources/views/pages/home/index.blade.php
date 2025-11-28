@@ -2,8 +2,9 @@
 
 @section('content')
 @include('pages.home.slider')
-{{-- @include('pages.home.solution') --}}
+
 @include('pages.home.services')
+@include('pages.home.testimonials')
 {{-- @include('pages.home.overview')
 @include('pages.home.problem')
 --}}

@@ -31,7 +31,9 @@
                             </li>
                             <li><a class="menu-item" href="{{ route('about') }}">Company</a>
                             </li>
-                            <li><a class="menu-item" href="blog.html">Blog</a></li>
+                            <li><a class="menu-item" href="{{ url('/careers') }}">Careers</a>
+                            </li>
+                            <li><a class="menu-item" href="{{ url('/blog') }}">Blog</a></li>
                             <li><a class="menu-item" href="{{ route('contact') }}">Contact</a></li>
                         </ul>
                         <!-- mainmenu end -->

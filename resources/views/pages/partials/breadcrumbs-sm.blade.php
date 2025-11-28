@@ -1,5 +1,5 @@
 <section id="subheader" class="text-light sm-mt-90 relative rounded-1 overflow-hidden m-3"
-    data-bgimage="url({{ isset($bannerBg) ? asset($bannerBg) : asset('assets/images/banner/banner-bg.png') }}) center">
+    data-bgimage="url({{ isset($bannerBg) ? asset($bannerBg) : asset('assets/images/background/1.jpg') }}) center">
     <div class="container relative z-2">
         <div class="row gy-4 gx-5 align-items-center">
             <div class="col-lg-12">

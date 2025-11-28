@@ -83,3 +83,24 @@ function getSlider()
         ],
     ];
 }
+
+function getTestimonials()
+{
+    return [
+        [
+            'title' => 'Information Technology Manager',
+            'company' => 'Fine Print Industries',
+            'description' => 'Website, domain, and server services delivered 0 downtime in 24 months (protecting 24/7 revenue), cut IT costs 40%, and all with outstanding reliability.',
+        ],
+        [
+            'title' => 'Head, Information Technology',
+            'company' => 'UBA Ghana',
+            'description' => 'As Head, Information Technology at UBA Ghana, I was impressed by how secure, scalable, and seamless their cloud solution was. It improved our operations immediately and the support has been outstanding.',
+        ],
+        [
+            'title' => 'Information Technology Manager',
+            'company' => 'NSIA Insurance',
+            'description' => 'The work BMB Technologies did on our website has enhanced our brand visibility and streamlined customer interactions, directly supporting our business growth.',
+        ],
+    ];
+}

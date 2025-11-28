@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Pages\AboutController;
+use App\Http\Controllers\Pages\CareerController;
 use App\Http\Controllers\Pages\ContactController;
 use App\Http\Controllers\Pages\HomeController;
 use App\Http\Controllers\Pages\ServicesController;
@@ -15,3 +16,5 @@ Route::get('/services/software', [ServicesController::class, 'software'])->name(
 Route::get('/services/it-infrastructure', [ServicesController::class, 'itInfrastructure'])->name('services.it-infrastructure');
 Route::get('/services/cybersecurity', [ServicesController::class, 'cybersecurity'])->name('services.cybersecurity');
 Route::get('/services/ai-analytics', [ServicesController::class, 'aiAnalytics'])->name('services.ai-analytics');
+Route::get('/careers', [CareerController::class, 'index'])->name('careers');
+Route::get('/careers/{id}', [CareerController::class, 'show'])->name('careers.show');

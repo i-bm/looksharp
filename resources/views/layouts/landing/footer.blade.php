@@ -1,3 +1,29 @@
+<section class="p-0 overflow-hidden" aria-label="section">
+    {{-- <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <img src="{{ asset('assets/images/misc/c1.webp') }}" class="w-100 wow fadeInUp" alt="">
+            </div>
+        </div>
+    </div> --}}
+</section>
+
+<section class="bg-color text-light pt-50 pb-50">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-9">
+                <h3 class="mb-0 fs-32 split">Ready to Get Started?</h3>
+            </div>
+            <div class="col-lg-3 text-lg-end">
+                <a class="btn-main fx-slide btn-line wow fadeInRight" data-wow-delay=".2s"
+                    href="{{ route('contact') }}"><span>Contact Us</span></a>
+            </div>
+        </div>
+    </div>
+</section>
+</div>
+<!-- content close -->
+
 <!-- footer begin -->
 <footer class="text-light section-dark">
     <div class="container">
@@ -22,12 +48,11 @@
                         <div class="widget">
                             <h5>Company</h5>
                             <ul>
-                                <li><a href="index.html">Home</a></li>
-                                <li><a href="about.html">About Us</a></li>
-                                <li><a href="team.html">Our Team</a></li>
-                                <li><a href="careers.html">Careers</a></li>
-                                <li><a href="blog.html">Blog</a></li>
-                                <li><a href="contact.html">Contact</a></li>
+                                <li><a href="{{ url('/') }}">Home</a></li>
+                                <li><a href="{{ route('about') }}">About Us</a></li>
+                                <li><a href="{{ url('/careers') }}">Careers</a></li>
+                                <li><a href="{{ url('/blog') }}">Blog</a></li>
+                                <li><a href="{{ route('contact') }}">Contact</a></li>
                             </ul>
                         </div>
                     </div>

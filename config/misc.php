@@ -3,7 +3,9 @@
 return [
     'company' => 'BM Technologies',
     'email' => 'info@bmtechnologiesgh.com',
+    'email_hr' => 'hr@bmtechnologiesgh.com',
     'phone' => '+233 24 792 4225',
+    'whatsapp_number' => '+233247924225',
     'address' => 'C159/3 Faanofa Link, Asylum Down, Accra, Ghana',
     'city' => 'Accra',
     'state' => 'Greater Accra',

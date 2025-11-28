@@ -1,32 +1,45 @@
-<div class="col-12 col-xl-6">
-    <div class="contact__form volunteer__form checkout__form" data-aos="fade-up" data-aos-duration="1000"
-       data-aos-delay="100">
-       <div class="volunteer__form-content">
-          <h4 class="title-animation">Fill Up The Form</h4>
-          <p>Required fields are marked *</p>
-       </div>
-       <form action="#" method="post" class="cta">
-          <div class="input-single">
-             <input type="text" name="full-name" id="fullName" placeholder="Enter Name *" required>
-             <i class="fa-solid fa-user"></i>
-          </div>
-          <div class="input-single">
-             <input type="email" name="c-email" id="cEmail" placeholder="Enter Email *" required>
-             <i class="fa-solid fa-envelope"></i>
-          </div>
-          <div class="input-single">
-             <input type="text" name="phone-number" id="phoneNumber" placeholder="Phone Number" >
-             <i class="fa-solid fa-phone"></i>
-          </div>
-          <div class="input-single alter-input">
-             <textarea name="contact-message" id="contactMessage"
-                placeholder="Your Message..."></textarea>
-             <i class="fa-solid fa-comments"></i>
-          </div>
-          <div class="form-cta">
-             <button type="submit" aria-label="submit message" title="submit message"
-                class="btn--primary">Send Message <i class="fa-solid fa-arrow-right"></i></button>
-          </div>
-       </form>
+<div class="col-lg-6">
+    <div class="bg-light rounded-1 p-60 relative">
+        <form name="contactForm" id="contact_form" method="post" action="#">
+            <div class="row g-4">
+                <div class="col-lg-12">
+                    <h3>Get In Touch</h3>
+                    <p>Have a question, suggestion, or just want to say hi? Fill out the form below and
+                        we’ll get back to you soon.</p>
+
+                    <div class="field-set">
+                        <input type="text" name="name" id="name" class="form-control mb-4" placeholder="Your Name"
+                            required>
+                    </div>
+
+                    <div class="field-set">
+                        <input type="text" name="email" id="email" class="form-control mb-4" placeholder="Your Email"
+                            required>
+                    </div>
+
+                    <div class="field-set">
+                        <input type="text" name="phone" id="phone" class="form-control mb-4" placeholder="Your Phone"
+                            required>
+                    </div>
+
+                    <div class="field-set">
+                        <textarea name="message" id="message" class="form-control mb-4 h-100px"
+                            placeholder="Your Message" required></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id='submit' class="mt-3">
+                <input type='submit' id='send_message' value='Send Message' class="btn-main">
+            </div>
+
+            <div id="success_message" class='success'>
+                Your message has been sent successfully. Refresh this page if you want to send more
+                messages.
+            </div>
+            <div id="error_message" class='error'>
+                Sorry there was an error sending your form.
+            </div>
+        </form>
     </div>
- </div>
+</div>
