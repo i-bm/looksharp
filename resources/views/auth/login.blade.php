@@ -51,8 +51,7 @@
                     <div style="margin-bottom: 40px;">
                         <h2
                             style="font-family: var(--font-bricolageGrotesque); font-weight: 600; font-size: 32px; color: var(--title-color); margin-bottom: 12px; line-height: 1.2;">
-                            Let's get you hired
-                            {{-- Welcome back to {{ config('app.name') }} --}}
+                            Looksharp, get hired!
                         </h2>
                         <p
                             style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); line-height: 1.5;">

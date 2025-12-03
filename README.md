@@ -203,6 +203,9 @@ looksharp/
 │   ├── migrations/           # Database migrations
 │   ├── seeders/              # Database seeders
 │   └── factories/            # Model factories
+├── docs/                     # Documentation and design files
+│   ├── architecture designs/ # System architecture diagrams
+│   └── UIs/                  # UI mockups and designs
 ├── public/                   # Public assets (CSS, JS, images)
 │   └── assets/               # Static assets
 ├── resources/
@@ -250,8 +253,18 @@ This project uses [Laravel Pint](https://laravel.com/docs/pint) for code style f
 
 ## 📚 Documentation
 
+### Core Documentation
 - **[Business Requirements Document](./Business-Requirements-Document.md)** - Complete product requirements and specifications
 - **[Database Model](./Database-Model.md)** - Database schema and entity relationships
+
+### Design & Architecture
+- **[Architecture Designs](./docs/architecture%20designs/)** - High-level system architecture diagrams
+  - `looksharp_highlevel-architecture.png` - Complete system architecture overview
+  - `Summarized_Looksharp_HighLevel_Architecture.png` - Simplified architecture diagram
+- **[UI Designs](./docs/UIs/)** - User interface mockups and designs
+  - `landing_page.jpg` - Landing page design
+  - `student_dashboard.jpg` - Student dashboard interface
+  - `student_login.jpg` - Student login page design
 
 ---
 
