@@ -36,6 +36,7 @@
     <title> {{config('app.name')}} {{isset($title) ? " - ". $title : "" }}</title>
     <link rel="icon" href="{{ asset('assets/fav-icon.svg') }}" type="image/gif" sizes="20x20">
 
+    {{--
     <link rel="stylesheet" id="silktide-consent-manager-css"
         href="{{ asset('assets/plugins/cookies/silktide-consent-manager.css') }}">
     <script src="{{ asset('assets/plugins/cookies/silktide-consent-manager.js') }}"></script>
@@ -122,7 +123,7 @@
         banner: "bottomLeft"
       }
     });
-    </script>
+    </script> --}}
 </head>
 
 <body class="tt-magic-cursor transport-home">
