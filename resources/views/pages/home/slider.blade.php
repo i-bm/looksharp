@@ -1,65 +1,169 @@
-<section class="text-light no-top no-bottom relative rounded-1 overflow-hidden m-3 sm-mt-90">
-    <div class="mh-800">
-        <div class="swiper">
-            <!-- Additional required wrapper -->
-            <div class="swiper-wrapper">
-
-
-                @foreach (getSlider() as $slider)
-                <div class="swiper-slide">
-                    <div class="swiper-inner" data-bgimage="url({{ asset($slider['image']) }})">
-                        <div class="sw-caption">
-                            <div class="container">
-                                <div class="row gx-5 align-items-center justify-content-between">
-                                    <div class="col-lg-6">
-                                        <div class="sw-text-wrapper">
-                                            <h1 class="animated text-uppercase anim-order-1">
-                                                {{ $slider['title'] }}</h1>
-
-                                            <div class="animated anim-order-2">
-                                                <p>{{ $slider['description'] }}</p>
-
-                                                <div class="spacer-half"></div>
-
-                                                <a class="btn-main fx-slide animated fadeInUp anim-order-3"
-                                                    href="{{ url('/contact-us') }}"><span>Get in touch</span></a>
-
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
+<!-- home1 Banner Section Start-->
+<div class="home1-banner-section">
+    <div class="swiper home1-banner-slider">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide">
+                <div class="banner-wrapper">
+                    <div class="banner-img-area">
+                        <img src="{{ asset('assets/img/home1/banner-img1a.jpg') }}" alt="">
+                    </div>
+                    <div class="banner-content-wrap">
+                        <div class="container">
+                            <div class="banner-content">
+                                <span>Trusted gateway to real internships</span>
+                                <h1>Verified. Connected. Hired.</h1>
+                                <a class="primary-btn1 btn-hover" href="{{ url('/login') }}">
+                                    Start Applying
+                                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z" />
+                                        </g>
+                                    </svg>
+                                    <span></span>
+                                </a>
+                                <a class="primary-btn2 btn-hover" href="{{ url('/login') }}">
+                                    I'm an Employer
+                                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z" />
+                                        </g>
+                                    </svg>
+                                    <span></span>
+                                </a>
                             </div>
                         </div>
-
-                        <div class="abs w-100 bottom-0 z-2 pb-4 sm-hide">
-                            <div class="container">
-                                <div class="row">
-                                    <div class="col-lg-12">
-                                        <div class="d-flex justify-content-between">
-                                            @foreach (getServices() as $service)
-                                            <div>
-                                                <h6>{{ $service['name'] }}</h6>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="sw-overlay op-4"></div>
                     </div>
                 </div>
-                @endforeach
             </div>
-
-            <!-- If we need pagination -->
-            <div class="swiper-pagination"></div>
-
-            <!-- If we need navigation buttons -->
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-button-next"></div>
+            {{-- <div class="swiper-slide">
+                <div class="banner-wrapper">
+                    <div class="banner-img-area">
+                        <img src="{{ asset('assets/img/home1/banner-img2.jpg') }}" alt="Banner-img2">
+                    </div>
+                    <div class="banner-content-wrap">
+                        <div class="container">
+                            <div class="banner-content">
+                                <span>EST. 1996 - Land Transport</span>
+                                <h1>Deliver. Connect. Grow.</h1>
+                                <a class="primary-btn1 btn-hover" href="get-in-touch.html">
+                                    Request A Quote
+                                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z" />
+                                        </g>
+                                    </svg>
+                                    <span></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-slide">
+                <div class="banner-wrapper">
+                    <div class="banner-video-area">
+                        <video autoplay loop muted playsinline
+                            src="{{ asset('assets/video/home1-banner-video.mp4') }}"></video>
+                    </div>
+                    <div class="banner-content-wrap">
+                        <div class="container">
+                            <div class="banner-content">
+                                <span>EST. 1996 - Land Transport</span>
+                                <h1>Fast. Reliable. Global.</h1>
+                                <a class="primary-btn1 btn-hover" href="get-in-touch.html">
+                                    Request A Quote
+                                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z" />
+                                        </g>
+                                    </svg>
+                                    <span></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-slide">
+                <div class="banner-wrapper">
+                    <div class="banner-img-area">
+                        <img src="assets/img/home1/banner-img3.jpg" alt="">
+                    </div>
+                    <div class="banner-content-wrap">
+                        <div class="container">
+                            <div class="banner-content">
+                                <span>EST. 1996 - Land Transport</span>
+                                <h1>Speed. Trust. Excellence</h1>
+                                <a class="primary-btn1 btn-hover" href="get-in-touch.html">
+                                    Request A Quote
+                                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z" />
+                                        </g>
+                                    </svg>
+                                    <span></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-slide">
+                <div class="banner-wrapper">
+                    <div class="banner-img-area">
+                        <img src="assets/img/home1/banner-img4.jpg" alt="">
+                    </div>
+                    <div class="banner-content-wrap">
+                        <div class="container">
+                            <div class="banner-content">
+                                <span>EST. 1996 - Land Transport</span>
+                                <h1>Your Cargo. Our Priority.</h1>
+                                <a class="primary-btn1 btn-hover" href="get-in-touch.html">
+                                    Request A Quote
+                                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                                        <g>
+                                            <path
+                                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z">
+                                            </path>
+                                        </g>
+                                    </svg>
+                                    <span></span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> --}}
         </div>
     </div>
-</section>
+    {{-- <div class="slider-btn-grp-area">
+        <div class="slider-btn banner-slider-prev">
+            <img src="assets/img/home1/pagination-img.png" alt="">
+            <div class="arrow">
+                <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <g>
+                        <path d="M15 20C15 15.2941 6.37992 11.5686 4 10C6.81263 8.43137 15 4.70588 15 0"
+                            stroke-width="2" />
+                    </g>
+                </svg>
+            </div>
+        </div>
+        <div class="slider-btn banner-slider-next">
+            <img src="assets/img/home1/pagination-img.png" alt="">
+            <div class="arrow">
+                <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <g>
+                        <path d="M5 20C5 15.2941 13.6201 11.5686 16 10C13.1874 8.43137 5 4.70588 5 0"
+                            stroke-width="2" />
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div> --}}
+</div>
+<!-- home1 Banner Section End-->
