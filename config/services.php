@@ -20,6 +20,7 @@ return [
 
     'resend' => [
         'key' => env('RESEND_KEY'),
+        'api_key' => env('RESEND_API_KEY'), // Used by resend-laravel package
     ],
 
     'ses' => [
@@ -33,6 +34,12 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'smsonlinegh' => [
+        'api_key' => env('SMSONLINEGH_API_KEY'),
+        'api_url' => env('SMSONLINEGH_API_URL', 'https://api.smsonlinegh.com/api/v1'),
+        'sender_id' => env('SMSONLINEGH_SENDER_ID'),
     ],
 
 ];

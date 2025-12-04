@@ -127,6 +127,17 @@ DB_PASSWORD=your_password
 
 APP_NAME="Looksharp"
 APP_URL=http://localhost:8000
+
+# Email Service (Resend)
+MAIL_MAILER=resend
+RESEND_API_KEY=your_resend_api_key
+MAIL_FROM_ADDRESS="hello@joinlooksharp.com"
+MAIL_FROM_NAME="Looksharp"
+
+# SMS Service (SMSOnlineGH)
+SMSONLINEGH_API_KEY=your_smsonlinegh_api_key
+SMSONLINEGH_API_URL=https://api.smsonlinegh.com/api/v1
+SMSONLINEGH_SENDER_ID=your_sender_id
 ```
 
 ### 5. Database Setup
