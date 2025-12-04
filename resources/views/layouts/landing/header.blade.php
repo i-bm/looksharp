@@ -11,8 +11,13 @@
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en-us">
     <meta property="og:site_name" content="{{ config('app.name') }}">
-    <meta property="og:image" content="{{ asset('assets/fav-icon.svg') }}">
-    <meta property="og:image:url" content="{{ asset('assets/fav-icon.svg') }}">
+    <meta property="og:image" content="{{ asset('assets/img/og-image.jpg') }}">
+    <meta property="og:image:url" content="{{ asset('assets/img/og-image.jpg') }}">
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="description" content="{{ isset($description) ? $description : '' }}">
+    <meta name="keywords"
+        content="internships, early-career jobs, employer connections, verified opportunities, career platform, Ghana">
     <!-- Bootstrap CSS -->
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/jquery-ui.css') }}" rel="stylesheet">
