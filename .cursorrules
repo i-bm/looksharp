@@ -1,0 +1,480 @@
+# Cursor Rules for Looksharp - Laravel 12 Project
+
+## Project Overview
+Looksharp is a Laravel 12 application for connecting talent with employers in Ghana. The project uses UUID primary keys, Spatie Permission for role-based access control, and Laravel Auditing for model change tracking.
+
+## Laravel 12 Standards
+
+### Framework Version
+- Use Laravel 12.0 conventions and features
+- PHP 8.2+ required
+- Follow Laravel 12 documentation patterns: https://laravel.com/docs/12.x
+
+### Code Style
+- Follow PSR-12 coding standards
+- Use Laravel Pint for code formatting
+- Use strict types where appropriate: `declare(strict_types=1);`
+- Use typed properties and return types
+- Prefer `list<string>` over `array<string>` for arrays with sequential integer keys
+
+## Database & Migrations
+
+### UUID Primary Keys
+- **ALL tables MUST use UUID primary keys**, not auto-incrementing IDs
+- Use `$table->uuid('id')->primary()` instead of `$table->id()`
+- All foreign keys referencing UUID columns MUST use `foreignUuid()` instead of `foreignId()`
+- Example:
+  ```php
+  Schema::create('table_name', function (Blueprint $table) {
+      $table->uuid('id')->primary();
+      $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+  });
+  ```
+
+### Migration Naming
+- Use descriptive migration names: `YYYY_MM_DD_HHMMSS_descriptive_action_table_name.php`
+- Group related changes in single migrations when logical
+- Always include `down()` method for rollback support
+
+### Model Morph Keys
+- When using polymorphic relationships with UUID models, use `uuid()` for morph keys:
+  ```php
+  $table->string('auditable_type');
+  $table->uuid('auditable_id');
+  ```
+
+## Models
+
+### UUID Models
+- All models MUST use the `HasUuids` trait from Laravel
+- Import: `use Illuminate\Database\Eloquent\Concerns\HasUuids;`
+- Add trait: `use HasFactory, HasUuids;`
+
+### Auditing
+- Models that need change tracking MUST implement `OwenIt\Auditing\Contracts\Auditable`
+- Use the `Auditable` trait: `use \OwenIt\Auditing\Auditable;`
+- Example:
+  ```php
+  use OwenIt\Auditing\Contracts\Auditable;
+
+  class ModelName extends Model implements Auditable
+  {
+      use HasFactory, HasUuids;
+      use \OwenIt\Auditing\Auditable;
+  }
+  ```
+
+### Permissions & Roles
+- User model MUST use `Spatie\Permission\Traits\HasRoles` trait
+- Use Spatie Permission methods: `$user->assignRole()`, `$user->hasRole()`, `$user->can()`
+- Define roles and permissions in seeders, not hardcoded
+
+### Model Conventions
+- Use `protected $fillable` for mass assignment (never `$guarded = []`)
+- Use `protected function casts(): array` for attribute casting (Laravel 12 style)
+- Use type hints: `protected function casts(): array`
+- Define relationships with return types: `public function user(): BelongsTo`
+
+### Enum Usage
+- Use PHP 8.1+ backed enums for constants
+- Store enum values as strings in database
+- Example:
+  ```php
+  enum UserRoleEnum: string
+  {
+      case TALENT = 'talent';
+      case EMPLOYER = 'employer';
+  }
+  ```
+- In migrations, use: `$table->enum('user_type', UserRoleEnum::class)`
+
+## Controllers
+
+### Controller Structure
+- Keep controllers thin - delegate business logic to Services
+- Use dependency injection in constructor
+- Return JSON for API endpoints, views for web routes
+- Use Form Requests for validation when validation logic is complex
+
+### Route Organization
+- Group related routes with middleware
+- Use route names consistently: `resource.action` format
+- Apply rate limiting to authentication/registration routes
+- Example:
+  ```php
+  Route::middleware('guest')->group(function () {
+      Route::post('/register/otp', [RegistrationController::class, 'requestRegistrationOtp'])
+          ->middleware('throttle:3,15')
+          ->name('register.otp');
+  });
+  ```
+
+## Services
+
+### Service Layer Pattern
+- Extract business logic from controllers into Service classes
+- Services should be in `app/Services/` directory
+- Use dependency injection for service dependencies
+- Services should be single-responsibility focused
+- Example structure:
+  ```php
+  class AuthService
+  {
+      private NotificationService $notificationService;
+
+      public function __construct(NotificationService $notificationService)
+      {
+          $this->notificationService = $notificationService;
+      }
+
+      public function requestOtp(string $email, ?string $userType = null): array
+      {
+          // Implementation
+      }
+  }
+  ```
+
+## Authentication & Authorization
+
+### Passwordless Auth
+- Use OTP-based authentication (no password required)
+- Store OTP tokens with expiration and attempt limits
+- Implement rate limiting for OTP requests
+- Clean up expired OTPs regularly
+
+### Permission Checks
+- Use Spatie Permission for authorization: `$user->can('permission-name')`
+- Use middleware: `->middleware('permission:permission-name')`
+- Use gates/policies for complex authorization logic
+
+## Validation
+
+### Form Requests
+- Create Form Request classes for complex validation
+- Use `rules()` method with array syntax
+- Use enum validation: `Rule::enum(UserRoleEnum::class)`
+- Example:
+  ```php
+  public function rules(): array
+  {
+      return [
+          'email' => ['required', 'email', 'max:255'],
+          'user_type' => ['required', Rule::enum(UserRoleEnum::class)],
+      ];
+  }
+  ```
+
+## Notifications & Emails
+
+### Email Service
+- Use dedicated EmailService for email sending
+- Use Mailable classes in `app/Mail/`
+- Use Blade templates in `resources/views/emails/`
+- Support both email and SMS notifications via NotificationService
+
+## Error Handling
+
+### Exceptions
+- Throw descriptive exceptions with clear messages
+- Use custom exception classes for domain-specific errors
+- Return appropriate HTTP status codes
+- Example:
+  ```php
+  throw new \Exception('Invalid or expired OTP code.');
+  ```
+
+### Database Transactions
+- **MUST use database transactions for ALL persistent methods** that modify data
+- Wrap database operations in `DB::transaction()` for atomicity
+- Use try-catch blocks to handle exceptions and rollback on errors
+- Always commit on success, rollback on failure
+- Import: `use Illuminate\Support\Facades\DB;`
+- Pattern:
+  ```php
+  use Illuminate\Support\Facades\DB;
+
+  public function persistData(array $data): Model
+  {
+      try {
+          return DB::transaction(function () use ($data) {
+              // Database operations
+              $model = Model::create($data);
+
+              // Related operations
+              $model->related()->create($relatedData);
+
+              // Commit is automatic on success
+              return $model;
+          });
+      } catch (\Exception $e) {
+          // Rollback is automatic on exception
+          \Log::error('Failed to persist data: ' . $e->getMessage());
+          throw new \Exception('Failed to save data: ' . $e->getMessage());
+      }
+  }
+  ```
+
+### Transaction Best Practices
+- Use transactions for multi-step database operations
+- Use transactions when creating related models
+- Use transactions when updating multiple related records
+- Always log errors before re-throwing exceptions
+- Use descriptive error messages that don't expose internal details
+- Example with manual commit/rollback (when needed):
+  ```php
+  use Illuminate\Support\Facades\DB;
+
+  public function complexOperation(): void
+  {
+      DB::beginTransaction();
+
+      try {
+          // First operation
+          $user = User::create($userData);
+
+          // Second operation
+          $profile = $user->profile()->create($profileData);
+
+          // Third operation
+          $user->roles()->attach($roleIds);
+
+          // Commit all changes
+          DB::commit();
+      } catch (\Exception $e) {
+          // Rollback all changes on error
+          DB::rollBack();
+
+          \Log::error('Complex operation failed: ' . $e->getMessage(), [
+              'trace' => $e->getTraceAsString()
+          ]);
+
+          throw new \Exception('Operation failed. Please try again.');
+      }
+  }
+  ```
+
+## Testing
+
+### Test Structure
+- Write Feature tests for HTTP endpoints
+- Write Unit tests for Services and Models
+- Use factories for test data generation
+- Update factories to use UUIDs when creating models
+
+## Configuration
+
+### Config Files
+- Store application-specific config in `config/` directory
+- Use environment variables via `config()` helper
+- Example: `config('passwordless.otp.expiry_minutes', 10)`
+
+## Code Organization
+
+### Directory Structure
+```
+app/
+├── Enums/           # PHP Enums
+├── Helpers/          # Helper functions
+├── Http/
+│   └── Controllers/
+│       ├── Auth/    # Authentication controllers
+│       └── Pages/   # Page controllers
+├── Mail/            # Mailable classes
+├── Models/          # Eloquent models
+├── Providers/       # Service providers
+└── Services/       # Business logic services
+```
+
+## Best Practices
+
+### General
+- Always use type hints for method parameters and return types
+- Use nullable types (`?string`) when values can be null
+- Use `list<string>` for arrays with sequential integer keys
+- Use `array<string, mixed>` for associative arrays
+- Prefer early returns over nested conditionals
+- Use query scopes for reusable query logic
+- Use accessors/mutators for attribute transformation
+
+### Database Queries
+- Use Eloquent relationships instead of manual joins when possible
+- Use query scopes for reusable query logic
+- Use `firstOrCreate()` / `updateOrCreate()` for upsert operations
+- Always use parameter binding (Eloquent handles this automatically)
+- **Wrap all write operations (create, update, delete) in transactions**
+- Use try-catch blocks around all database transactions
+
+### Security
+- Never expose sensitive data in responses
+- Use `$hidden` array in models for sensitive attributes
+- Hash passwords using Laravel's built-in hashing
+- Validate and sanitize all user input
+- Use CSRF protection on state-changing routes
+
+### Performance
+- Use eager loading (`with()`) to prevent N+1 queries
+- Add database indexes for frequently queried columns
+- Use database transactions for multi-step operations (required for all persistent methods)
+- Cache expensive operations when appropriate
+- Transactions ensure data integrity and atomicity
+
+## Package-Specific Rules
+
+### Spatie Permission
+- Always use UUIDs for roles and permissions tables
+- Use `$user->assignRole('role-name')` to assign roles
+- Use `$user->hasRole('role-name')` to check roles
+- Use `$user->can('permission-name')` to check permissions
+- Define roles and permissions in seeders
+
+### Laravel Auditing
+- Implement `Auditable` contract on models that need auditing
+- Use `Auditable` trait for automatic change tracking
+- Configure audit settings in `config/audit.php`
+- Audits table uses UUID primary keys and UUID foreign keys
+
+## Common Patterns
+
+### Service Method Pattern
+```php
+use Illuminate\Support\Facades\DB;
+
+public function methodName(string $param, ?string $optional = null): ReturnType
+{
+    // Validation
+    if (!$this->validateSomething($param)) {
+        throw new \Exception('Error message');
+    }
+
+    try {
+        return DB::transaction(function () use ($param) {
+            // Business logic with database operations
+            $result = $this->doSomething($param);
+
+            // Return result (auto-commits on success)
+            return $result;
+        });
+    } catch (\Exception $e) {
+        // Auto-rollback on exception
+        \Log::error('Method failed: ' . $e->getMessage());
+        throw new \Exception('Operation failed. Please try again.');
+    }
+}
+```
+
+### Persistent Method Pattern (Create/Update/Delete)
+```php
+use Illuminate\Support\Facades\DB;
+
+public function createModel(array $data): Model
+{
+    try {
+        return DB::transaction(function () use ($data) {
+            // Create main model
+            $model = Model::create($data);
+
+            // Create related models if needed
+            if (isset($data['related'])) {
+                $model->related()->create($data['related']);
+            }
+
+            // Perform additional operations
+            $this->performPostCreateActions($model);
+
+            return $model;
+        });
+    } catch (\Exception $e) {
+        \Log::error('Failed to create model: ' . $e->getMessage(), [
+            'data' => $data,
+            'trace' => $e->getTraceAsString()
+        ]);
+        throw new \Exception('Failed to create record. Please try again.');
+    }
+}
+
+public function updateModel(string $id, array $data): Model
+{
+    try {
+        return DB::transaction(function () use ($id, $data) {
+            $model = Model::findOrFail($id);
+            $model->update($data);
+
+            // Update related models if needed
+            if (isset($data['related'])) {
+                $model->related()->update($data['related']);
+            }
+
+            return $model->fresh();
+        });
+    } catch (\Exception $e) {
+        \Log::error('Failed to update model: ' . $e->getMessage(), [
+            'id' => $id,
+            'data' => $data
+        ]);
+        throw new \Exception('Failed to update record. Please try again.');
+    }
+}
+
+public function deleteModel(string $id): bool
+{
+    try {
+        return DB::transaction(function () use ($id) {
+            $model = Model::findOrFail($id);
+
+            // Delete related records first if needed
+            $model->related()->delete();
+
+            // Delete main model
+            return $model->delete();
+        });
+    } catch (\Exception $e) {
+        \Log::error('Failed to delete model: ' . $e->getMessage(), [
+            'id' => $id
+        ]);
+        throw new \Exception('Failed to delete record. Please try again.');
+    }
+}
+```
+
+### Controller Method Pattern
+```php
+public function actionName(Request $request)
+{
+    $validated = $request->validate([
+        'field' => ['required', 'string'],
+    ]);
+
+    $result = $this->service->methodName($validated['field']);
+
+    return response()->json($result);
+}
+```
+
+### Model Relationship Pattern
+```php
+public function relatedModel(): HasOne|BelongsTo|HasMany
+{
+    return $this->hasOne(RelatedModel::class);
+}
+```
+
+## When Creating New Code
+
+1. **Models**: Always include `HasUuids` trait, implement `Auditable` if needed
+2. **Migrations**: Always use UUID primary keys and `foreignUuid()` for foreign keys
+3. **Controllers**: Keep thin, delegate to Services
+4. **Services**: Extract business logic here, wrap persistent methods in transactions
+5. **Validation**: Use Form Requests for complex validation
+6. **Routes**: Apply appropriate middleware and rate limiting
+7. **Enums**: Use backed enums for constants stored in database
+8. **Transactions**: Always use `DB::transaction()` with try-catch for create/update/delete operations
+
+## Notes
+
+- This project uses passwordless authentication (OTP-based)
+- All primary keys are UUIDs
+- All models that need auditing should implement `Auditable`
+- User model uses Spatie Permission for roles/permissions
+- Services handle business logic, controllers are thin
+- Follow Laravel 12 conventions and best practices
+

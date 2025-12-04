@@ -41,7 +41,7 @@
                             Universities </a>
                     </li>
                 </ul>
-                <a class="primary-btn1 btn-hover d-xl-none" href="#">
+                <a class="primary-btn1 btn-hover d-xl-none" href="{{ route('login') }}">
                     Get Started
                     <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                         <g>
@@ -100,7 +100,7 @@
                     </a>
                 </div> --}}
                 <a class=" {{ request()->is('/') ? 'primary-btn1' : 'primary-btn2' }} btn-hover text-white d-xl-flex d-none"
-                    href="#">
+                    href="{{ route('login') }}">
                     Get Started
                     <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                         <g>

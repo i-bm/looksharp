@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserRoleEnum;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -13,24 +14,20 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Talent Users
-        User::create([
-            'name' => 'Esther Nanegbe',
-            'email' => 'esther.nanegbe@ug.edu.gh',
-            'password' => null, // Passwordless auth
-            'user_type' => 'talent',
-            'email_verified_at' => now(),
-        ]);
 
-        User::create([
-            'name' => 'Isaac Boakye Manu',
-            'email' => 'isaac.boakyemanu@gmail.com',
+        $talent = User::create([
+            'first_name' => 'Isaac',
+            'last_name' => 'Boakye Manu',
+            'email' => 'test@gmail.com',
             'password' => null,
             'user_type' => 'talent',
             'email_verified_at' => now(),
         ]);
+        $talent->assignRole(UserRoleEnum::TALENT->value);
 
         User::create([
-            'name' => 'Akosua Osei',
+            'first_name' => 'Akosua',
+            'last_name' => 'Osei',
             'email' => 'akosua.osei@ashesi.edu.gh',
             'password' => null,
             'user_type' => 'talent',
@@ -39,7 +36,8 @@ class UserSeeder extends Seeder
 
         // Employer Users
         User::create([
-            'name' => 'MTN Ghana HR',
+            'first_name' => 'MTN Ghana HR',
+            'last_name' => 'HR',
             'email' => 'hr@mtn.com.gh',
             'password' => null,
             'user_type' => 'employer',
@@ -47,7 +45,8 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Tech Startup Accra',
+            'first_name' => 'Tech Startup Accra',
+            'last_name' => 'Accra',
             'email' => 'careers@techstartup.gh',
             'password' => null,
             'user_type' => 'employer',
@@ -55,7 +54,8 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Vodafone Ghana',
+            'first_name' => 'Vodafone Ghana',
+            'last_name' => 'Ghana',
             'email' => 'recruitment@vodafone.com.gh',
             'password' => null,
             'user_type' => 'employer',
@@ -64,7 +64,8 @@ class UserSeeder extends Seeder
 
         // University Admin Users
         User::create([
-            'name' => 'University of Ghana Career Services',
+            'first_name' => 'University of Ghana Career Services',
+            'last_name' => 'Career Services',
             'email' => 'careerservices@ug.edu.gh',
             'password' => null,
             'user_type' => 'university_admin',
@@ -72,7 +73,8 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Ashesi University Career Services',
+            'first_name' => 'Ashesi University Career Services',
+            'last_name' => 'Career Services',
             'email' => 'careerservices@ashesi.edu.gh',
             'password' => null,
             'user_type' => 'university_admin',
@@ -80,7 +82,8 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'KNUST Career Services',
+            'first_name' => 'KNUST Career Services',
+            'last_name' => 'Career Services',
             'email' => 'careerservices@knust.edu.gh',
             'password' => null,
             'user_type' => 'university_admin',
@@ -89,7 +92,8 @@ class UserSeeder extends Seeder
 
         // Admin User
         User::create([
-            'name' => 'Looksharp Admin',
+            'first_name' => 'Looksharp Admin',
+            'last_name' => 'Admin',
             'email' => 'admin@joinlooksharp.com',
             'password' => null,
             'user_type' => 'admin',

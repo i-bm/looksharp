@@ -39,7 +39,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     <!-- Title -->
     <title> {{config('app.name')}} {{isset($title) ? " - ". $title : "" }}</title>
-    <link rel="icon" href="{{ asset('assets/fav-icon.svg') }}" type="image/gif" sizes="20x20">
+    <link rel="icon" href="{{ asset('assets/favicon.png') }}" type="image/gif" sizes="20x20">
 
     {{--
     <link rel="stylesheet" id="silktide-consent-manager-css"

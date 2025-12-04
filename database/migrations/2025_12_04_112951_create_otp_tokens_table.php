@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\UserRoleEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,15 +13,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('otp_tokens', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('email')->index();
             $table->string('otp_code', 6);
-            $table->enum('user_type', ['talent', 'employer', 'university_admin'])->nullable();
+            $table->string('user_type')->default(UserRoleEnum::TALENT->value);
             $table->integer('attempts')->default(0);
             $table->timestamp('expires_at');
             $table->timestamp('verified_at')->nullable();
             $table->timestamps();
-            
+
             $table->index('otp_code');
             $table->index('expires_at');
         });

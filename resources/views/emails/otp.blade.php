@@ -8,9 +8,9 @@
 </head>
 
 <body
-    style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background-color: #f8f9fa; padding: 30px; border-radius: 5px;">
-        <h1 style="color: #333; margin-top: 0;">Sign to {{ config('app.name') }}</h1>
+    style="font-family: Arial, sans-serif; line-height: 1.6; color: #000; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style=" padding: 30px; border-radius: 5px;">
+        <h1 style="color: #000; margin-top: 0;">Sign to {{ config('app.name') }}</h1>
 
         <p>You requested to sign in to Looksharp. Your one-time code is:</p>
 
@@ -22,10 +22,10 @@
 
         <p>This code will expire in {{ $expiryMinutes }} minutes.</p>
 
-        <p style="color: #666; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
+        <p style="color: #000; font-size: 14px;">If you didn't request this code, please ignore this email.</p>
     </div>
 
-    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #000;">
         <p>Thanks,<br>{{ config('app.name') }} Team</p>
     </div>
 </body>

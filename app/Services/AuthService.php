@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\UserRoleEnum;
 use App\Models\OtpToken;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuthService
 {
@@ -202,6 +205,139 @@ class AuthService
     public function cleanupExpiredOtps(): int
     {
         return OtpToken::expired()->delete();
+    }
+
+    /**
+     * Request OTP for registration (new user signup).
+     *
+     * @throws \Exception
+     */
+    public function requestRegistrationOtp(string $email, string $userType): array
+    {
+        // Check if user already exists
+        if (User::where('email', $email)->exists()) {
+            throw new \Exception('An account with this email already exists. Please login instead.');
+        }
+
+        // Check throttling
+        if (! $this->throttleCheck($email)) {
+            throw new \Exception('Too many OTP requests. Please try again later.');
+        }
+
+        // Cleanup expired OTPs for this email
+        OtpToken::where('email', $email)
+            ->expired()
+            ->delete();
+
+        // Generate new OTP
+        $otp = $this->generateOtp();
+        $expiresAt = now()->addMinutes($this->getOtpExpiryMinutes());
+
+        // Create or update OTP token with user_type
+        OtpToken::updateOrCreate(
+            [
+                'email' => $email,
+                'user_type' => $userType,
+            ],
+            [
+                'otp_code' => $otp,
+                'attempts' => 0,
+                'expires_at' => $expiresAt,
+                'verified_at' => null,
+            ]
+        );
+
+        // Send OTP email
+        $this->sendOtpEmail($email, $otp, $userType);
+
+        return [
+            'success' => true,
+            'expires_at' => $expiresAt,
+            'expiry_minutes' => $this->getOtpExpiryMinutes(),
+        ];
+    }
+
+    /**
+     * Verify registration OTP and create new user account.
+     *
+     * @throws \Exception
+     */
+    public function verifyRegistrationOtp(string $email, string $otp, string $userType): User
+    {
+        // Check if user already exists
+        if (User::where('email', $email)->exists()) {
+            throw new \Exception('An account with this email already exists. Please login instead.');
+        }
+
+        // Find valid OTP token
+        $otpToken = OtpToken::where('email', $email)
+            ->where('otp_code', $otp)
+            ->where('user_type', $userType)
+            ->valid()
+            ->first();
+
+        if (! $otpToken) {
+            // Increment attempts for existing token if found
+            $existingToken = OtpToken::where('email', $email)
+                ->where('user_type', $userType)
+                ->unverified()
+                ->first();
+
+            if ($existingToken) {
+                $existingToken->incrementAttempts();
+
+                if ($existingToken->attempts >= $this->getMaxAttempts()) {
+                    $existingToken->delete();
+                    throw new \Exception('Maximum verification attempts exceeded. Please request a new OTP.');
+                }
+            }
+
+            throw new \Exception('Invalid or expired OTP code.');
+        }
+
+        // Check if max attempts exceeded
+        if ($otpToken->attempts >= $this->getMaxAttempts()) {
+            $otpToken->delete();
+            throw new \Exception('Maximum verification attempts exceeded. Please request a new OTP.');
+        }
+
+        // Check if expired
+        if ($otpToken->isExpired()) {
+            $otpToken->delete();
+            throw new \Exception('OTP has expired. Please request a new one.');
+        }
+
+        try {
+            return DB::transaction(function () use ($email, $userType, $otpToken) {
+                // Mark as verified
+                $otpToken->markAsVerified();
+
+                // Create new user (registration - user should not exist)
+                $extractedName = $this->extractNameFromEmail($email);
+                $nameParts = explode(' ', $extractedName, 2);
+
+                $user = User::create([
+                    'email' => $email,
+                    'first_name' => null,
+                    'last_name' => null,
+                    'user_type' => $userType,
+                    'password' => null,
+                ]);
+
+                $user->assignRole(UserRoleEnum::from($userType)->value);
+                // Cleanup the verified OTP
+                $otpToken->delete();
+
+                return $user;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to verify registration OTP: '.$e->getMessage(), [
+                'email' => $email,
+                'user_type' => $userType,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to create account. Please try again.');
+        }
     }
 
     /**

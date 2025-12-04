@@ -65,9 +65,8 @@
 
                     <!-- Sign Up Link -->
                     <div style="text-align: center;">
-                        <p
-                            style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); margin: 0;">
-                            Don't have an account? <a href="#"
+                        <p style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); margin: 0;">
+                            Don't have an account? <a href="{{ route('register', ['userType' => 'talent']) }}"
                                 style="color: var(--primary-color2); font-weight: 600; text-decoration: none;">
                                 Sign up
                             </a>
@@ -77,7 +76,3 @@
             </div>
         </div>
     </div>
-</div>
-<!-- Login Page End -->
-@endsection
-
