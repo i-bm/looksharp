@@ -11,7 +11,7 @@
             </a>
             <div class="main-menu">
                 <div class="mobile-logo-area d-xl-none d-flex align-items-center justify-content-between">
-                    <a href="index.html" class="mobile-logo-wrap">
+                    <a href="{{ url('/') }}" class="mobile-logo-wrap">
                         <img src="{{ asset('assets/img/logo-red.png') }}" alt="">
                     </a>
                     <div class="menu-close-btn">
@@ -30,13 +30,13 @@
                     </li>
 
                     <li class="menu-item-has-children {{ request()->is('employers') ? 'active' : '' }}">
-                        <a href="{{ route('employers') }}"
-                            class="{{ !request()->is('/') && !request()->is('employers') ? 'text-dark' : '' }}"> For
+                        <a href="#" class="{{ !request()->is('/') && !request()->is('employers') ? 'text-dark' : '' }}">
+                            For
                             Employers </a>
                     </li>
 
                     <li class="menu-item-has-children {{ request()->is('universities') ? 'active' : '' }}">
-                        <a href="{{ route('universities') }}"
+                        <a href="#"
                             class="{{ !request()->is('/') && !request()->is('universities') ? 'text-dark' : '' }}"> For
                             Universities </a>
                     </li>
