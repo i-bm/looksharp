@@ -35,6 +35,8 @@
     <link href="{{ asset('assets/css/boxicons.min.css') }}" rel="stylesheet">
     <!--  Style CSS  -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
     <!-- Dashboard CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/dashboard.css') }}">
     <!-- Title -->

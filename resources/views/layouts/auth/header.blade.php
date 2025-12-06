@@ -2,41 +2,38 @@
 <html lang="en">
 
 <head>
+    <!-- Required meta tags -->
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
-    <meta name="description" content="">
-    <meta name="keywords" content="">
-    <meta name="author" content="">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{config('app.name')}} {{ isset($title) ? " - ".$title : "" }}</title>
-
-    <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/favicon.png')}}">
-
-    <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/favicon.png')}}">
-
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css')}}">
+    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/jquery-ui.css') }}" rel="stylesheet">
+    <!-- Bootstrap Icon CSS -->
+    <link href="{{ asset('assets/css/bootstrap-icons.css') }}" rel="stylesheet">
+    <!-- CSS -->
+    <link href="{{ asset('assets/css/animate.min.css') }}" rel="stylesheet">
+    <!-- FancyBox CSS -->
+    <link href="{{ asset('assets/css/jquery.fancybox.min.css') }}" rel="stylesheet">
+    <!-- Swiper slider CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/swiper-bundle.min.css') }}">
+    <!-- Slick slider CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/slick.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/slick-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/daterangepicker.css') }}">
+    <!-- BoxIcon  CSS -->
+    <link href="{{ asset('assets/css/boxicons.min.css') }}" rel="stylesheet">
+    <!--  Style CSS  -->
+    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
 
-    <!-- Feather CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/plugins/icons/feather/feather.css')}}">
-
-    <!-- Tabler Icon CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/plugins/tabler-icons/tabler-icons.css')}}">
-
-    <!-- Fontawesome CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/fontawesome.min.css')}}">
-    <link rel="stylesheet" href="{{ asset('assets/plugins/fontawesome/css/all.min.css')}}">
-
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/css/style.css')}}">
-
+    <title>{{config('app.name')}} {{ isset($title) ? " - ".$title : "" }}</title>
+    <link rel="icon" href="{{ asset('assets/favicon.png') }}" type="image/gif" sizes="20x20">
 </head>
 
-<body class="bg-linear-gradiant">
+<body class="tt-magic-cursor">
 
-    <div id="global-loader" style="display: none;">
-        <div class="page-loader"></div>
+    <div id="magic-cursor">
+        <div id="ball"></div>
     </div>

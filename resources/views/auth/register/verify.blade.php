@@ -2,45 +2,38 @@
 
 @section('content')
 <!-- OTP Verification Page Start -->
-<div class="login-page" style="height: 100vh; display: flex; align-items: center; background: #f5f5f5;">
-    <div class="container-fluid p-0" style="height: 100%;">
-        <div class="row g-0" style="height: 100%;">
+<div class="login-page auth-page">
+    <div class="container-fluid p-0 auth-container-fluid">
+        <div class="row g-0 auth-row">
             <!-- Left Panel - Dark Background -->
-            <div class="col-lg-6 d-none d-lg-flex"
-                style="background-image: url('{{ asset('assets/img/feature-img-6.jpg') }}'); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative; padding: 40px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="col-lg-6 d-none d-lg-flex auth-side-panel"
+                style="background-image: url('{{ asset('assets/img/feature-img-6.jpg') }}');">
                 <!-- Dark Overlay for better text readability at bottom -->
-                <div
-                    style="position: absolute; bottom: 0; left: 0; right: 0; height: 40%; background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.7) 50%, transparent 100%); z-index: 0;">
-                </div>
-                <div
-                    style="position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="auth-side-panel-overlay"></div>
+                <div class="auth-side-panel-content">
                     <!-- Logo -->
                     <div>
-                        <img src="{{ asset('assets/img/logo-white.png') }}" alt="Logo" style="max-width: 150px;">
+                        <img src="{{ asset('assets/img/logo-white.png') }}" alt="Logo" class="auth-logo">
                     </div>
                 </div>
             </div>
 
             <!-- Right Panel - White Background with Form -->
-            <div class="col-lg-6"
-                style="background: var(--white-color); padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
-                <div style="max-width: 450px; width: 100%;">
+            <div class="col-lg-6 auth-form-panel">
+                <div class="auth-form-wrapper">
                     <!-- Title -->
-                    <div style="margin-bottom: 40px;">
-                        <h2
-                            style="font-family: var(--font-bricolageGrotesque); font-weight: 600; font-size: 32px; color: var(--title-color); margin-bottom: 12px; line-height: 1.2;">
+                    <div class="auth-form-header">
+                        <h2 class="auth-form-title">
                             Enter verification code
                         </h2>
-                        <p
-                            style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); line-height: 1.5;">
+                        <p class="auth-form-subtitle">
                             We've sent a 6-digit code to <strong>{{ $email }}</strong>. Please enter it below to
                             complete your registration.
                         </p>
                     </div>
 
                     @if(session('success'))
-                    <div
-                        style="background: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-family: var(--font-suse); font-size: 14px;">
+                    <div class="success-message">
                         {{ session('success') }}
                     </div>
                     @endif
@@ -50,49 +43,45 @@
                         @csrf
 
                         <div class="form-inner mb-20">
-                            <label style="color: var(--title-color);">Verification Code</label>
+                            <label class="auth-label">Verification Code</label>
                             <input type="text" name="otp" id="otp" value="{{ old('otp', '') }}" placeholder="000000"
                                 required autocomplete="off" autofocus maxlength="6" pattern="[0-9]{6}"
-                                style="border: 1px solid #E0E0E0; background: var(--white-color); border-radius: 8px; text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: 600;"
-                                onfocus="this.style.borderColor='var(--primary-color2)'"
-                                onblur="this.style.borderColor='#E0E0E0'"
+                                class="auth-otp-input"
+                                onfocus="this.classList.add('form-input-focus')"
+                                onblur="this.classList.remove('form-input-focus')"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
                             @error('otp')
-                            <span class="invalid-feedback" role="alert"
-                                style="display: block; color: var(--primary-color1); margin-top: 5px;">
+                            <span class="invalid-feedback auth-error-message" role="alert">
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" class="primary-btn1 btn-hover"
-                            style="width: 100%; justify-content: center; margin-bottom: 20px; border: none; padding: 18px;">
+                        <button type="submit" class="primary-btn1 btn-hover auth-form-button" style="margin-bottom: 20px;">
                             Verify & Create Account
                         </button>
                     </form>
 
                     <!-- Resend OTP Section (outside main form) -->
-                    <div style="text-align: center; margin-bottom: 20px;" id="resend-section"
+                    <div class="text-center" style="margin-bottom: 20px;" id="resend-section"
                         data-resend-route="{{ route('register.otp') }}"
                         data-countdown-seconds="{{ $countdownSeconds ?? 60 }}"
                         data-otp-sent-at="{{ $otpSentAt ?? '' }}"
                         data-throttle-remaining="{{ isset($throttleInfo['remaining_seconds']) ? $throttleInfo['remaining_seconds'] : 0 }}">
-                        <p style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); margin: 0;">
+                        <p class="auth-form-link mb-0">
                             Didn't receive the code?
-                            <button type="button" id="resend-otp-btn"
-                                style="background: none; border: none; color: var(--primary-color2); font-weight: 600; text-decoration: none; cursor: pointer; font-family: var(--font-suse); font-size: 16px; padding: 0;">
+                            <button type="button" id="resend-otp-btn" class="border-none bg-white cursor-pointer" style="color: var(--primary-color2); font-weight: 600; font-family: var(--font-suse); font-size: 16px; padding: 0;">
                                 <span id="resend-text">Resend code</span>
-                                <span id="resend-countdown" style="display: none;"></span>
+                                <span id="resend-countdown" class="hidden"></span>
                             </button>
                         </p>
-                        <div id="resend-error" style="display: none; color: var(--primary-color1); margin-top: 10px; font-size: 14px;"></div>
+                        <div id="resend-error" class="hidden" style="color: var(--primary-color1); margin-top: 10px; font-size: 14px;"></div>
                     </div>
 
                     <!-- Back to Registration -->
-                    <div style="text-align: center;">
-                        <a href="{{ route('register.email') }}"
-                            style="color: var(--text-color); font-family: var(--font-suse); font-size: 16px; text-decoration: none;">
+                    <div class="auth-form-link-container">
+                        <a href="{{ route('register.email') }}" class="auth-form-link">
                             ← Back to registration
                         </a>
                     </div>

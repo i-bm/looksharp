@@ -7,7 +7,7 @@
 
     <!-- Profile Photo Upload -->
     <div class="mb-30">
-        <label class="block mb-2 font-medium">Profile Photo</label>
+        <label class="block mb-2 font-medium">Profile Photo <span style="color: red;">*</span></label>
         <div style="display: flex; align-items: center; gap: 20px;">
             @if($profile->profile_photo)
             <img src="{{ asset('storage/' . $profile->profile_photo) }}" alt="Profile Photo"
@@ -25,11 +25,9 @@
                     style="padding: 8px 16px; font-size: 14px;">
                     {{ $profile->profile_photo ? 'Change Photo' : 'Upload Photo' }}
                 </button>
-                {{-- <button type="button" class="btn btn-primary" data-bs-toggle="popover" title="Popover Header"
-                    data-bs-content="Did you know that you're more likely to have your profile reviewed by an
-                employer if you add a profile picture?" data-bs-placement="right" data-bs-html="true">
-                    <i class="bx bx-info-circle"></i>
-                </button> --}}
+                <x-info-icon
+                    text="Did you know that you're more likely to have your profile reviewed by an employer if you add a profile picture?"
+                    width="250px" />
             </div>
         </div>
     </div>
@@ -170,17 +168,40 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw { data, status: response.status };
+                    }
+                    return data;
+                });
+            })
             .then(data => {
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert(data.error || 'Failed to upload photo');
+                    let errorMessage = data.error || 'Failed to upload photo';
+                    if (data.errors && data.errors.photo) {
+                        errorMessage = Array.isArray(data.errors.photo)
+                            ? data.errors.photo.join(', ')
+                            : data.errors.photo;
+                    }
+                    alert(errorMessage);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to upload photo');
+                let errorMessage = 'Failed to upload photo';
+                if (error.data) {
+                    if (error.data.errors && error.data.errors.photo) {
+                        errorMessage = Array.isArray(error.data.errors.photo)
+                            ? error.data.errors.photo.join(', ')
+                            : error.data.errors.photo;
+                    } else if (error.data.error) {
+                        errorMessage = error.data.error;
+                    }
+                }
+                alert(errorMessage);
             });
         }
     }

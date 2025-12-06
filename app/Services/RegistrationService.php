@@ -21,9 +21,15 @@ class RegistrationService
                     return $user->talentProfile;
                 }
 
+                // Generate unique public URL slug from user's name
+                $firstName = $user->first_name ?? 'user';
+                $lastName = $user->last_name ?? '';
+                // $publicUrl = generatePublicUrlSlug($firstName, $lastName);
+
                 // Create new talent profile with default values
                 $talentProfile = TalentProfile::create([
                     'user_id' => $user->id,
+                    // 'public_url' => $publicUrl,
                     'verification_status' => 'pending',
                     'profile_completeness_score' => 0,
                 ]);

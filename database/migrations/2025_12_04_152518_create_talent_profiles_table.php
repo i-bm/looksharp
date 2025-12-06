@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('verification_document_url')->nullable();
             $table->timestamp('verification_verified_at')->nullable();
             $table->integer('profile_completeness_score')->default(0);
+            $table->boolean('is_profile_building_step_completed')->default(false);
             $table->timestamps();
             $table->softDeletes();
 

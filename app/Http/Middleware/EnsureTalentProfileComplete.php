@@ -31,11 +31,6 @@ class EnsureTalentProfileComplete
     ];
 
     /**
-     * Minimum completeness score required (0-100).
-     */
-    protected int $minCompletenessScore = 80;
-
-    /**
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
@@ -66,7 +61,7 @@ class EnsureTalentProfileComplete
                 ->with('error', 'Please complete your profile to continue.');
         }
 
-        // Check if profile is complete
+        // Check if profile building step is completed
         if (! $this->isProfileComplete($profile)) {
             return redirect()->route('talent.profile.build')
                 ->with('info', 'Please complete your profile to access this page.');
@@ -111,29 +106,6 @@ class EnsureTalentProfileComplete
      */
     protected function isProfileComplete($profile): bool
     {
-        // Check completeness score
-        if ($profile->profile_completeness_score < $this->minCompletenessScore) {
-            return false;
-        }
-
-        // Additional checks: ensure core fields are filled
-        $requiredFields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'location'];
-        foreach ($requiredFields as $field) {
-            if (empty($profile->$field)) {
-                return false;
-            }
-        }
-
-        // Check if at least one education record exists
-        if (! $profile->education()->exists()) {
-            return false;
-        }
-
-        // Check if at least 3 skills exist
-        if ($profile->skills()->count() < 3) {
-            return false;
-        }
-
-        return true;
+        return $profile->is_profile_building_step_completed === true;
     }
 }

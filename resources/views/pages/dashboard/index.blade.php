@@ -8,7 +8,7 @@
             <i class="bi bi-list"></i>
         </button>
         <div class="dashboard-header-content">
-            <h1 class="dashboard-welcome">Welcome Back, {{ Auth::user()->talentProfile->full_name }}</h1>
+            <h1 class="dashboard-welcome">Welcome Back, {{ Auth::user()->talentProfile ? (Auth::user()->talentProfile->first_name . ' ' . Auth::user()->talentProfile->last_name) : Auth::user()->full_name }}</h1>
             <p class="dashboard-subtitle">Here's what's happening with your profile today</p>
         </div>
         <div class="dashboard-header-actions">
@@ -25,8 +25,11 @@
                 </button>
                 <div class="dashboard-profile">
                     <div class="dashboard-avatar-initials">
-                        {{ strtoupper(substr(Auth::user()->talentProfile->first_name, 0, 1) .
-                        substr(Auth::user()->talentProfile->last_name, 0, 1)) }}
+                        @if(Auth::user()->talentProfile)
+                            {{ strtoupper(substr(Auth::user()->talentProfile->first_name, 0, 1) . substr(Auth::user()->talentProfile->last_name, 0, 1)) }}
+                        @else
+                            {{ strtoupper(substr(Auth::user()->first_name, 0, 1) . substr(Auth::user()->last_name, 0, 1)) }}
+                        @endif
                     </div>
                 </div>
             </div>

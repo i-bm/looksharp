@@ -1,6 +1,7 @@
 <?php
 
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 function getGenderOptions()
 {
@@ -176,4 +177,73 @@ function getDateComponentValues(string $prefix, $existingDate = null): array
         'month' => $month !== null ? (int) $month : '',
         'year' => $year !== null ? (int) $year : '',
     ];
+}
+
+/**
+ * Convert YouTube or Vimeo URL to embed URL.
+ *
+ * @param  string  $url  YouTube or Vimeo URL
+ * @return string|null Embed URL or null if invalid
+ */
+function getVideoEmbedUrl(?string $url): ?string
+{
+    if (empty($url)) {
+        return null;
+    }
+
+    // YouTube URL patterns
+    // https://www.youtube.com/watch?v=VIDEO_ID
+    // https://youtu.be/VIDEO_ID
+    // https://www.youtube.com/embed/VIDEO_ID
+    if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $url, $matches)) {
+        return 'https://www.youtube.com/embed/'.$matches[1];
+    }
+
+    // Vimeo URL patterns
+    // https://vimeo.com/VIDEO_ID
+    // https://player.vimeo.com/video/VIDEO_ID
+    if (preg_match('/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/', $url, $matches)) {
+        return 'https://player.vimeo.com/video/'.$matches[1];
+    }
+
+    // If already an embed URL, return as is
+    if (str_contains($url, 'youtube.com/embed') || str_contains($url, 'player.vimeo.com/video')) {
+        return $url;
+    }
+
+    return null;
+}
+
+/**
+ * Generate a unique public URL slug from a name.
+ *
+ * @param  string|null  $existingSlug  Existing slug to check uniqueness against
+ */
+function generatePublicUrlSlug(string $firstName, string $lastName, ?string $existingSlug = null): string
+{
+    // Combine first and last name, convert to lowercase, remove special characters
+    $baseSlug = strtolower(trim($firstName.'-'.$lastName));
+    $baseSlug = preg_replace('/[^a-z0-9-]/', '', $baseSlug);
+    $baseSlug = preg_replace('/-+/', '-', $baseSlug); // Replace multiple dashes with single dash
+    $baseSlug = trim($baseSlug, '-'); // Remove leading/trailing dashes
+
+    // If base slug is empty, use a default
+    if (empty($baseSlug)) {
+        $baseSlug = Str::random(10);
+    }
+
+    // Check if slug already exists (excluding the current profile if updating)
+    $slug = $baseSlug;
+    $counter = 1;
+
+    while (\App\Models\TalentProfile::where('public_url', $slug)
+        ->when($existingSlug, function ($query) use ($existingSlug) {
+            return $query->where('public_url', '!=', $existingSlug);
+        })
+        ->exists()) {
+        $slug = $baseSlug.'-'.$counter;
+        $counter++;
+    }
+
+    return $slug;
 }

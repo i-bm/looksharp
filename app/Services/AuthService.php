@@ -50,12 +50,18 @@ class AuthService
     }
 
     /**
-     * Request OTP for email and user type.
+     * Request OTP for email and user type (login only - user must exist).
      *
      * @throws \Exception
      */
     public function requestOtp(string $email, ?string $userType = null): array
     {
+        // Check if user exists (login requires existing account)
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            throw new \Exception('No account found with this email. Please register first.');
+        }
+
         // Check throttling with detailed status
         $throttleStatus = $this->getThrottleStatus($email);
         if ($throttleStatus['is_throttled']) {
@@ -143,15 +149,14 @@ class AuthService
         // Mark as verified
         $otpToken->markAsVerified();
 
-        // Find or create user
-        $user = User::firstOrCreate(
-            ['email' => $email],
-            [
-                'name' => $this->extractNameFromEmail($email),
-                'user_type' => $userType,
-                'password' => null,
-            ]
-        );
+        // Find existing user (login only - do not create new users)
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            // Cleanup the verified OTP before throwing error
+            $otpToken->delete();
+            throw new \Exception('No account found with this email. Please register first.');
+        }
 
         // Update user type if it was null
         if ($user->user_type === null && $userType !== null) {

@@ -258,32 +258,6 @@
                     style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('passion', $profile->passion) }}</textarea>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
-                    Gigs / Freelance
-                </label>
-                <textarea name="gigs_freelance" rows="3"
-                    placeholder="Do you have a side gig? What about freelance work?"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('gigs_freelance', $profile->gigs_freelance) }}</textarea>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
-                    Leadership
-                </label>
-                <textarea name="leadership" rows="3"
-                    placeholder="Do you consider yourself a leader? From sports to clubs to extracurriculars..."
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('leadership', $profile->leadership) }}</textarea>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
-                    Volunteer
-                </label>
-                <textarea name="volunteer" rows="3"
-                    placeholder="Do you volunteer? Let people know about the causes you donate your time to here!"
-                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('volunteer', $profile->volunteer) }}</textarea>
-            </div>
 
             <div style="margin-bottom: 20px;">
                 <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
@@ -546,6 +520,7 @@
             </div>
 
             <div style="margin-bottom: 20px;">
+                <input type="hidden" name="is_current" value="0">
                 <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
                     <input type="checkbox" name="is_current" value="1" {{ old('is_current') ? 'checked' : '' }}
                         onchange="toggleEndDate(this)">
@@ -777,6 +752,7 @@
             </div>
 
             <div style="margin-bottom: 20px;">
+                <input type="hidden" name="is_current" value="0">
                 <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
                     <input type="checkbox" name="is_current" value="1" {{ old('is_current') ? 'checked' : '' }}
                         onchange="toggleWorkEndDate(this)">
@@ -1001,6 +977,376 @@
             </button>
         </form>
     </div>
+
+    <!-- Volunteer Experiences Section -->
+    <div
+        style="background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2
+            style="font-size: 20px; font-weight: 600; color: var(--title-color); margin: 0 0 25px 0; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+            Volunteer Experiences
+        </h2>
+
+        <!-- Existing Volunteer Experiences -->
+        @if($profile->volunteerExperiences->count() > 0)
+        <div style="margin-bottom: 30px;">
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 15px;">Your Volunteer Experiences ({{ $profile->volunteerExperiences->count() }})</h3>
+            @foreach($profile->volunteerExperiences as $volunteer)
+            <div
+                style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ $volunteer->organization }}</strong><br>
+                    <span style="color: #666; font-size: 14px;">
+                        <i class="bi bi-calendar3"></i>
+                        {{ $volunteer->start_date?->format('M Y') }}
+                        @if($volunteer->is_current)
+                        - Present
+                        @elseif($volunteer->end_date)
+                        - {{ $volunteer->end_date->format('M Y') }}
+                        @endif
+                    </span>
+                </div>
+                <form method="POST" action="{{ route('talent.profile.volunteer-experience.remove', ['id' => $volunteer->id]) }}"
+                    style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                        onclick="return confirm('Are you sure you want to remove this volunteer experience?')"
+                        style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                        Remove
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+        <!-- Add Volunteer Experience Form -->
+        <form method="POST" action="{{ route('talent.profile.volunteer-experience.add') }}">
+            @csrf
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 20px;">{{ $profile->volunteerExperiences->count() > 0 ? 'Add Another Volunteer Experience' : 'Add Volunteer Experience' }}</h3>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                    Organization <span style="color: #F53003;">*</span>
+                </label>
+                <input type="text" name="organization" value="{{ old('organization') }}" required
+                    placeholder="Organization Name (ex: Teach for America)"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+            </div>
+
+            @php
+            $volunteerStartDateValues = getDateComponentValues('volunteer_start_date', old('volunteer_start_date'));
+            $volunteerEndDateValues = getDateComponentValues('volunteer_end_date', old('volunteer_end_date'));
+            $currentYear = (int) date('Y');
+            $yearOptions = getYearOptions($currentYear - 50, $currentYear + 10);
+            @endphp
+
+            <div style="margin-bottom: 20px;">
+                @include('pages.profile.partials.date-selector', [
+                'label' => 'Start Date',
+                'required' => true,
+                'prefix' => 'start_date',
+                'dayValue' => old('start_date_day', $volunteerStartDateValues['day']),
+                'monthValue' => old('start_date_month', $volunteerStartDateValues['month']),
+                'yearValue' => old('start_date_year', $volunteerStartDateValues['year']),
+                'yearOptions' => $yearOptions,
+                'errorKey' => 'start_date'
+                ])
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <input type="hidden" name="is_current" value="0">
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <input type="checkbox" name="is_current" value="1" {{ old('is_current') ? 'checked' : '' }}
+                        onchange="toggleVolunteerEndDate(this)">
+                    <span style="font-weight: 500;">Currently volunteering here</span>
+                </label>
+            </div>
+
+            <div id="volunteerEndDateContainer" style="margin-bottom: 20px; {{ old('is_current') ? 'display: none;' : '' }}">
+                @include('pages.profile.partials.date-selector', [
+                'label' => 'End Date',
+                'required' => false,
+                'prefix' => 'end_date',
+                'dayValue' => old('end_date_day', $volunteerEndDateValues['day']),
+                'monthValue' => old('end_date_month', $volunteerEndDateValues['month']),
+                'yearValue' => old('end_date_year', $volunteerEndDateValues['year']),
+                'yearOptions' => $yearOptions,
+                'errorKey' => 'end_date'
+                ])
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                    Details
+                </label>
+                <textarea name="details" rows="3" value="{{ old('details') }}"
+                    placeholder="Describe your volunteer work..."
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('details') }}</textarea>
+            </div>
+
+            <button type="submit" class="primary-btn1 btn-hover"
+                style="padding: 10px 20px; border: none; cursor: pointer;">
+                <i class="bi bi-plus-circle"></i> Add Volunteer Experience
+            </button>
+        </form>
+    </div>
+
+    <!-- Leadership Experiences Section -->
+    <div
+        style="background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2
+            style="font-size: 20px; font-weight: 600; color: var(--title-color); margin: 0 0 25px 0; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+            Leadership Experiences
+        </h2>
+
+        <!-- Existing Leadership Experiences -->
+        @if($profile->leadershipExperiences->count() > 0)
+        <div style="margin-bottom: 30px;">
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 15px;">Your Leadership Experiences ({{ $profile->leadershipExperiences->count() }})</h3>
+            @foreach($profile->leadershipExperiences as $leadership)
+            <div
+                style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ $leadership->organization }}</strong>
+                    @if($leadership->title)
+                    <br><span style="color: #666; font-size: 14px;">{{ $leadership->title }}</span>
+                    @endif
+                    <br><span style="color: #666; font-size: 14px;">
+                        <i class="bi bi-calendar3"></i>
+                        {{ $leadership->start_date?->format('M Y') }}
+                        @if($leadership->is_current)
+                        - Present
+                        @elseif($leadership->end_date)
+                        - {{ $leadership->end_date->format('M Y') }}
+                        @endif
+                    </span>
+                </div>
+                <form method="POST" action="{{ route('talent.profile.leadership-experience.remove', ['id' => $leadership->id]) }}"
+                    style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                        onclick="return confirm('Are you sure you want to remove this leadership experience?')"
+                        style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                        Remove
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+        <!-- Add Leadership Experience Form -->
+        <form method="POST" action="{{ route('talent.profile.leadership-experience.add') }}">
+            @csrf
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 20px;">{{ $profile->leadershipExperiences->count() > 0 ? 'Add Another Leadership Experience' : 'Add Leadership Experience' }}</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                        Organization <span style="color: #F53003;">*</span>
+                    </label>
+                    <input type="text" name="organization" value="{{ old('organization') }}" required
+                        placeholder="Organization Name"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                        Title
+                    </label>
+                    <input type="text" name="title" value="{{ old('title') }}"
+                        placeholder="Your leadership title"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+            </div>
+
+            @php
+            $leadershipStartDateValues = getDateComponentValues('leadership_start_date', old('leadership_start_date'));
+            $leadershipEndDateValues = getDateComponentValues('leadership_end_date', old('leadership_end_date'));
+            $currentYear = (int) date('Y');
+            $yearOptions = getYearOptions($currentYear - 50, $currentYear + 10);
+            @endphp
+
+            <div style="margin-bottom: 20px;">
+                @include('pages.profile.partials.date-selector', [
+                'label' => 'Start Date',
+                'required' => true,
+                'prefix' => 'start_date',
+                'dayValue' => old('start_date_day', $leadershipStartDateValues['day']),
+                'monthValue' => old('start_date_month', $leadershipStartDateValues['month']),
+                'yearValue' => old('start_date_year', $leadershipStartDateValues['year']),
+                'yearOptions' => $yearOptions,
+                'errorKey' => 'start_date'
+                ])
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <input type="hidden" name="is_current" value="0">
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <input type="checkbox" name="is_current" value="1" {{ old('is_current') ? 'checked' : '' }}
+                        onchange="toggleLeadershipEndDate(this)">
+                    <span style="font-weight: 500;">Currently in this role</span>
+                </label>
+            </div>
+
+            <div id="leadershipEndDateContainer" style="margin-bottom: 20px; {{ old('is_current') ? 'display: none;' : '' }}">
+                @include('pages.profile.partials.date-selector', [
+                'label' => 'End Date',
+                'required' => false,
+                'prefix' => 'end_date',
+                'dayValue' => old('end_date_day', $leadershipEndDateValues['day']),
+                'monthValue' => old('end_date_month', $leadershipEndDateValues['month']),
+                'yearValue' => old('end_date_year', $leadershipEndDateValues['year']),
+                'yearOptions' => $yearOptions,
+                'errorKey' => 'end_date'
+                ])
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                    Details
+                </label>
+                <textarea name="details" rows="3" value="{{ old('details') }}"
+                    placeholder="Describe your leadership role and achievements..."
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('details') }}</textarea>
+            </div>
+
+            <button type="submit" class="primary-btn1 btn-hover"
+                style="padding: 10px 20px; border: none; cursor: pointer;">
+                <i class="bi bi-plus-circle"></i> Add Leadership Experience
+            </button>
+        </form>
+    </div>
+
+    <!-- Gigs / Freelance Section -->
+    <div
+        style="background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2
+            style="font-size: 20px; font-weight: 600; color: var(--title-color); margin: 0 0 25px 0; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+            Gigs / Freelance
+        </h2>
+
+        <!-- Existing Gigs/Freelance -->
+        @if($profile->gigsFreelance->count() > 0)
+        <div style="margin-bottom: 30px;">
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 15px;">Your Gigs/Freelance Work ({{ $profile->gigsFreelance->count() }})</h3>
+            @foreach($profile->gigsFreelance as $gig)
+            <div
+                style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>{{ $gig->company }}</strong>
+                    @if($gig->title)
+                    <br><span style="color: #666; font-size: 14px;">{{ $gig->title }}</span>
+                    @endif
+                    <br><span style="color: #666; font-size: 14px;">
+                        <i class="bi bi-calendar3"></i>
+                        {{ $gig->start_date?->format('M Y') }}
+                        @if($gig->is_current)
+                        - Present
+                        @elseif($gig->end_date)
+                        - {{ $gig->end_date->format('M Y') }}
+                        @endif
+                    </span>
+                </div>
+                <form method="POST" action="{{ route('talent.profile.gigs-freelance.remove', ['id' => $gig->id]) }}"
+                    style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                        onclick="return confirm('Are you sure you want to remove this gig/freelance work?')"
+                        style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                        Remove
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
+        <!-- Add Gigs/Freelance Form -->
+        <form method="POST" action="{{ route('talent.profile.gigs-freelance.add') }}">
+            @csrf
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 20px;">{{ $profile->gigsFreelance->count() > 0 ? 'Add Another Gig/Freelance Work' : 'Add Gigs/Freelance Work' }}</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                        Company <span style="color: #F53003;">*</span>
+                    </label>
+                    <input type="text" name="company" value="{{ old('company') }}" required
+                        placeholder="Company Name (ex: Google)"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                        Title
+                    </label>
+                    <input type="text" name="title" value="{{ old('title') }}"
+                        placeholder="Your role/title"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                </div>
+            </div>
+
+            @php
+            $gigsStartDateValues = getDateComponentValues('gigs_start_date', old('gigs_start_date'));
+            $gigsEndDateValues = getDateComponentValues('gigs_end_date', old('gigs_end_date'));
+            $currentYear = (int) date('Y');
+            $yearOptions = getYearOptions($currentYear - 50, $currentYear + 10);
+            @endphp
+
+            <div style="margin-bottom: 20px;">
+                @include('pages.profile.partials.date-selector', [
+                'label' => 'Start Date',
+                'required' => true,
+                'prefix' => 'start_date',
+                'dayValue' => old('start_date_day', $gigsStartDateValues['day']),
+                'monthValue' => old('start_date_month', $gigsStartDateValues['month']),
+                'yearValue' => old('start_date_year', $gigsStartDateValues['year']),
+                'yearOptions' => $yearOptions,
+                'errorKey' => 'start_date'
+                ])
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <input type="hidden" name="is_current" value="0">
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <input type="checkbox" name="is_current" value="1" {{ old('is_current') ? 'checked' : '' }}
+                        onchange="toggleGigsEndDate(this)">
+                    <span style="font-weight: 500;">Currently working on this</span>
+                </label>
+            </div>
+
+            <div id="gigsEndDateContainer" style="margin-bottom: 20px; {{ old('is_current') ? 'display: none;' : '' }}">
+                @include('pages.profile.partials.date-selector', [
+                'label' => 'End Date',
+                'required' => false,
+                'prefix' => 'end_date',
+                'dayValue' => old('end_date_day', $gigsEndDateValues['day']),
+                'monthValue' => old('end_date_month', $gigsEndDateValues['month']),
+                'yearValue' => old('end_date_year', $gigsEndDateValues['year']),
+                'yearOptions' => $yearOptions,
+                'errorKey' => 'end_date'
+                ])
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                    Details
+                </label>
+                <textarea name="details" rows="3" value="{{ old('details') }}"
+                    placeholder="Describe your gig/freelance work..."
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical;">{{ old('details') }}</textarea>
+            </div>
+
+            <button type="submit" class="primary-btn1 btn-hover"
+                style="padding: 10px 20px; border: none; cursor: pointer;">
+                <i class="bi bi-plus-circle"></i> Add Gigs/Freelance Work
+            </button>
+        </form>
+    </div>
 </div>
 
 @push('scripts')
@@ -1015,17 +1361,40 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw { data, status: response.status };
+                    }
+                    return data;
+                });
+            })
             .then(data => {
                 if (data.success) {
                     location.reload();
                 } else {
-                    alert(data.error || 'Failed to upload photo');
+                    let errorMessage = data.error || 'Failed to upload photo';
+                    if (data.errors && data.errors.photo) {
+                        errorMessage = Array.isArray(data.errors.photo) 
+                            ? data.errors.photo.join(', ') 
+                            : data.errors.photo;
+                    }
+                    alert(errorMessage);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to upload photo');
+                let errorMessage = 'Failed to upload photo';
+                if (error.data) {
+                    if (error.data.errors && error.data.errors.photo) {
+                        errorMessage = Array.isArray(error.data.errors.photo) 
+                            ? error.data.errors.photo.join(', ') 
+                            : error.data.errors.photo;
+                    } else if (error.data.error) {
+                        errorMessage = error.data.error;
+                    }
+                }
+                alert(errorMessage);
             });
         }
     }
@@ -1072,6 +1441,39 @@
         if (checkbox.checked) {
             endDateContainer.style.display = 'none';
             // Clear end date fields
+            const endDateInputs = endDateContainer.querySelectorAll('select');
+            endDateInputs.forEach(input => input.value = '');
+        } else {
+            endDateContainer.style.display = 'block';
+        }
+    }
+
+    function toggleVolunteerEndDate(checkbox) {
+        const endDateContainer = document.getElementById('volunteerEndDateContainer');
+        if (checkbox.checked) {
+            endDateContainer.style.display = 'none';
+            const endDateInputs = endDateContainer.querySelectorAll('select');
+            endDateInputs.forEach(input => input.value = '');
+        } else {
+            endDateContainer.style.display = 'block';
+        }
+    }
+
+    function toggleLeadershipEndDate(checkbox) {
+        const endDateContainer = document.getElementById('leadershipEndDateContainer');
+        if (checkbox.checked) {
+            endDateContainer.style.display = 'none';
+            const endDateInputs = endDateContainer.querySelectorAll('select');
+            endDateInputs.forEach(input => input.value = '');
+        } else {
+            endDateContainer.style.display = 'block';
+        }
+    }
+
+    function toggleGigsEndDate(checkbox) {
+        const endDateContainer = document.getElementById('gigsEndDateContainer');
+        if (checkbox.checked) {
+            endDateContainer.style.display = 'none';
             const endDateInputs = endDateContainer.querySelectorAll('select');
             endDateInputs.forEach(input => input.value = '');
         } else {

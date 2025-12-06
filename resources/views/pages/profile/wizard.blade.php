@@ -42,7 +42,7 @@
                 <a href="{{ route('talent.profile.build.step', ['step' => $i]) }}" style="text-decoration: none; color: {{ $i <= $current_step ? '#4CAF50' : '#999' }};
                               display: flex; flex-direction: column; align-items: center;">
                     <div style="width: 40px; height: 40px; border-radius: 50%;
-                                    background: {{ $i < $current_step ? '#4CAF50' : ($i == $current_step ? '#2196F3' : '#f0f0f0') }};
+                                    background: {{ $i < $current_step ? '#4CAF50' : ($i == $current_step ? 'var(--primary-color2)' : '#f0f0f0') }};
                                     color: {{ $i <= $current_step ? '#fff' : '#999' }};
                                     display: flex; align-items: center; justify-content: center;
                                     font-weight: bold; margin-bottom: 8px;">

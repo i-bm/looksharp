@@ -97,12 +97,14 @@ class RegistrationController extends Controller
             // If no email in request or session, validate it as required
             $validated = $request->validate([
                 'email' => ['required', 'email', 'max:255'],
+                'consent_to_privacy_policy' => ['required', 'accepted'],
             ]);
             $email = $validated['email'];
         } else {
             // Validate email format if provided
             $request->validate([
                 'email' => ['nullable', 'email', 'max:255'],
+                'consent_to_privacy_policy' => ['required', 'accepted'],
             ]);
         }
 
