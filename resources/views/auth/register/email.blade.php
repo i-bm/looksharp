@@ -70,8 +70,6 @@
                     <form method="POST" action="{{ route('register.otp') }}">
                         @csrf
 
-                        <input type="hidden" name="user_type" value="{{ $userType ?? 'talent' }}">
-
                         <div class="form-inner mb-20">
                             <label style="color: var(--title-color);">Email</label>
                             <input type="email" name="email" id="email" value="{{ old('email', '') }}"
@@ -87,6 +85,17 @@
                             @enderror
                         </div>
 
+                        <div class="col-md-12">
+                            <div class="form-inner2 two">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="" id="contactCheck22">
+                                    <label class="form-check-label" for="contactCheck22">
+                                        I consent to my data being processed according to the
+                                        <a href="#" target="_blank">privacy policy</a>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                         <!-- Submit Button -->
                         <button type="submit" class="primary-btn1 btn-hover"
                             style="width: 100%; justify-content: center; margin-bottom: 30px; border: none; padding: 18px;">
@@ -96,7 +105,7 @@
 
                     <!-- Back Link -->
                     <div style="text-align: center;">
-                        <a href="{{ route('register', ['userType' => $displayUserType ?? 'talent']) }}"
+                        <a href="{{ route('register', $displayUserType ?? 'talent') }}"
                             style="color: var(--text-color); font-family: var(--font-suse); font-size: 16px; text-decoration: none;">
                             ← Back to registration
                         </a>

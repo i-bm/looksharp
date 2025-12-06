@@ -18,7 +18,7 @@
                         <span style="background: #2196F3; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 10px;">Primary</span>
                     @endif
                 </div>
-                <form method="POST" action="{{ route('profile.education.remove', ['id' => $edu->id]) }}" style="display: inline;">
+                <form method="POST" action="{{ route('talent.profile.education.remove', ['id' => $edu->id]) }}" style="display: inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" onclick="return confirm('Are you sure you want to remove this education record?')" 
@@ -32,7 +32,7 @@
 @endif
 
 <!-- Add Education Form -->
-<form method="POST" action="{{ route('profile.build.save', ['step' => 2]) }}">
+<form method="POST" action="{{ route('talent.profile.build.save', ['step' => 2]) }}">
     @csrf
 
     <h3 style="font-size: 18px; margin-bottom: 20px;">{{ $education->count() > 0 ? 'Add Another Education' : 'Add Education' }}</h3>
@@ -96,20 +96,21 @@
     </div>
 
     <!-- Start Date -->
-    <div style="margin-bottom: 20px;">
-        <label for="start_date" style="display: block; margin-bottom: 8px; font-weight: 500;">
-            Start Date <span style="color: red;">*</span>
-        </label>
-        <input type="date" 
-               name="start_date" 
-               id="start_date" 
-               value="{{ old('start_date') }}" 
-               required
-               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
-        @error('start_date')
-            <span style="color: red; font-size: 14px;">{{ $message }}</span>
-        @enderror
-    </div>
+    @php
+        $startDateValues = getDateComponentValues('start_date', null);
+        $currentYear = (int) date('Y');
+        $startYearOptions = getYearOptions($currentYear - 50, $currentYear);
+    @endphp
+    @include('pages.profile.partials.date-selector', [
+        'label' => 'Start Date',
+        'required' => true,
+        'prefix' => 'start_date',
+        'dayValue' => $startDateValues['day'],
+        'monthValue' => $startDateValues['month'],
+        'yearValue' => $startDateValues['year'],
+        'yearOptions' => $startYearOptions,
+        'errorKey' => 'start_date'
+    ])
 
     <!-- End Date / Is Current -->
     <div style="margin-bottom: 20px;">
@@ -125,17 +126,21 @@
     </div>
 
     <div style="margin-bottom: 20px;" id="end_date_container">
-        <label for="end_date" style="display: block; margin-bottom: 8px; font-weight: 500;">
-            End Date / Expected Graduation
-        </label>
-        <input type="date" 
-               name="end_date" 
-               id="end_date" 
-               value="{{ old('end_date') }}"
-               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
-        @error('end_date')
-            <span style="color: red; font-size: 14px;">{{ $message }}</span>
-        @enderror
+        @php
+            $endDateValues = getDateComponentValues('end_date', null);
+            $currentYear = (int) date('Y');
+            $endYearOptions = getYearOptions($currentYear - 50, $currentYear + 10);
+        @endphp
+        @include('pages.profile.partials.date-selector', [
+            'label' => 'End Date / Expected Graduation',
+            'required' => false,
+            'prefix' => 'end_date',
+            'dayValue' => $endDateValues['day'],
+            'monthValue' => $endDateValues['month'],
+            'yearValue' => $endDateValues['year'],
+            'yearOptions' => $endYearOptions,
+            'errorKey' => 'end_date'
+        ])
     </div>
 
     <!-- GPA -->
@@ -171,7 +176,7 @@
 
     <!-- Navigation Buttons -->
     <div style="display: flex; justify-content: space-between; gap: 20px;">
-        <a href="{{ route('profile.build.step', ['step' => 1]) }}" 
+        <a href="{{ route('talent.profile.build.step', ['step' => 1]) }}" 
            class="primary-btn1 btn-hover" 
            style="text-decoration: none; padding: 12px 24px; display: inline-block;">
             Previous
@@ -186,11 +191,15 @@
 function toggleEndDate() {
     const isCurrent = document.getElementById('is_current').checked;
     const endDateContainer = document.getElementById('end_date_container');
-    const endDateInput = document.getElementById('end_date');
+    const endDateDay = document.getElementById('end_date_day');
+    const endDateMonth = document.getElementById('end_date_month');
+    const endDateYear = document.getElementById('end_date_year');
     
     if (isCurrent) {
         endDateContainer.style.display = 'none';
-        endDateInput.value = '';
+        if (endDateDay) endDateDay.value = '';
+        if (endDateMonth) endDateMonth.value = '';
+        if (endDateYear) endDateYear.value = '';
     } else {
         endDateContainer.style.display = 'block';
     }

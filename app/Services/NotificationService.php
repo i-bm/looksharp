@@ -193,4 +193,28 @@ class NotificationService
 
         return $results;
     }
+
+    /**
+     * Send welcome email to newly registered user.
+     *
+     * @param  \App\Models\User  $user  The user to send welcome email to
+     * @return array Response array with 'success' and 'message' keys
+     */
+    public function sendWelcomeEmail(\App\Models\User $user): array
+    {
+        try {
+            return $this->emailService->sendWelcomeEmail($user);
+        } catch (\Exception $e) {
+            Log::error('NotificationService: Welcome email sending failed', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 }

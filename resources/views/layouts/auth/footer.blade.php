@@ -17,6 +17,7 @@
             $('.submit-btn').attr("disabled", true).text('Please wait...');
         });
     </script>
+    @stack('scripts')
 </body>
 
 </html>

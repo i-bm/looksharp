@@ -16,15 +16,18 @@ class EnsureTalentProfileComplete
      * @var array<string>
      */
     protected array $allowedRoutes = [
-        'profile.build',
-        'profile.build.step',
-        'profile.build.save',
-        'profile.photo.upload',
-        'profile.education.remove',
-        'profile.skill.remove',
-        'profile.complete',
+        'talent.profile.build',
+        'talent.profile.build.step',
+        'talent.profile.build.save',
+        'talent.profile.photo.upload',
+        'talent.profile.resume.upload',
+        'talent.profile.education.remove',
+        'talent.profile.skill.remove',
+        'talent.profile.complete',
+        'talent.profile.show',
+        'talent.profile.edit',
+        'talent.profile.update',
         'logout',
-        'home',
     ];
 
     /**
@@ -59,13 +62,13 @@ class EnsureTalentProfileComplete
         // Check if profile exists
         $profile = $user->talentProfile;
         if (! $profile) {
-            return redirect()->route('profile.build')
+            return redirect()->route('talent.profile.build')
                 ->with('error', 'Please complete your profile to continue.');
         }
 
         // Check if profile is complete
         if (! $this->isProfileComplete($profile)) {
-            return redirect()->route('profile.build')
+            return redirect()->route('talent.profile.build')
                 ->with('info', 'Please complete your profile to access this page.');
         }
 
@@ -88,8 +91,15 @@ class EnsureTalentProfileComplete
             return true;
         }
 
-        // Check if route starts with profile.build (for step routes with parameters)
-        if (str_starts_with($routeName, 'profile.build')) {
+        // Check if route starts with talent.profile.build (for step routes with parameters)
+        if (str_starts_with($routeName, 'talent.profile.build')) {
+            return true;
+        }
+
+        // Allow profile view and edit routes
+        if (str_starts_with($routeName, 'talent.profile.show') ||
+            str_starts_with($routeName, 'talent.profile.edit') ||
+            str_starts_with($routeName, 'talent.profile.update')) {
             return true;
         }
 

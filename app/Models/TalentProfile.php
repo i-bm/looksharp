@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\AvailabilityEnum;
+use App\Enums\PreferredLocationEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +28,7 @@ class TalentProfile extends Model implements Auditable
         'date_of_birth',
         'gender',
         'profile_photo',
+        'resume_url',
         'video_introduction',
         'bio',
         'location',
@@ -37,6 +40,24 @@ class TalentProfile extends Model implements Auditable
         'verification_document_url',
         'verification_verified_at',
         'profile_completeness_score',
+        // Additional Details
+        'fun_fact',
+        'passion',
+        'gigs_freelance',
+        'leadership',
+        'volunteer',
+        'hobbies',
+        // Portfolio & Social Links
+        'github_url',
+        'behance_url',
+        'portfolio_url',
+        'linkedin_url',
+        'twitter_url',
+        // Work Preferences
+        'availability',
+        'availability_details',
+        'preferred_location',
+        'salary_expectations',
     ];
 
     /**
@@ -50,6 +71,9 @@ class TalentProfile extends Model implements Auditable
             'date_of_birth' => 'date',
             'verification_verified_at' => 'datetime',
             'profile_completeness_score' => 'integer',
+            'availability' => AvailabilityEnum::class,
+            'preferred_location' => PreferredLocationEnum::class,
+            'salary_expectations' => 'decimal:2',
         ];
     }
 
@@ -75,5 +99,37 @@ class TalentProfile extends Model implements Auditable
     public function skills(): HasMany
     {
         return $this->hasMany(TalentSkill::class, 'talent_id');
+    }
+
+    /**
+     * Get the work history records for the talent profile.
+     */
+    public function workHistory(): HasMany
+    {
+        return $this->hasMany(TalentWorkHistory::class, 'talent_id');
+    }
+
+    /**
+     * Get the languages for the talent profile.
+     */
+    public function languages(): HasMany
+    {
+        return $this->hasMany(TalentLanguage::class, 'talent_id');
+    }
+
+    /**
+     * Get the certifications for the talent profile.
+     */
+    public function certifications(): HasMany
+    {
+        return $this->hasMany(TalentCertification::class, 'talent_id');
+    }
+
+    /**
+     * Get the full name of the talent profile.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
     }
 }

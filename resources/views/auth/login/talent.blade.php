@@ -44,17 +44,12 @@
             </div>
 
             <!-- Right Panel - White Background with Form -->
-            <div class="col-lg-6"
-                style="background: var(--white-color); padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: 100vh;">
-                <div style="max-width: 450px; width: 100%;">
+            <div class="col-lg-6" class="bg-white p-10 flex items-center justify-center min-h-screen">
+                <div class="max-w-450 w-full">
                     <!-- Title -->
-                    <div style="margin-bottom: 40px;">
-                        <h2
-                            style="font-family: var(--font-bricolageGrotesque); font-weight: 600; font-size: 32px; color: var(--title-color); margin-bottom: 12px; line-height: 1.2;">
-                            Looksharp, get hired!
-                        </h2>
-                        <p
-                            style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); line-height: 1.5;">
+                    <div class="mb-40">
+                        <h2 class="text-2xl font-bold text-title-color mb-3">Looksharp, get hired!</h2>
+                        <p class="text-sm text-text-color">
                             {{ config('app.name') }} is the go-to platform to land internships fast. Search
                             opportunities, get career advice, and connect directly with employers.
                         </p>

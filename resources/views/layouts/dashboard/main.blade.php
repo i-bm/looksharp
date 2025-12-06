@@ -1,4 +1,9 @@
 @include('layouts.dashboard.header')
-@include('layouts.dashboard.navigation')
-    @yield('content')
+<body class="dashboard-body">
+    <div class="dashboard-layout">
+        @include('layouts.dashboard.navigation')
+        <div class="dashboard-main-wrapper">
+            @yield('content')
+        </div>
+    </div>
 @include('layouts.dashboard.footer')

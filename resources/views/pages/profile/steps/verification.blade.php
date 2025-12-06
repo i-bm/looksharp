@@ -18,7 +18,7 @@
 </div>
 @endif
 
-<form method="POST" action="{{ route('profile.build.save', ['step' => 4]) }}" enctype="multipart/form-data">
+<form method="POST" action="{{ route('talent.profile.build.save', ['step' => 4]) }}" enctype="multipart/form-data">
     @csrf
 
     <!-- Verification Type -->
@@ -56,7 +56,7 @@
 
     <!-- Navigation Buttons -->
     <div style="display: flex; justify-content: space-between; gap: 20px;">
-        <a href="{{ route('profile.build.step', ['step' => 3]) }}" class="primary-btn1 btn-hover"
+        <a href="{{ route('talent.profile.build.step', ['step' => 3]) }}" class="primary-btn1 btn-hover"
             style="text-decoration: none; padding: 12px 24px; display: inline-block;">
             Previous
         </a>

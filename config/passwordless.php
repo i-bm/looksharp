@@ -20,4 +20,8 @@ return [
         'duration_minutes' => env('OTP_THROTTLE_MINUTES', 10),
         'max_requests' => env('OTP_MAX_REQUESTS', 3),
     ],
+
+    'resend' => [
+        'countdown_seconds' => env('OTP_RESEND_COUNTDOWN_SECONDS', 60),
+    ],
 ];

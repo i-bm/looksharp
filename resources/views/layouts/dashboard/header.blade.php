@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dashboard-html">
 
 <head>
     <!-- Required meta tags -->
@@ -23,6 +23,8 @@
     <link href="{{ asset('assets/css/animate.min.css') }}" rel="stylesheet">
     <!-- FancyBox CSS -->
     <link href="{{ asset('assets/css/jquery.fancybox.min.css') }}" rel="stylesheet">
+    <!-- Nice CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/nice-select.css') }}">
     <!-- Swiper slider CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/swiper-bundle.min.css') }}">
     <!-- Slick slider CSS -->
@@ -33,6 +35,15 @@
     <link href="{{ asset('assets/css/boxicons.min.css') }}" rel="stylesheet">
     <!--  Style CSS  -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/dashboard.css') }}">
     <!-- Title -->
     <title> {{config('app.name')}} {{isset($title) ? " - ". $title : "" }}</title>
     <link rel="icon" href="{{ asset('assets/favicon.png') }}" type="image/gif" sizes="20x20">
+    <style>
+        html,
+        body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+    </style>

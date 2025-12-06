@@ -11,7 +11,7 @@
             style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); line-height: 1.6; margin-bottom: 30px;">
             Your account has been created successfully. The profile building page will be available soon.
         </p>
-        <a href="{{ route('home') }}" class="primary-btn1 btn-hover"
+        <a href="{{ route('dashboard') }}" class="primary-btn1 btn-hover"
             style="text-decoration: none; display: inline-block; padding: 12px 24px;">
             Go to Dashboard
         </a>

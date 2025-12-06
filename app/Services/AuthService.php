@@ -56,9 +56,10 @@ class AuthService
      */
     public function requestOtp(string $email, ?string $userType = null): array
     {
-        // Check throttling
-        if (! $this->throttleCheck($email)) {
-            throw new \Exception('Too many OTP requests. Please try again later.');
+        // Check throttling with detailed status
+        $throttleStatus = $this->getThrottleStatus($email);
+        if ($throttleStatus['is_throttled']) {
+            throw new \Exception($throttleStatus['message']);
         }
 
         // Cleanup expired OTPs for this email
@@ -198,6 +199,46 @@ class AuthService
     }
 
     /**
+     * Get throttle status with remaining wait time.
+     *
+     * @return array{is_throttled: bool, remaining_seconds: int, remaining_minutes: int, message: string}
+     */
+    public function getThrottleStatus(string $email): array
+    {
+        $maxRequests = config('passwordless.throttle.max_requests', 3);
+        $throttleMinutes = $this->getThrottleMinutes();
+
+        $recentRequests = OtpToken::where('email', $email)
+            ->where('created_at', '>=', now()->subMinutes($throttleMinutes))
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $isThrottled = $recentRequests->count() >= $maxRequests;
+
+        if (! $isThrottled) {
+            return [
+                'is_throttled' => false,
+                'remaining_seconds' => 0,
+                'remaining_minutes' => 0,
+                'message' => '',
+            ];
+        }
+
+        // Calculate remaining time based on oldest request in the throttle window
+        $oldestRequest = $recentRequests->first();
+        $throttleExpiresAt = $oldestRequest->created_at->addMinutes($throttleMinutes);
+        $remainingSeconds = max(0, now()->diffInSeconds($throttleExpiresAt, false));
+        $remainingMinutes = (int) ceil($remainingSeconds / 60);
+
+        return [
+            'is_throttled' => true,
+            'remaining_seconds' => $remainingSeconds,
+            'remaining_minutes' => $remainingMinutes,
+            'message' => "Too many OTP requests. Please try again in {$remainingMinutes} minute(s).",
+        ];
+    }
+
+    /**
      * Cleanup expired OTPs.
      *
      * @return int Number of deleted tokens
@@ -219,9 +260,10 @@ class AuthService
             throw new \Exception('An account with this email already exists. Please login instead.');
         }
 
-        // Check throttling
-        if (! $this->throttleCheck($email)) {
-            throw new \Exception('Too many OTP requests. Please try again later.');
+        // Check throttling with detailed status
+        $throttleStatus = $this->getThrottleStatus($email);
+        if ($throttleStatus['is_throttled']) {
+            throw new \Exception($throttleStatus['message']);
         }
 
         // Cleanup expired OTPs for this email
@@ -308,7 +350,7 @@ class AuthService
         }
 
         try {
-            return DB::transaction(function () use ($email, $userType, $otpToken) {
+            $user = DB::transaction(function () use ($email, $userType, $otpToken) {
                 // Mark as verified
                 $otpToken->markAsVerified();
 
@@ -318,8 +360,6 @@ class AuthService
 
                 $user = User::create([
                     'email' => $email,
-                    'first_name' => null,
-                    'last_name' => null,
                     'user_type' => $userType,
                     'password' => null,
                 ]);
@@ -330,6 +370,19 @@ class AuthService
 
                 return $user;
             });
+
+            // Send welcome email after user creation (outside transaction to not fail registration if email fails)
+            try {
+                $this->notificationService->sendWelcomeEmail($user);
+            } catch (\Exception $e) {
+                // Log error but don't fail registration if welcome email fails
+                Log::error('Failed to send welcome email after registration: '.$e->getMessage(), [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+            }
+
+            return $user;
         } catch (\Exception $e) {
             Log::error('Failed to verify registration OTP: '.$e->getMessage(), [
                 'email' => $email,

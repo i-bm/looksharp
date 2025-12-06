@@ -4,9 +4,12 @@ namespace App\Services;
 
 use App\Enums\DegreeTypeEnum;
 use App\Enums\ProficiencyLevelEnum;
+use App\Models\TalentCertification;
 use App\Models\TalentEducation;
+use App\Models\TalentLanguage;
 use App\Models\TalentProfile;
 use App\Models\TalentSkill;
+use App\Models\TalentWorkHistory;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -70,6 +73,35 @@ class ProfileService
                 'trace' => $e->getTraceAsString(),
             ]);
             throw new \Exception('Failed to upload profile photo. Please try again.');
+        }
+    }
+
+    /**
+     * Upload and save resume.
+     */
+    public function uploadResume(TalentProfile $profile, UploadedFile $file): TalentProfile
+    {
+        try {
+            return DB::transaction(function () use ($profile, $file) {
+                // Delete old resume if exists
+                if ($profile->resume_url) {
+                    Storage::disk('private')->delete($profile->resume_url);
+                }
+
+                // Store new resume in private storage
+                $path = $file->store('resumes', 'private');
+                $profile->update(['resume_url' => $path]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $profile->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to upload resume: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to upload resume. Please try again.');
         }
     }
 
@@ -339,6 +371,216 @@ class ProfileService
             'current_step' => $currentStep,
             'completeness_score' => $profile->profile_completeness_score,
         ];
+    }
+
+    /**
+     * Update profile information.
+     */
+    public function updateProfile(TalentProfile $profile, array $data): TalentProfile
+    {
+        try {
+            return DB::transaction(function () use ($profile, $data) {
+                $profile->update([
+                    'first_name' => $data['first_name'] ?? $profile->first_name,
+                    'last_name' => $data['last_name'] ?? $profile->last_name,
+                    'date_of_birth' => $data['date_of_birth'] ?? $profile->date_of_birth,
+                    'gender' => $data['gender'] ?? $profile->gender,
+                    'location' => $data['location'] ?? $profile->location,
+                    'bio' => $data['bio'] ?? $profile->bio,
+                    'video_introduction' => $data['video_introduction'] ?? $profile->video_introduction,
+                    'nss_status' => $data['nss_status'] ?? $profile->nss_status,
+                    'nss_posting_location' => $data['nss_posting_location'] ?? $profile->nss_posting_location,
+                    'nss_posting_number' => $data['nss_posting_number'] ?? $profile->nss_posting_number,
+                    // Additional Details
+                    'fun_fact' => $data['fun_fact'] ?? $profile->fun_fact,
+                    'passion' => $data['passion'] ?? $profile->passion,
+                    'gigs_freelance' => $data['gigs_freelance'] ?? $profile->gigs_freelance,
+                    'leadership' => $data['leadership'] ?? $profile->leadership,
+                    'volunteer' => $data['volunteer'] ?? $profile->volunteer,
+                    'hobbies' => $data['hobbies'] ?? $profile->hobbies,
+                    // Portfolio & Social Links
+                    'github_url' => $data['github_url'] ?? $profile->github_url,
+                    'behance_url' => $data['behance_url'] ?? $profile->behance_url,
+                    'portfolio_url' => $data['portfolio_url'] ?? $profile->portfolio_url,
+                    'linkedin_url' => $data['linkedin_url'] ?? $profile->linkedin_url,
+                    'twitter_url' => $data['twitter_url'] ?? $profile->twitter_url,
+                    // Work Preferences
+                    'availability' => $data['availability'] ?? $profile->availability,
+                    'availability_details' => $data['availability_details'] ?? $profile->availability_details,
+                    'preferred_location' => $data['preferred_location'] ?? $profile->preferred_location,
+                    'salary_expectations' => $data['salary_expectations'] ?? $profile->salary_expectations,
+                ]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $profile->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to update profile: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'data' => $data,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to update profile. Please try again.');
+        }
+    }
+
+    /**
+     * Save work history record.
+     */
+    public function saveWorkHistory(TalentProfile $profile, array $data): TalentWorkHistory
+    {
+        try {
+            return DB::transaction(function () use ($profile, $data) {
+                $workHistory = TalentWorkHistory::create([
+                    'talent_id' => $profile->id,
+                    'company' => $data['company'] ?? null,
+                    'position' => $data['position'] ?? null,
+                    'description' => $data['description'] ?? null,
+                    'location' => $data['location'] ?? null,
+                    'start_date' => $data['start_date'] ?? null,
+                    'end_date' => $data['end_date'] ?? null,
+                    'is_current' => $data['is_current'] ?? false,
+                ]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $workHistory;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to save work history: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'data' => $data,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to save work history record. Please try again.');
+        }
+    }
+
+    /**
+     * Delete work history record.
+     */
+    public function deleteWorkHistory(TalentWorkHistory $workHistory): bool
+    {
+        try {
+            return DB::transaction(function () use ($workHistory) {
+                $profile = $workHistory->talentProfile;
+                $deleted = $workHistory->delete();
+
+                $this->calculateCompletenessScore($profile);
+
+                return $deleted;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to delete work history: '.$e->getMessage(), [
+                'work_history_id' => $workHistory->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to delete work history record. Please try again.');
+        }
+    }
+
+    /**
+     * Save language record.
+     */
+    public function saveLanguage(TalentProfile $profile, array $data): TalentLanguage
+    {
+        try {
+            return DB::transaction(function () use ($profile, $data) {
+                $language = TalentLanguage::create([
+                    'talent_id' => $profile->id,
+                    'language_name' => $data['language_name'] ?? null,
+                    'proficiency_level' => $data['proficiency_level'] ?? ProficiencyLevelEnum::BEGINNER,
+                ]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $language;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to save language: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'data' => $data,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to save language. Please try again.');
+        }
+    }
+
+    /**
+     * Delete language record.
+     */
+    public function deleteLanguage(TalentLanguage $language): bool
+    {
+        try {
+            return DB::transaction(function () use ($language) {
+                $profile = $language->talentProfile;
+                $deleted = $language->delete();
+
+                $this->calculateCompletenessScore($profile);
+
+                return $deleted;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to delete language: '.$e->getMessage(), [
+                'language_id' => $language->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to delete language. Please try again.');
+        }
+    }
+
+    /**
+     * Save certification record.
+     */
+    public function saveCertification(TalentProfile $profile, array $data): TalentCertification
+    {
+        try {
+            return DB::transaction(function () use ($profile, $data) {
+                $certification = TalentCertification::create([
+                    'talent_id' => $profile->id,
+                    'name' => $data['name'] ?? null,
+                    'issuer' => $data['issuer'] ?? null,
+                    'date_obtained' => $data['date_obtained'] ?? null,
+                    'expiration_date' => $data['expiration_date'] ?? null,
+                    'credential_url' => $data['credential_url'] ?? null,
+                ]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $certification;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to save certification: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'data' => $data,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to save certification. Please try again.');
+        }
+    }
+
+    /**
+     * Delete certification record.
+     */
+    public function deleteCertification(TalentCertification $certification): bool
+    {
+        try {
+            return DB::transaction(function () use ($certification) {
+                $profile = $certification->talentProfile;
+                $deleted = $certification->delete();
+
+                $this->calculateCompletenessScore($profile);
+
+                return $deleted;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to delete certification: '.$e->getMessage(), [
+                'certification_id' => $certification->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to delete certification. Please try again.');
+        }
     }
 }
 

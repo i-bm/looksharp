@@ -63,8 +63,7 @@
                     <!-- Registration Method Selection -->
                     <div style="margin-bottom: 30px;">
                         <!-- Email Registration Button -->
-                        <a href="{{ route('register.email', ['user_type' => $userType ?? 'talent']) }}"
-                            class="primary-btn1 btn-hover"
+                        <a href="{{ route('register.email') }}" class="primary-btn1 btn-hover"
                             style="width: 100%; justify-content: center; margin-bottom: 15px; border: none; padding: 18px; text-decoration: none; display: block; text-align: center;">
                             Continue with Email
                         </a>
@@ -85,7 +84,7 @@
                             <span style="color: var(--text-color); font-family: var(--font-suse); font-size: 14px;">OR</span>
                         </div>
 
-                        <a href="{{ route('register.email', ['user_type' => $userType ?? 'talent']) }}"
+                        <a href="{{ route('register.email') }}"
                             class="primary-btn2 btn-hover"
                             style="width: 100%; justify-content: center; margin-bottom: 15px; border: 1px solid #E0E0E0; padding: 18px; text-decoration: none; display: block; text-align: center;">
                             Continue with Phone Number
@@ -96,8 +95,7 @@
                     <!-- Login Link -->
                     <div style="text-align: center;">
                         <p style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); margin: 0;">
-                            Already have an account? <a
-                                href="{{ route('login', ['userType' => $displayUserType ?? 'talent']) }}"
+                            Already have an account? <a href="{{ route('login', $displayUserType ?? 'talent') }}"
                                 style="color: var(--primary-color2); font-weight: 600; text-decoration: none;">
                                 Sign in
                             </a>

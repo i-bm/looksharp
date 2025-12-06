@@ -46,7 +46,7 @@
                     @endif
 
                     <!-- OTP Verification Form -->
-                    <form method="POST" action="{{ route('login.verify') }}">
+                    <form method="POST" action="{{ route('login.verify') }}" id="otp-verify-form">
                         @csrf
 
                         <input type="hidden" name="email" value="{{ $email }}">
@@ -73,32 +73,33 @@
                             style="width: 100%; justify-content: center; margin-bottom: 20px; border: none; padding: 18px;">
                             Verify & Continue
                         </button>
-
-                        <!-- Resend OTP -->
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <p
-                                style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); margin: 0;">
-                                Didn't receive the code?
-                            <form method="POST" action="{{ route('login.otp') }}" style="display: inline;">
-                                @csrf
-                                <input type="hidden" name="email" value="{{ $email }}">
-                                <input type="hidden" name="user_type" value="{{ $userType ?? null }}">
-                                <button type="submit"
-                                    style="background: none; border: none; color: var(--primary-color2); font-weight: 600; text-decoration: none; cursor: pointer; font-family: var(--font-suse); font-size: 16px; padding: 0;">
-                                    Resend code
-                                </button>
-                            </form>
-                            </p>
-                        </div>
-
-                        <!-- Back to Login -->
-                        <div style="text-align: center;">
-                            <a href="{{ route('login', ['userType' => $userType === 'university_admin' ? 'university' : ($userType ?? 'talent')]) }}"
-                                style="color: var(--text-color); font-family: var(--font-suse); font-size: 16px; text-decoration: none;">
-                                ← Back to login
-                            </a>
-                        </div>
                     </form>
+
+                    <!-- Resend OTP Section (outside main form) -->
+                    <div style="text-align: center; margin-bottom: 20px;" id="resend-section"
+                        data-resend-route="{{ route('login.otp') }}"
+                        data-countdown-seconds="{{ $countdownSeconds ?? 60 }}" data-otp-sent-at="{{ $otpSentAt ?? '' }}"
+                        data-throttle-remaining="{{ isset($throttleInfo['remaining_seconds']) ? $throttleInfo['remaining_seconds'] : 0 }}">
+                        <p style="font-family: var(--font-suse); font-size: 16px; color: var(--text-color); margin: 0;">
+                            Didn't receive the code?
+                            <button type="button" id="resend-otp-btn"
+                                style="background: none; border: none; color: var(--primary-color2); font-weight: 600; text-decoration: none; cursor: pointer; font-family: var(--font-suse); font-size: 16px; padding: 0;">
+                                <span id="resend-text">Resend code</span>
+                                <span id="resend-countdown" style="display: none;"></span>
+                            </button>
+                        </p>
+                        <div id="resend-error"
+                            style="display: none; color: var(--primary-color1); margin-top: 10px; font-size: 14px;">
+                        </div>
+                    </div>
+
+                    <!-- Back to Login -->
+                    <div style="text-align: center;">
+                        <a href="{{ route('login', ['userType' => $userType === 'university_admin' ? 'university' : ($userType ?? 'talent')]) }}"
+                            style="color: var(--text-color); font-family: var(--font-suse); font-size: 16px; text-decoration: none;">
+                            ← Back to login
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,3 +107,7 @@
 </div>
 <!-- OTP Verification Page End -->
 @endsection
+
+@push('scripts')
+<script src="{{ asset('assets/js/otp-resend.js') }}"></script>
+@endpush
