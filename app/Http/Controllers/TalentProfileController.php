@@ -270,7 +270,7 @@ class TalentProfileController extends Controller
 
             // If all steps complete, redirect to completion page
             if ($allStepsComplete) {
-                $profile->update(['is_profile_building_step_completed' => true]);
+                $profile->update(['is_profile_building_step_completed' => 1]);
 
                 return redirect()->route('talent.profile.show')
                     ->with('success', 'Profile is almost complete! Please complete the remaining steps to get your profile verified.');
