@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\UserRoleEnum;
+use App\Models\TalentProfile;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -104,8 +105,8 @@ class EnsureTalentProfileComplete
     /**
      * Check if the talent profile is complete.
      */
-    protected function isProfileComplete($profile): bool
+    protected function isProfileComplete(TalentProfile $profile): bool
     {
-        return $profile->is_profile_building_step_completed === true;
+        return (bool) $profile->is_profile_building_step_completed;
     }
 }

@@ -72,6 +72,7 @@ class TalentProfile extends Model implements Auditable
             'date_of_birth' => 'date',
             'verification_verified_at' => 'datetime',
             'profile_completeness_score' => 'integer',
+            'is_profile_building_step_completed' => 'boolean',
             'availability' => AvailabilityEnum::class,
             'preferred_location' => PreferredLocationEnum::class,
             'salary_expectations' => 'decimal:2',
