@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -270,7 +271,12 @@ class TalentProfileController extends Controller
 
             // If all steps complete, redirect to completion page
             if ($allStepsComplete) {
-                $profile->update(['is_profile_building_step_completed' => 1]);
+                // Log::info('All steps complete, updating profile building step completed', ['profile' => $profile]);
+
+                $profile->is_profile_building_step_completed = 1;
+                $updatedProfile = $profile->save();
+
+                Log::info('Profile building step completed updated', ['profile' => $updatedProfile]);
 
                 return redirect()->route('talent.profile.show')
                     ->with('success', 'Profile is almost complete! Please complete the remaining steps to get your profile verified.');
