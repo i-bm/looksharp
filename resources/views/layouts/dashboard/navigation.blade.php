@@ -161,17 +161,28 @@
                     </li>
                 </ul>
             </li>
+            <li class="dashboard-nav-item">
+                <a href="#" class="dashboard-nav-link">
+                    <i class="bi bi-question-circle"></i>
+                    <span>Help</span>
+                </a>
+            </li>
+            <li class="dashboard-nav-item">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="dashboard-nav-link dashboard-nav-link-logout1">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </li>
         </ul>
     </nav>
 
     <div class="dashboard-sidebar-footer">
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button type="submit" class="dashboard-nav-link dashboard-nav-link-logout">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Logout</span>
-            </button>
-        </form>
+        <span style="padding-left: 10px;color: #666;font-size: 14px;">&copy;{{ date('Y') }} {{config('app.name')}}
+            v1.0.0</span>
+
     </div>
 </aside>
 @endif

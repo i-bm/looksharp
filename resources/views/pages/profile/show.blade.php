@@ -94,6 +94,13 @@
                             </div>
                             @endif
 
+                            @if($profile->phone_number)
+                            <div class="profile-location-large">
+                                <i class="bi bi-telephone-fill"></i>
+                                <span>{{ $profile->phone_number }}</span>
+                            </div>
+                            @endif
+
                             @if($profile->public_url)
                             <div class="profile-public-url-large mt-2">
                                 <i class="bi bi-link-45deg"></i>
@@ -339,7 +346,7 @@
         </div>
 
         <!-- Right Column (Narrower) -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 profile-strength-column">
             <!-- Profile Strength Card -->
             @if(!$isPublic)
             <div class="card profile-section-card profile-strength-card mb-4">

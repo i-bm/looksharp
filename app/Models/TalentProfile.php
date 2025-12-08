@@ -35,6 +35,7 @@ class TalentProfile extends Model implements Auditable
         'video_introduction',
         'bio',
         'location',
+        'phone_number',
         'nss_status',
         'nss_posting_location',
         'nss_posting_number',

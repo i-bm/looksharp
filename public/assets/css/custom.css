@@ -1899,6 +1899,23 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+/* Move Profile Strength Card to top on mobile */
+@media (max-width: 991px) {
+    .profile-container .row.g-4 {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .profile-container .col-lg-4:has(.profile-strength-card) {
+        order: -1;
+    }
+
+    /* Fallback for browsers that don't support :has() */
+    .profile-container .col-lg-4.profile-strength-column {
+        order: -1;
+    }
+}
+
 .profile-strength-title {
     font-family: var(--font-bricolageGrotesque);
     font-size: 18px;

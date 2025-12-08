@@ -20,7 +20,6 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -132,6 +131,7 @@ class TalentProfileController extends Controller
                         'dob_year' => ['required', 'integer', 'min:'.(date('Y') - 100), 'max:'.(date('Y') - 13)],
                         'gender' => ['required', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
                         'location' => ['required', 'string', 'max:255'],
+                        'phone_number' => ['nullable', 'string', 'max:20'],
                         'bio' => ['nullable', 'string', 'max:1000'],
                     ]);
 
@@ -242,15 +242,39 @@ class TalentProfileController extends Controller
                     break;
 
                 case 4:
-                    $validated = $request->validate([
-                        'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-                        'verification_type' => ['required', Rule::in(['ghana_card', 'student_id', 'passport'])],
-                    ]);
-                    $this->profileService->uploadVerificationDocument(
-                        $profile,
-                        $validated['verification_document'],
-                        $validated['verification_type']
-                    );
+                    try {
+                        $validated = $request->validate([
+                            'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+                            'verification_type' => ['required', Rule::in(['ghana_card', 'student_id', 'passport'])],
+                        ]);
+                        $this->profileService->uploadVerificationDocument(
+                            $profile,
+                            $validated['verification_document'],
+                            $validated['verification_type']
+                        );
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        $errors = $e->errors();
+                        if (isset($errors['verification_document'])) {
+                            $docErrors = $errors['verification_document'];
+                            $errorMessage = is_array($docErrors) ? implode(', ', $docErrors) : $docErrors;
+
+                            // Improve error messages
+                            if (str_contains(strtolower($errorMessage), 'max')) {
+                                $errorMessage = 'File is too large. Maximum size is 5MB.';
+                            } elseif (str_contains(strtolower($errorMessage), 'mimes')) {
+                                $errorMessage = 'Invalid file type. Please upload a PDF, JPG, JPEG, or PNG file.';
+                            }
+
+                            return back()
+                                ->withInput()
+                                ->withErrors(['verification_document' => $errorMessage]);
+                        }
+                        throw $e;
+                    } catch (\Illuminate\Http\Exceptions\PostTooLargeException $e) {
+                        return back()
+                            ->withInput()
+                            ->withErrors(['verification_document' => 'File is too large. Maximum size is 5MB. Please try a smaller file.']);
+                    }
                     break;
 
                 default:
@@ -271,12 +295,9 @@ class TalentProfileController extends Controller
 
             // If all steps complete, redirect to completion page
             if ($allStepsComplete) {
-                // Log::info('All steps complete, updating profile building step completed', ['profile' => $profile]);
 
                 $profile->is_profile_building_step_completed = 1;
-                $updatedProfile = $profile->save();
-
-                Log::info('Profile building step completed updated', ['profile' => $updatedProfile]);
+                $profile->save();
 
                 return redirect()->route('talent.profile.show')
                     ->with('success', 'Profile is almost complete! Please complete the remaining steps to get your profile verified.');
@@ -305,6 +326,24 @@ class TalentProfileController extends Controller
             return response()->json(['success' => false, 'error' => 'Profile not found.'], 404);
         }
 
+        // Check if file was uploaded
+        if (! $request->hasFile('photo')) {
+            // Check if it's a size issue
+            if ($request->getContentLength() > 0) {
+                $maxSize = ini_get('upload_max_filesize');
+
+                return response()->json([
+                    'success' => false,
+                    'error' => "File is too large. Maximum size is 2MB. Server limit: {$maxSize}",
+                ], 413);
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => 'No file was uploaded. Please select a file.',
+            ], 422);
+        }
+
         try {
             $validated = $request->validate([
                 'photo' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'], // 2MB max
@@ -318,15 +357,51 @@ class TalentProfileController extends Controller
                 'photo_url' => $profile->fresh()->profile_photo ? asset('storage/'.$profile->fresh()->profile_photo) : null,
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $errorMessage = 'Validation failed.';
+
+            if (isset($errors['photo'])) {
+                $photoErrors = $errors['photo'];
+                if (is_array($photoErrors)) {
+                    $errorMessage = implode(', ', $photoErrors);
+                } else {
+                    $errorMessage = $photoErrors;
+                }
+
+                // Improve error messages
+                if (str_contains(strtolower($errorMessage), 'max')) {
+                    $errorMessage = 'File is too large. Maximum size is 2MB.';
+                } elseif (str_contains(strtolower($errorMessage), 'mimes') || str_contains(strtolower($errorMessage), 'image')) {
+                    $errorMessage = 'Invalid file type. Please upload a JPG, JPEG, or PNG image.';
+                }
+            }
+
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
-                'errors' => $e->errors(),
+                'error' => $errorMessage,
+                'errors' => $errors,
             ], 422);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Http\Exceptions\PostTooLargeException $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'error' => 'File is too large. Maximum size is 2MB. Please try a smaller file.',
+            ], 413);
+        } catch (\Exception $e) {
+            \Log::error('Photo upload error: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $errorMessage = 'Failed to upload photo. Please try again.';
+            if (str_contains($e->getMessage(), 'exceeded') || str_contains($e->getMessage(), 'too large')) {
+                $errorMessage = 'File is too large. Maximum size is 2MB.';
+            } elseif (str_contains($e->getMessage(), 'network') || str_contains($e->getMessage(), 'timeout')) {
+                $errorMessage = 'Upload timed out. Please check your internet connection and try again.';
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => $errorMessage,
             ], 500);
         }
     }
@@ -386,22 +461,85 @@ class TalentProfileController extends Controller
         $profile = $user->talentProfile;
 
         if (! $profile) {
-            return response()->json(['error' => 'Profile not found.'], 404);
+            return response()->json(['success' => false, 'error' => 'Profile not found.'], 404);
         }
 
-        $request->validate([
-            'resume' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:5120'], // 5MB max
-        ]);
+        // Check if file was uploaded
+        if (! $request->hasFile('resume')) {
+            // Check if it's a size issue
+            if ($request->getContentLength() > 0) {
+                $maxSize = ini_get('upload_max_filesize');
+
+                return response()->json([
+                    'success' => false,
+                    'error' => "File is too large. Maximum size is 5MB. Server limit: {$maxSize}",
+                ], 413);
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => 'No file was uploaded. Please select a file.',
+            ], 422);
+        }
 
         try {
+            $validated = $request->validate([
+                'resume' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:5120'], // 5MB max
+            ]);
+
             $this->profileService->uploadResume($profile, $request->file('resume'));
 
             return response()->json([
                 'success' => true,
                 'message' => 'Resume uploaded successfully.',
             ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $errorMessage = 'Validation failed.';
+
+            if (isset($errors['resume'])) {
+                $resumeErrors = $errors['resume'];
+                if (is_array($resumeErrors)) {
+                    $errorMessage = implode(', ', $resumeErrors);
+                } else {
+                    $errorMessage = $resumeErrors;
+                }
+
+                // Improve error messages
+                if (str_contains(strtolower($errorMessage), 'max')) {
+                    $errorMessage = 'File is too large. Maximum size is 5MB.';
+                } elseif (str_contains(strtolower($errorMessage), 'mimes')) {
+                    $errorMessage = 'Invalid file type. Please upload a PDF, DOC, or DOCX file.';
+                }
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => $errorMessage,
+                'errors' => $errors,
+            ], 422);
+        } catch (\Illuminate\Http\Exceptions\PostTooLargeException $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'File is too large. Maximum size is 5MB. Please try a smaller file.',
+            ], 413);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            \Log::error('Resume upload error: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            $errorMessage = 'Failed to upload resume. Please try again.';
+            if (str_contains($e->getMessage(), 'exceeded') || str_contains($e->getMessage(), 'too large')) {
+                $errorMessage = 'File is too large. Maximum size is 5MB.';
+            } elseif (str_contains($e->getMessage(), 'network') || str_contains($e->getMessage(), 'timeout')) {
+                $errorMessage = 'Upload timed out. Please check your internet connection and try again.';
+            }
+
+            return response()->json([
+                'success' => false,
+                'error' => $errorMessage,
+            ], 500);
         }
     }
 

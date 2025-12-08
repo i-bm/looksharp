@@ -35,6 +35,10 @@
             <!-- Right Panel - White Background with Form -->
             <div class="col-lg-6 auth-form-panel">
                 <div class="auth-form-wrapper">
+                    <div class="auth-form-logo mb-5 text-center d-block d-lg-none">
+                        <img src="{{ asset('assets/img/logo-red.png') }}" width="180" alt="Logo"
+                            class="auth-form-logo-img">
+                    </div>
                     <!-- Title -->
                     <div class="auth-form-header">
                         <h2 class="auth-form-title">

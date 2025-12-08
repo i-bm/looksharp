@@ -32,6 +32,7 @@ class ProfileService
                     'date_of_birth' => $data['date_of_birth'] ?? null,
                     'gender' => $data['gender'] ?? null,
                     'location' => $data['location'] ?? null,
+                    'phone_number' => $data['phone_number'] ?? null,
                     'bio' => $data['bio'] ?? null,
                 ];
 

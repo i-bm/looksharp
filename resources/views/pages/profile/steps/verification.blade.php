@@ -47,10 +47,19 @@
             Upload Document <span style="color: red;">*</span>
         </label>
         <input type="file" name="verification_document" id="verification_document" accept=".pdf,.jpg,.jpeg,.png"
-            required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+            required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;"
+            onchange="validateVerificationDocument(this)">
         <small style="color: #666; font-size: 14px;">Accepted formats: PDF, JPG, PNG (Max 5MB)</small>
+        <!-- Error Display -->
+        <div id="verification-error"
+            style="display: none; margin-top: 8px; padding: 10px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c33;">
+            <span id="verification-error-text"></span>
+        </div>
         @error('verification_document')
-        <span style="color: red; font-size: 14px; display: block; margin-top: 5px;">{{ $message }}</span>
+        <div
+            style="margin-top: 8px; padding: 10px; background: #fee; border: 1px solid #fcc; border-radius: 4px; color: #c33;">
+            <span>{{ $message }}</span>
+        </div>
         @enderror
     </div>
 
@@ -60,8 +69,79 @@
             style="text-decoration: none; padding: 12px 24px; display: inline-block;">
             Previous
         </a>
-        <button type="submit" class="primary-btn1 btn-hover" style="padding: 12px 24px;">
+        <button type="submit" id="verification-submit-btn" class="primary-btn1 btn-hover" style="padding: 12px 24px;">
             {{ $profile->verification_document_url ? 'Update & Complete' : 'Upload & Complete' }}
         </button>
     </div>
 </form>
+
+<script>
+    // Helper function to format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    // Helper function to show error
+    function showVerificationError(message) {
+        const errorDiv = document.getElementById('verification-error');
+        const errorText = document.getElementById('verification-error-text');
+        if (errorDiv && errorText) {
+            errorText.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    // Helper function to hide error
+    function hideVerificationError() {
+        const errorDiv = document.getElementById('verification-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+    }
+
+    function validateVerificationDocument(input) {
+        if (!input.files || !input.files[0]) {
+            return;
+        }
+
+        const file = input.files[0];
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+        const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+        // Hide previous errors
+        hideVerificationError();
+
+        // Client-side validation
+        if (!allowedExtensions.includes(fileExtension)) {
+            showVerificationError('Invalid file type. Please upload a PDF, JPG, JPEG, or PNG file.');
+            input.value = '';
+            return false;
+        }
+
+        if (file.size > maxSize) {
+            const fileSizeFormatted = formatFileSize(file.size);
+            const maxSizeFormatted = formatFileSize(maxSize);
+            showVerificationError(`File is too large (${fileSizeFormatted}). Maximum size is ${maxSizeFormatted}.`);
+            input.value = '';
+            return false;
+        }
+
+        return true;
+    }
+
+    // Validate on form submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('verification_document');
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+            if (!validateVerificationDocument(fileInput)) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+</script>
