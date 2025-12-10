@@ -273,13 +273,16 @@ body.dashboard-body {
     border-top: 1px solid #e3e3e0;
 }
 
-.dashboard-nav-link-logout {
-    color: #dc3545;
+.dashboard-nav-link-logout,
+.dashboard-nav-link-logout1 {
+    color: #706f6c;
     width: 100%;
+    background-color: transparent !important;
 }
 
-.dashboard-nav-link-logout:hover {
-    background-color: #fff5f5;
+.dashboard-nav-link-logout:hover,
+.dashboard-nav-link-logout1:hover {
+    background-color: #f8f9fa;
     color: #dc3545;
 }
 

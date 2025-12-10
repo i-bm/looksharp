@@ -1051,16 +1051,35 @@ class ProfileService
     {
         try {
             return DB::transaction(function () use ($profile, $data) {
+                // Handle availability - enum or null
+                $availability = $data['availability'] ?? null;
+                $availability = $availability === '' ? null : $availability;
+
+                // Handle availability_details - trim and convert empty string to null
+                $availabilityDetails = $data['availability_details'] ?? null;
+                $availabilityDetails = $availabilityDetails !== null ? trim($availabilityDetails) : null;
+                $availabilityDetails = $availabilityDetails === '' ? null : $availabilityDetails;
+
+                // Handle preferred_location - enum or null
+                $preferredLocation = $data['preferred_location'] ?? null;
+                $preferredLocation = $preferredLocation === '' ? null : $preferredLocation;
+
+                // Handle salary_expectations - numeric or null
+                $salaryExpectations = $data['salary_expectations'] ?? null;
+                $salaryExpectations = $salaryExpectations === '' ? null : $salaryExpectations;
+                $salaryExpectations = $salaryExpectations !== null ? (float) $salaryExpectations : null;
+
                 $updateData = [
-                    'availability' => $data['availability'] ?? null,
-                    'availability_details' => $data['availability_details'] ?? null,
-                    'preferred_location' => $data['preferred_location'] ?? null,
-                    'salary_expectations' => $data['salary_expectations'] ?? null,
+                    'availability' => $availability,
+                    'availability_details' => $availabilityDetails,
+                    'preferred_location' => $preferredLocation,
+                    'salary_expectations' => $salaryExpectations,
                 ];
 
                 $profile->update($updateData);
 
                 // Handle career interest areas - sync the relationship
+                // If the key is set (even as empty array), sync it to clear relationships
                 if (isset($data['career_interest_areas'])) {
                     $careerInterestAreaIds = is_array($data['career_interest_areas'])
                         ? $data['career_interest_areas']
