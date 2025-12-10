@@ -183,6 +183,213 @@ Looksharp is a Laravel 12 application for connecting talent with employers in Gh
   throw new \Exception('Invalid or expired OTP code.');
   ```
 
+## Logging
+
+### Logging Best Practices
+- **Frequently add relevant backend logs** throughout the application for debugging, monitoring, and troubleshooting
+- Use appropriate log levels: `debug`, `info`, `warning`, `error`, `critical`
+- Log important business operations, state changes, and user actions
+- Include contextual information (user IDs, request IDs, relevant data) in log messages
+- Use structured logging with arrays for better log parsing and analysis
+- Import: `use Illuminate\Support\Facades\Log;` or use `\Log::` facade
+
+### When to Log
+
+#### Always Log:
+- **Service method entry/exit**: Log when important service methods start and complete
+- **Database operations**: Log create, update, delete operations with relevant identifiers
+- **Authentication events**: Login attempts, OTP requests, verification success/failure
+- **Authorization failures**: Permission denials, role checks
+- **External API calls**: Request/response logging for third-party integrations
+- **Business logic decisions**: Important conditional branches, state transitions
+- **Error conditions**: All exceptions, validation failures, unexpected states
+- **User actions**: Critical user actions (profile updates, submissions, etc.)
+
+#### Log Levels Guide:
+- `Log::debug()`: Detailed information for debugging (development only)
+- `Log::info()`: General informational messages (successful operations, state changes)
+- `Log::warning()`: Warning messages (deprecated features, unusual but handled situations)
+- `Log::error()`: Error messages (exceptions, failures that don't stop execution)
+- `Log::critical()`: Critical failures (system failures, data corruption risks)
+
+### Logging Patterns
+
+#### Service Method Logging
+```php
+use Illuminate\Support\Facades\Log;
+
+public function processData(string $userId, array $data): array
+{
+    Log::info('Processing data for user', [
+        'user_id' => $userId,
+        'data_keys' => array_keys($data),
+    ]);
+
+    try {
+        $result = $this->performOperation($data);
+
+        Log::info('Data processing completed successfully', [
+            'user_id' => $userId,
+            'result_id' => $result['id'] ?? null,
+        ]);
+
+        return $result;
+    } catch (\Exception $e) {
+        Log::error('Data processing failed', [
+            'user_id' => $userId,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        throw $e;
+    }
+}
+```
+
+#### Database Operation Logging
+```php
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
+public function createModel(array $data): Model
+{
+    Log::info('Creating model', ['data_keys' => array_keys($data)]);
+
+    try {
+        return DB::transaction(function () use ($data) {
+            $model = Model::create($data);
+
+            Log::info('Model created successfully', [
+                'model_id' => $model->id,
+                'model_type' => get_class($model),
+            ]);
+
+            return $model;
+        });
+    } catch (\Exception $e) {
+        Log::error('Failed to create model', [
+            'error' => $e->getMessage(),
+            'data' => $data,
+        ]);
+
+        throw $e;
+    }
+}
+```
+
+#### Authentication/Authorization Logging
+```php
+use Illuminate\Support\Facades\Log;
+
+public function verifyOtp(string $email, string $otp): bool
+{
+    Log::info('OTP verification attempt', ['email' => $email]);
+
+    $otpRecord = OtpToken::where('email', $email)
+        ->where('token', $otp)
+        ->where('expires_at', '>', now())
+        ->first();
+
+    if (!$otpRecord) {
+        Log::warning('OTP verification failed: Invalid or expired OTP', [
+            'email' => $email,
+        ]);
+        return false;
+    }
+
+    Log::info('OTP verification successful', [
+        'email' => $email,
+        'otp_id' => $otpRecord->id,
+    ]);
+
+    return true;
+}
+```
+
+#### Controller Action Logging
+```php
+use Illuminate\Support\Facades\Log;
+
+public function updateProfile(Request $request)
+{
+    $user = $request->user();
+
+    Log::info('Profile update request', [
+        'user_id' => $user->id,
+        'request_data_keys' => array_keys($request->all()),
+    ]);
+
+    $validated = $request->validate([...]);
+
+    try {
+        $profile = $this->profileService->updateProfile($user->id, $validated);
+
+        Log::info('Profile updated successfully', [
+            'user_id' => $user->id,
+            'profile_id' => $profile->id,
+        ]);
+
+        return response()->json($profile);
+    } catch (\Exception $e) {
+        Log::error('Profile update failed', [
+            'user_id' => $user->id,
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json(['error' => 'Update failed'], 500);
+    }
+}
+```
+
+#### External API Call Logging
+```php
+use Illuminate\Support\Facades\Log;
+
+public function sendEmail(string $to, string $subject, string $body): bool
+{
+    Log::info('Sending email', [
+        'to' => $to,
+        'subject' => $subject,
+    ]);
+
+    try {
+        $response = $this->emailClient->send($to, $subject, $body);
+
+        Log::info('Email sent successfully', [
+            'to' => $to,
+            'message_id' => $response['id'] ?? null,
+        ]);
+
+        return true;
+    } catch (\Exception $e) {
+        Log::error('Email sending failed', [
+            'to' => $to,
+            'error' => $e->getMessage(),
+        ]);
+
+        return false;
+    }
+}
+```
+
+### Logging Guidelines
+- **Include context**: Always include relevant identifiers (user_id, model_id, request_id)
+- **Avoid sensitive data**: Never log passwords, tokens, or sensitive personal information
+- **Use structured data**: Pass arrays as second parameter for better log parsing
+- **Be descriptive**: Use clear, descriptive log messages that explain what happened
+- **Log at appropriate levels**: Use the right log level for the situation
+- **Log before and after**: Log method entry and exit for important operations
+- **Include error details**: When logging errors, include exception messages and stack traces
+- **Log business events**: Log important business logic decisions and state changes
+- **Performance logging**: Consider logging execution time for slow operations
+- **Request correlation**: Include request IDs or correlation IDs when available for tracing
+
+### Logging in Transactions
+- Log before starting transactions
+- Log after successful transaction commits
+- Log errors with full context when transactions fail
+- Include transaction-related data in log context
+
 ### Database Transactions
 - **MUST use database transactions for ALL persistent methods** that modify data
 - Wrap database operations in `DB::transaction()` for atomicity
@@ -285,6 +492,24 @@ app/
 └── Services/       # Business logic services
 ```
 
+## Frontend & Styling
+
+### CSS Organization
+- **ALWAYS write CSS as external CSS files**, never inline styles or `<style>` tags in Blade templates
+- Store CSS files in `public/assets/css/` or `resources/css/` directory
+- Link external CSS files using `<link rel="stylesheet">` tags in Blade layouts
+- Avoid using `style=""` attributes in HTML/Blade templates
+- Use CSS classes and external stylesheets for all styling needs
+- Example:
+  ```html
+  <!-- In layout.blade.php -->
+  <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
+
+  <!-- In Blade template -->
+  <div class="custom-class">Content</div>
+  ```
+- For component-specific styles, create separate CSS files and import them in the main stylesheet or link them in the layout
+
 ## Best Practices
 
 ### General
@@ -338,11 +563,18 @@ app/
 ### Service Method Pattern
 ```php
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 public function methodName(string $param, ?string $optional = null): ReturnType
 {
+    Log::info('Method execution started', [
+        'param' => $param,
+        'optional' => $optional,
+    ]);
+
     // Validation
     if (!$this->validateSomething($param)) {
+        Log::warning('Validation failed', ['param' => $param]);
         throw new \Exception('Error message');
     }
 
@@ -351,12 +583,21 @@ public function methodName(string $param, ?string $optional = null): ReturnType
             // Business logic with database operations
             $result = $this->doSomething($param);
 
+            Log::info('Method completed successfully', [
+                'param' => $param,
+                'result_id' => $result->id ?? null,
+            ]);
+
             // Return result (auto-commits on success)
             return $result;
         });
     } catch (\Exception $e) {
         // Auto-rollback on exception
-        \Log::error('Method failed: ' . $e->getMessage());
+        Log::error('Method failed', [
+            'param' => $param,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
         throw new \Exception('Operation failed. Please try again.');
     }
 }
@@ -365,28 +606,45 @@ public function methodName(string $param, ?string $optional = null): ReturnType
 ### Persistent Method Pattern (Create/Update/Delete)
 ```php
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 public function createModel(array $data): Model
 {
+    Log::info('Creating model', [
+        'data_keys' => array_keys($data),
+        'user_id' => $data['user_id'] ?? null,
+    ]);
+
     try {
         return DB::transaction(function () use ($data) {
             // Create main model
             $model = Model::create($data);
 
+            Log::info('Model created', [
+                'model_id' => $model->id,
+                'model_type' => get_class($model),
+            ]);
+
             // Create related models if needed
             if (isset($data['related'])) {
                 $model->related()->create($data['related']);
+                Log::info('Related models created', ['model_id' => $model->id]);
             }
 
             // Perform additional operations
             $this->performPostCreateActions($model);
 
+            Log::info('Model creation completed successfully', [
+                'model_id' => $model->id,
+            ]);
+
             return $model;
         });
     } catch (\Exception $e) {
-        \Log::error('Failed to create model: ' . $e->getMessage(), [
-            'data' => $data,
-            'trace' => $e->getTraceAsString()
+        Log::error('Failed to create model', [
+            'error' => $e->getMessage(),
+            'data_keys' => array_keys($data),
+            'trace' => $e->getTraceAsString(),
         ]);
         throw new \Exception('Failed to create record. Please try again.');
     }
@@ -394,22 +652,37 @@ public function createModel(array $data): Model
 
 public function updateModel(string $id, array $data): Model
 {
+    Log::info('Updating model', [
+        'model_id' => $id,
+        'data_keys' => array_keys($data),
+    ]);
+
     try {
         return DB::transaction(function () use ($id, $data) {
             $model = Model::findOrFail($id);
             $model->update($data);
 
+            Log::info('Model updated', [
+                'model_id' => $id,
+                'model_type' => get_class($model),
+            ]);
+
             // Update related models if needed
             if (isset($data['related'])) {
                 $model->related()->update($data['related']);
+                Log::info('Related models updated', ['model_id' => $id]);
             }
+
+            Log::info('Model update completed successfully', ['model_id' => $id]);
 
             return $model->fresh();
         });
     } catch (\Exception $e) {
-        \Log::error('Failed to update model: ' . $e->getMessage(), [
-            'id' => $id,
-            'data' => $data
+        Log::error('Failed to update model', [
+            'model_id' => $id,
+            'error' => $e->getMessage(),
+            'data_keys' => array_keys($data),
+            'trace' => $e->getTraceAsString(),
         ]);
         throw new \Exception('Failed to update record. Please try again.');
     }
@@ -417,19 +690,31 @@ public function updateModel(string $id, array $data): Model
 
 public function deleteModel(string $id): bool
 {
+    Log::info('Deleting model', ['model_id' => $id]);
+
     try {
         return DB::transaction(function () use ($id) {
             $model = Model::findOrFail($id);
 
             // Delete related records first if needed
             $model->related()->delete();
+            Log::info('Related models deleted', ['model_id' => $id]);
 
             // Delete main model
-            return $model->delete();
+            $deleted = $model->delete();
+
+            Log::info('Model deleted successfully', [
+                'model_id' => $id,
+                'model_type' => get_class($model),
+            ]);
+
+            return $deleted;
         });
     } catch (\Exception $e) {
-        \Log::error('Failed to delete model: ' . $e->getMessage(), [
-            'id' => $id
+        Log::error('Failed to delete model', [
+            'model_id' => $id,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
         ]);
         throw new \Exception('Failed to delete record. Please try again.');
     }
@@ -438,15 +723,38 @@ public function deleteModel(string $id): bool
 
 ### Controller Method Pattern
 ```php
+use Illuminate\Support\Facades\Log;
+
 public function actionName(Request $request)
 {
+    $user = $request->user();
+
+    Log::info('Action request received', [
+        'user_id' => $user->id ?? null,
+        'action' => 'actionName',
+    ]);
+
     $validated = $request->validate([
         'field' => ['required', 'string'],
     ]);
 
-    $result = $this->service->methodName($validated['field']);
+    try {
+        $result = $this->service->methodName($validated['field']);
 
-    return response()->json($result);
+        Log::info('Action completed successfully', [
+            'user_id' => $user->id ?? null,
+            'result_id' => $result['id'] ?? null,
+        ]);
+
+        return response()->json($result);
+    } catch (\Exception $e) {
+        Log::error('Action failed', [
+            'user_id' => $user->id ?? null,
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json(['error' => 'Operation failed'], 500);
+    }
 }
 ```
 
@@ -462,12 +770,13 @@ public function relatedModel(): HasOne|BelongsTo|HasMany
 
 1. **Models**: Always include `HasUuids` trait, implement `Auditable` if needed
 2. **Migrations**: Always use UUID primary keys and `foreignUuid()` for foreign keys
-3. **Controllers**: Keep thin, delegate to Services
-4. **Services**: Extract business logic here, wrap persistent methods in transactions
+3. **Controllers**: Keep thin, delegate to Services, add logging for requests and responses
+4. **Services**: Extract business logic here, wrap persistent methods in transactions, add comprehensive logging
 5. **Validation**: Use Form Requests for complex validation
 6. **Routes**: Apply appropriate middleware and rate limiting
 7. **Enums**: Use backed enums for constants stored in database
 8. **Transactions**: Always use `DB::transaction()` with try-catch for create/update/delete operations
+9. **Logging**: Frequently add relevant backend logs for debugging, monitoring, and troubleshooting
 
 ## Notes
 

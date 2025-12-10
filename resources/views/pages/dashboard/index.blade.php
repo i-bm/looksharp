@@ -111,6 +111,7 @@
                     <a href="#" class="dashboard-btn-link">View All Applications</a>
                 </div>
                 <div class="dashboard-table-container">
+                    @if(count($recentApplications ?? []) > 0)
                     <table class="dashboard-table">
                         <thead>
                             <tr>
@@ -122,59 +123,37 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @foreach($recentApplications as $application)
                             <tr>
                                 <td>
                                     <div class="dashboard-table-cell">
-                                        <strong>Software Developer Intern</strong>
+                                        <strong>{{ $application['position'] ?? 'N/A' }}</strong>
                                     </div>
                                 </td>
-                                <td>MTN Ghana</td>
-                                <td>15 Dec 2024</td>
-                                <td><span class="dashboard-status-badge dashboard-status-review">Under Review</span>
-                                </td>
-                                <td><a href="#" class="dashboard-table-link"><i
-                                            class="bi bi-box-arrow-up-right"></i></a></td>
-                            </tr>
-                            <tr>
+                                <td>{{ $application['company'] ?? 'N/A' }}</td>
+                                <td>{{ $application['date_applied'] ?? 'N/A' }}</td>
                                 <td>
-                                    <div class="dashboard-table-cell">
-                                        <strong>Marketing Assistant</strong>
-                                    </div>
+                                    <span
+                                        class="dashboard-status-badge dashboard-status-{{ $application['status_class'] ?? 'review' }}">
+                                        {{ $application['status'] ?? 'Under Review' }}
+                                    </span>
                                 </td>
-                                <td>Vodafone Ghana</td>
-                                <td>12 Dec 2024</td>
-                                <td><span class="dashboard-status-badge dashboard-status-interview">Interview
-                                        Scheduled</span></td>
-                                <td><a href="#" class="dashboard-table-link"><i
-                                            class="bi bi-box-arrow-up-right"></i></a></td>
-                            </tr>
-                            <tr>
                                 <td>
-                                    <div class="dashboard-table-cell">
-                                        <strong>Data Analyst</strong>
-                                    </div>
+                                    <a href="{{ $application['url'] ?? '#' }}" class="dashboard-table-link">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
                                 </td>
-                                <td>Ecobank Ghana</td>
-                                <td>10 Dec 2024</td>
-                                <td><span class="dashboard-status-badge dashboard-status-completed">Accepted</span></td>
-                                <td><a href="#" class="dashboard-table-link"><i
-                                            class="bi bi-box-arrow-up-right"></i></a></td>
                             </tr>
-                            <tr>
-                                <td>
-                                    <div class="dashboard-table-cell">
-                                        <strong>UI/UX Designer</strong>
-                                    </div>
-                                </td>
-                                <td>Ashesi University</td>
-                                <td>08 Dec 2024</td>
-                                <td><span class="dashboard-status-badge dashboard-status-completed">Completed</span>
-                                </td>
-                                <td><a href="#" class="dashboard-table-link"><i
-                                            class="bi bi-box-arrow-up-right"></i></a></td>
-                            </tr>
+                            @endforeach
                         </tbody>
                     </table>
+                    @else
+                    <div class="dashboard-empty-state">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #666; margin: 0;">No applications yet. Start applying to opportunities to see
+                            them here.</p>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -195,80 +174,45 @@
                     </select>
                 </div>
                 <div class="dashboard-opportunities">
+                    @if(count($recommendedOpportunities ?? []) > 0)
+                    @foreach($recommendedOpportunities as $opportunity)
                     <div class="dashboard-opportunity-item">
                         <div class="dashboard-opportunity-header">
-                            <h4 class="dashboard-opportunity-title">Frontend Developer</h4>
-                            <a href="#" class="dashboard-opportunity-link"><i class="bi bi-box-arrow-up-right"></i></a>
+                            <h4 class="dashboard-opportunity-title">{{ $opportunity['title'] ?? 'N/A' }}</h4>
+                            <a href="{{ $opportunity['url'] ?? '#' }}" class="dashboard-opportunity-link">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
                         </div>
                         <div class="dashboard-opportunity-details">
                             <div class="dashboard-opportunity-detail">
                                 <i class="bi bi-building"></i>
-                                <span>Google Ghana</span>
+                                <span>{{ $opportunity['company'] ?? 'N/A' }}</span>
                             </div>
                             <div class="dashboard-opportunity-detail">
                                 <i class="bi bi-geo-alt"></i>
-                                <span>Accra, Ghana</span>
+                                <span>{{ $opportunity['location'] ?? 'N/A' }}</span>
                             </div>
                             <div class="dashboard-opportunity-detail">
                                 <i class="bi bi-clock"></i>
-                                <span>Full-time</span>
+                                <span>{{ $opportunity['type'] ?? 'N/A' }}</span>
                             </div>
                         </div>
                         <div class="dashboard-opportunity-footer">
-                            <span class="dashboard-opportunity-match">95% Match</span>
+                            @if(isset($opportunity['match_percentage']))
+                            <span class="dashboard-opportunity-match">{{ $opportunity['match_percentage'] }}%
+                                Match</span>
+                            @endif
                             <button class="dashboard-btn-primary">Apply Now</button>
                         </div>
                     </div>
-
-                    <div class="dashboard-opportunity-item">
-                        <div class="dashboard-opportunity-header">
-                            <h4 class="dashboard-opportunity-title">Backend Engineer</h4>
-                            <a href="#" class="dashboard-opportunity-link"><i class="bi bi-box-arrow-up-right"></i></a>
-                        </div>
-                        <div class="dashboard-opportunity-details">
-                            <div class="dashboard-opportunity-detail">
-                                <i class="bi bi-building"></i>
-                                <span>Microsoft Ghana</span>
-                            </div>
-                            <div class="dashboard-opportunity-detail">
-                                <i class="bi bi-geo-alt"></i>
-                                <span>Remote</span>
-                            </div>
-                            <div class="dashboard-opportunity-detail">
-                                <i class="bi bi-clock"></i>
-                                <span>Part-time</span>
-                            </div>
-                        </div>
-                        <div class="dashboard-opportunity-footer">
-                            <span class="dashboard-opportunity-match">88% Match</span>
-                            <button class="dashboard-btn-primary">Apply Now</button>
-                        </div>
+                    @endforeach
+                    @else
+                    <div class="dashboard-empty-state" style="text-align: center; padding: 2rem;">
+                        <i class="bi bi-briefcase" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                        <p style="color: #666; margin: 0;">No recommended opportunities at the moment. Complete your
+                            profile to get personalized job recommendations.</p>
                     </div>
-
-                    <div class="dashboard-opportunity-item">
-                        <div class="dashboard-opportunity-header">
-                            <h4 class="dashboard-opportunity-title">Product Manager</h4>
-                            <a href="#" class="dashboard-opportunity-link"><i class="bi bi-box-arrow-up-right"></i></a>
-                        </div>
-                        <div class="dashboard-opportunity-details">
-                            <div class="dashboard-opportunity-detail">
-                                <i class="bi bi-building"></i>
-                                <span>Shopify</span>
-                            </div>
-                            <div class="dashboard-opportunity-detail">
-                                <i class="bi bi-geo-alt"></i>
-                                <span>Kumasi, Ghana</span>
-                            </div>
-                            <div class="dashboard-opportunity-detail">
-                                <i class="bi bi-clock"></i>
-                                <span>Contract</span>
-                            </div>
-                        </div>
-                        <div class="dashboard-opportunity-footer">
-                            <span class="dashboard-opportunity-match">82% Match</span>
-                            <button class="dashboard-btn-primary">Apply Now</button>
-                        </div>
-                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -310,13 +254,15 @@
     // Application Status Chart
     const ctx = document.getElementById('applicationChart');
     if (ctx) {
+        const chartData = @json($applicationChartData ?? ['labels' => [], 'data' => []]);
+
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: chartData.labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                 datasets: [{
                     label: 'Applications',
-                    data: [2, 3, 5, 4, 6, 8, 7, 9, 10, 8, 12, 15],
+                    data: chartData.data || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                     borderColor: '#F53003',
                     backgroundColor: 'rgba(245, 48, 3, 0.1)',
                     tension: 0.4,

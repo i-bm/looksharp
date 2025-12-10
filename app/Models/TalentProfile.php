@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AvailabilityEnum;
+use App\Enums\CurrentStatusEnum;
 use App\Enums\PreferredLocationEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,6 +40,9 @@ class TalentProfile extends Model implements Auditable
         'nss_status',
         'nss_posting_location',
         'nss_posting_number',
+        'current_status',
+        'student_id',
+        'student_email',
         'verification_status',
         'verification_type',
         'verification_document_url',
@@ -74,6 +78,7 @@ class TalentProfile extends Model implements Auditable
             'verification_verified_at' => 'datetime',
             'profile_completeness_score' => 'integer',
             'is_profile_building_step_completed' => 'boolean',
+            'current_status' => CurrentStatusEnum::class,
             'availability' => AvailabilityEnum::class,
             'preferred_location' => PreferredLocationEnum::class,
             'salary_expectations' => 'decimal:2',
@@ -168,5 +173,39 @@ class TalentProfile extends Model implements Auditable
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * Get the primary or current education institution.
+     */
+    public function getPrimaryInstitution(): ?Institution
+    {
+        // First try to get primary education
+        $primaryEducation = $this->education()
+            ->where('is_primary', true)
+            ->with('institution')
+            ->first();
+
+        if ($primaryEducation && $primaryEducation->institution) {
+            return $primaryEducation->institution;
+        }
+
+        // Then try current education
+        $currentEducation = $this->education()
+            ->where('is_current', true)
+            ->with('institution')
+            ->first();
+
+        if ($currentEducation && $currentEducation->institution) {
+            return $currentEducation->institution;
+        }
+
+        // Finally, get the most recent education
+        $recentEducation = $this->education()
+            ->with('institution')
+            ->orderBy('start_date', 'desc')
+            ->first();
+
+        return $recentEducation?->institution;
     }
 }

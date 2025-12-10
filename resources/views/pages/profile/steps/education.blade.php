@@ -12,6 +12,9 @@
         <div>
             <strong>{{ $edu->institution?->name ?? 'Institution not set' }}</strong><br>
             <span>{{ ucfirst($edu->degree_type->value) }} in {{ $edu->field_of_study }}</span>
+            @if($edu->level)
+            <span style="color: #666; font-size: 14px;"> - {{ $edu->level }}</span>
+            @endif
             @if($edu->is_current)
             <span
                 style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 10px;">Current</span>
@@ -89,6 +92,24 @@
             placeholder="e.g., Computer Science, Business Administration"
             style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
         @error('field_of_study')
+        <span style="color: red; font-size: 14px;">{{ $message }}</span>
+        @enderror
+    </div>
+
+    <!-- Level -->
+    <div style="margin-bottom: 20px;">
+        <label for="level" style="display: block; margin-bottom: 8px; font-weight: 500;">
+            Level (Optional)
+        </label>
+        <select name="level" id="level"
+            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px;">
+            <option value="">Select Level</option>
+            <option value="Level 100" {{ old('level')=='Level 100' ? 'selected' : '' }}>Level 100</option>
+            <option value="Level 200" {{ old('level')=='Level 200' ? 'selected' : '' }}>Level 200</option>
+            <option value="Level 300" {{ old('level')=='Level 300' ? 'selected' : '' }}>Level 300</option>
+            <option value="Level 400" {{ old('level')=='Level 400' ? 'selected' : '' }}>Level 400</option>
+        </select>
+        @error('level')
         <span style="color: red; font-size: 14px;">{{ $message }}</span>
         @enderror
     </div>

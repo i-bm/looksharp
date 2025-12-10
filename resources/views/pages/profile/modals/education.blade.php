@@ -3,13 +3,18 @@
         <!-- Existing Education -->
         @if($profile->education->count() > 0)
         <div style="margin-bottom: 30px;">
-            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 15px; color: var(--title-color);">Your Education Records ({{ $profile->education->count() }})</h3>
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 15px; color: var(--title-color);">Your
+                Education Records ({{ $profile->education->count() }})</h3>
             @foreach($profile->education as $edu)
             <div
                 style="background: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>{{ $edu->institution?->name ?? 'Institution not set' }}</strong><br>
-                    <span>{{ ucfirst(str_replace('_', ' ', $edu->degree_type->value)) }} in {{ $edu->field_of_study }}</span>
+                    <span>{{ ucfirst(str_replace('_', ' ', $edu->degree_type->value)) }} in {{ $edu->field_of_study
+                        }}</span>
+                    @if($edu->level)
+                    <span style="color: #666; font-size: 14px;"> - {{ $edu->level }}</span>
+                    @endif
                     @if($edu->is_current)
                     <span
                         style="background: #4CAF50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 10px;">Current</span>
@@ -31,7 +36,8 @@
         <!-- Add Education Form -->
         <form id="add-education-form" onsubmit="submitAddEducation(event)">
             @csrf
-            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 20px; color: var(--title-color);">{{ $profile->education->count() > 0 ? 'Add Another Education' : 'Add Education' }}</h3>
+            <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 20px; color: var(--title-color);">{{
+                $profile->education->count() > 0 ? 'Add Another Education' : 'Add Education' }}</h3>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                 <div>
@@ -72,6 +78,14 @@
                     style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
             </div>
 
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+                    Level (Optional)
+                </label>
+                <input type="text" name="level" id="education-level" placeholder="e.g., Level 100, 200"
+                    style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+            </div>
+
             @php
             $currentYear = (int) date('Y');
             $yearOptions = getYearOptions($currentYear - 50, $currentYear + 10);
@@ -93,7 +107,8 @@
             <div style="margin-bottom: 20px;">
                 <input type="hidden" name="is_current" value="0">
                 <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
-                    <input type="checkbox" name="is_current" id="education-is-current" value="1" onchange="toggleEducationEndDate(this)">
+                    <input type="checkbox" name="is_current" id="education-is-current" value="1"
+                        onchange="toggleEducationEndDate(this)">
                     <span style="font-weight: 500;">Currently enrolled</span>
                 </label>
             </div>
@@ -130,7 +145,7 @@
             </div>
 
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 25px;">
-                <button type="button" onclick="closeModal('education-modal')" 
+                <button type="button" onclick="closeModal('education-modal')"
                     style="padding: 10px 20px; border: 2px solid #ddd; border-radius: 4px; background: white; color: var(--text-color); cursor: pointer; font-size: 14px;">
                     Close
                 </button>
@@ -142,4 +157,3 @@
         </form>
     </div>
 </x-modal>
-

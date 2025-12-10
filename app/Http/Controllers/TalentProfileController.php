@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AvailabilityEnum;
+use App\Enums\CurrentStatusEnum;
 use App\Enums\PreferredLocationEnum;
 use App\Enums\UserRoleEnum;
 use App\Models\CareerInterestArea;
@@ -79,8 +80,12 @@ class TalentProfileController extends Controller
 
         // Don't allow skipping ahead to incomplete steps
         if ($step > $progress['current_step']) {
+            $currentStepName = $this->getStepName($progress['current_step']);
+            $requirements = $this->getStepRequirements($progress['current_step']);
+            $errorMessage = "Please complete Step {$progress['current_step']}: {$currentStepName} before proceeding. {$requirements}";
+
             return redirect()->route('talent.profile.build.step', ['step' => $progress['current_step']])
-                ->with('error', 'Please complete the previous steps first.'); // TODO:return a proper error message
+                ->with('error', $errorMessage);
         }
 
         $data = [
@@ -102,11 +107,40 @@ class TalentProfileController extends Controller
                 $data['skills'] = $profile->skills;
                 break;
             case 4:
-                // Verification - no additional data needed
+                // Verification - pass current status options
+                $data['currentStatusOptions'] = CurrentStatusEnum::cases();
                 break;
         }
 
         return view('pages.profile.wizard', $data);
+    }
+
+    /**
+     * Get user-friendly step name for a given step number.
+     */
+    private function getStepName(int $step): string
+    {
+        return match ($step) {
+            1 => 'Basic Info',
+            2 => 'Education',
+            3 => 'Skills',
+            4 => 'Verification',
+            default => 'Unknown Step',
+        };
+    }
+
+    /**
+     * Get step-specific requirements message.
+     */
+    private function getStepRequirements(int $step): string
+    {
+        return match ($step) {
+            1 => 'Make sure all required fields (name, date of birth, gender, location, and profile photo) are filled.',
+            2 => 'Add at least one education record.',
+            3 => 'Add at least 3 skills.',
+            4 => 'Upload your verification document.',
+            default => 'Complete all required fields.',
+        };
     }
 
     /**
@@ -172,6 +206,7 @@ class TalentProfileController extends Controller
                         'institution_id' => ['nullable', 'uuid', 'exists:institutions,id'],
                         'degree_type' => ['required', Rule::enum(\App\Enums\DegreeTypeEnum::class)],
                         'field_of_study' => ['required', 'string', 'max:255'],
+                        'level' => ['nullable', 'string', 'max:50'],
                         'start_date_day' => ['required', 'integer', 'min:1', 'max:31'],
                         'start_date_month' => ['required', 'integer', 'min:1', 'max:12'],
                         'start_date_year' => ['required', 'integer', 'min:'.(date('Y') - 50), 'max:'.(date('Y') + 10)],
@@ -246,15 +281,83 @@ class TalentProfileController extends Controller
 
                 case 4:
                     try {
-                        $validated = $request->validate([
-                            'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-                            'verification_type' => ['required', Rule::in(['ghana_card', 'student_id', 'passport'])],
+                        Log::info('Verification step 4 submission started', [
+                            'user_id' => Auth::id(),
+                            'has_file' => $request->hasFile('verification_document'),
                         ]);
-                        $this->profileService->uploadVerificationDocument(
-                            $profile,
-                            $validated['verification_document'],
-                            $validated['verification_type']
-                        );
+
+                        // First validate current_status to determine which fields are needed
+                        $currentStatus = $request->validate([
+                            'current_status' => ['required', Rule::enum(CurrentStatusEnum::class)],
+                        ])['current_status'];
+
+                        Log::info('Current status validated', [
+                            'user_id' => Auth::id(),
+                            'current_status' => $currentStatus,
+                            'has_file' => $request->hasFile('verification_document'),
+                        ]);
+
+                        // Build validation rules based on current_status
+                        $rules = [
+                            'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+                        ];
+
+                        if ($currentStatus === CurrentStatusEnum::STUDENT->value) {
+                            // Student-specific validation
+                            $rules['student_id'] = ['required', 'string', 'max:255'];
+                            $rules['student_email'] = ['required', 'email', 'max:255'];
+                        } else {
+                            // Non-student validation
+                            $rules['verification_type'] = ['required', Rule::in(['ghana_card', 'student_id', 'passport'])];
+                        }
+
+                        $validated = $request->validate($rules);
+                        $validated['current_status'] = $currentStatus;
+
+                        Log::info('Verification step 4 validation passed', [
+                            'user_id' => Auth::id(),
+                            'current_status' => $currentStatus,
+                        ]);
+
+                        // Handle student verification flow
+                        if ($validated['current_status'] === CurrentStatusEnum::STUDENT->value) {
+                            if (! $request->hasFile('verification_document')) {
+                                return back()
+                                    ->withInput()
+                                    ->withErrors(['verification_document' => 'Please upload your student ID card.']);
+                            }
+
+                            $otpResult = $this->profileService->submitStudentVerification(
+                                $profile,
+                                $validated['student_id'],
+                                $validated['student_email'],
+                                $request->file('verification_document')
+                            );
+
+                            // Store OTP sent timestamp for resend countdown
+                            $request->session()->put('student_verification.otp_sent_at', now()->toIso8601String());
+                            $request->session()->put('student_verification.student_email', $validated['student_email']);
+
+                            // Redirect to OTP verification page
+                            return redirect()->route('talent.profile.verify-student-email')
+                                ->with('success', 'OTP has been sent to your student email address.');
+                        } else {
+                            // Non-student verification flow (existing flow)
+                            if (! $request->hasFile('verification_document')) {
+                                return back()
+                                    ->withInput()
+                                    ->withErrors(['verification_document' => 'Please upload your verification document.']);
+                            }
+
+                            $this->profileService->uploadVerificationDocument(
+                                $profile,
+                                $request->file('verification_document'),
+                                $validated['verification_type']
+                            );
+
+                            // Update current status for non-students
+                            $profile->update(['current_status' => $validated['current_status']]);
+                        }
                     } catch (\Illuminate\Validation\ValidationException $e) {
                         $errors = $e->errors();
                         if (isset($errors['verification_document'])) {
@@ -277,6 +380,10 @@ class TalentProfileController extends Controller
                         return back()
                             ->withInput()
                             ->withErrors(['verification_document' => 'File is too large. Maximum size is 5MB. Please try a smaller file.']);
+                    } catch (\Exception $e) {
+                        return back()
+                            ->withInput()
+                            ->withErrors(['error' => $e->getMessage()]);
                     }
                     break;
 
@@ -313,6 +420,97 @@ class TalentProfileController extends Controller
         } catch (\Exception $e) {
             return back()
                 ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Show student email verification page.
+     */
+    public function showVerifyStudentEmail(): View|RedirectResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profile not found. Please contact support.');
+        }
+
+        if (empty($profile->student_email)) {
+            return redirect()->route('talent.profile.build.step', ['step' => 4])
+                ->with('error', 'Please submit your student verification first.');
+        }
+
+        $otpSentAt = request()->session()->get('student_verification.otp_sent_at');
+        $countdownSeconds = config('passwordless.resend.countdown_seconds', 60);
+
+        return view('pages.profile.steps.verify-student-email', [
+            'profile' => $profile,
+            'studentEmail' => $profile->student_email,
+            'otpSentAt' => $otpSentAt,
+            'countdownSeconds' => $countdownSeconds,
+        ]);
+    }
+
+    /**
+     * Verify student email OTP.
+     */
+    public function verifyStudentEmail(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profile not found. Please contact support.');
+        }
+
+        $validated = $request->validate([
+            'otp' => ['required', 'string', 'size:6', 'regex:/^[0-9]{6}$/'],
+        ]);
+
+        try {
+            $this->profileService->verifyStudentEmail($profile, $validated['otp']);
+
+            // Clear session data
+            $request->session()->forget(['student_verification.otp_sent_at', 'student_verification.student_email']);
+
+            $profile->is_profile_building_step_completed = 1;
+            $profile->save();
+
+            return redirect()->route('talent.profile.show')
+                ->with('success', 'Your student email has been verified successfully! Your profile is now verified.');
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(['otp' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Resend student verification OTP.
+     */
+    public function resendStudentVerificationOtp(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profile not found. Please contact support.');
+        }
+
+        try {
+            $otpResult = $this->profileService->resendStudentVerificationOtp($profile);
+
+            // Update session with new OTP sent timestamp
+            $request->session()->put('student_verification.otp_sent_at', now()->toIso8601String());
+
+            return back()
+                ->with('success', 'OTP has been resent to your student email address.');
+        } catch (\Exception $e) {
+            return back()
                 ->withErrors(['error' => $e->getMessage()]);
         }
     }
@@ -774,6 +972,7 @@ class TalentProfileController extends Controller
                 'institution_id' => ['nullable', 'uuid', 'exists:institutions,id'],
                 'degree_type' => ['required', Rule::enum(\App\Enums\DegreeTypeEnum::class)],
                 'field_of_study' => ['required', 'string', 'max:255'],
+                'level' => ['nullable', 'string', 'max:50'],
                 'start_date_day' => ['required', 'integer', 'min:1', 'max:31'],
                 'start_date_month' => ['required', 'integer', 'min:1', 'max:12'],
                 'start_date_year' => ['required', 'integer', 'min:'.(date('Y') - 50), 'max:'.(date('Y') + 10)],
@@ -1883,6 +2082,7 @@ class TalentProfileController extends Controller
                 'institution_id' => ['nullable', 'uuid', 'exists:institutions,id'],
                 'degree_type' => ['required', Rule::enum(\App\Enums\DegreeTypeEnum::class)],
                 'field_of_study' => ['required', 'string', 'max:255'],
+                'level' => ['nullable', 'string', 'max:50'],
                 'start_date_day' => ['required', 'integer', 'min:1', 'max:31'],
                 'start_date_month' => ['required', 'integer', 'min:1', 'max:12'],
                 'start_date_year' => ['required', 'integer', 'min:'.(date('Y') - 50), 'max:'.(date('Y') + 10)],
