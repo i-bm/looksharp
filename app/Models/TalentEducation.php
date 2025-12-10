@@ -24,6 +24,7 @@ class TalentEducation extends Model implements Auditable
         'institution_id',
         'degree_type',
         'field_of_study',
+        'level',
         'start_date',
         'end_date',
         'is_current',

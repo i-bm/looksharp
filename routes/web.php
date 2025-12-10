@@ -73,9 +73,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/profile/complete', [TalentProfileController::class, 'complete'])->name('profile.complete');
         });
 
+        // Student email verification routes (outside redirect middleware so user can verify)
+        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email');
+        Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
+        Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
+
         Route::post('/profile/photo', [TalentProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
         Route::post('/profile/resume', [TalentProfileController::class, 'uploadResume'])->name('profile.resume.upload');
-        
+
         // AJAX routes for section updates
         Route::put('/profile/about-me', [TalentProfileController::class, 'updateAboutMe'])->name('profile.about-me.update');
         Route::put('/profile/video-introduction', [TalentProfileController::class, 'updateVideoIntroduction'])->name('profile.video-introduction.update');
@@ -84,35 +89,35 @@ Route::middleware('auth')->group(function () {
         Route::put('/profile/hobbies', [TalentProfileController::class, 'updateHobbies'])->name('profile.hobbies.update');
         Route::put('/profile/social-links', [TalentProfileController::class, 'updateSocialLinks'])->name('profile.social-links.update');
         Route::put('/profile/work-preferences', [TalentProfileController::class, 'updateWorkPreferences'])->name('profile.work-preferences.update');
-        
+
         // Education routes (AJAX)
         Route::post('/profile/education', [TalentProfileController::class, 'addEducationAjax'])->name('profile.education.add');
         Route::delete('/profile/education/{id}', [TalentProfileController::class, 'removeEducationAjax'])->name('profile.education.remove');
-        
+
         // Skill routes (AJAX)
         Route::post('/profile/skill', [TalentProfileController::class, 'addSkillAjax'])->name('profile.skill.add');
         Route::delete('/profile/skill/{id}', [TalentProfileController::class, 'removeSkillAjax'])->name('profile.skill.remove');
-        
+
         // Work history routes (AJAX)
         Route::post('/profile/work-history', [TalentProfileController::class, 'addWorkHistoryAjax'])->name('profile.work-history.add');
         Route::delete('/profile/work-history/{id}', [TalentProfileController::class, 'removeWorkHistoryAjax'])->name('profile.work-history.remove');
-        
+
         // Language routes (AJAX)
         Route::post('/profile/language', [TalentProfileController::class, 'addLanguageAjax'])->name('profile.language.add');
         Route::delete('/profile/language/{id}', [TalentProfileController::class, 'removeLanguageAjax'])->name('profile.language.remove');
-        
+
         // Certification routes (AJAX)
         Route::post('/profile/certification', [TalentProfileController::class, 'addCertificationAjax'])->name('profile.certification.add');
         Route::delete('/profile/certification/{id}', [TalentProfileController::class, 'removeCertificationAjax'])->name('profile.certification.remove');
-        
+
         // Volunteer experience routes (AJAX)
         Route::post('/profile/volunteer-experience', [TalentProfileController::class, 'addVolunteerExperienceAjax'])->name('profile.volunteer-experience.add');
         Route::delete('/profile/volunteer-experience/{id}', [TalentProfileController::class, 'removeVolunteerExperienceAjax'])->name('profile.volunteer-experience.remove');
-        
+
         // Leadership experience routes (AJAX)
         Route::post('/profile/leadership-experience', [TalentProfileController::class, 'addLeadershipExperienceAjax'])->name('profile.leadership-experience.add');
         Route::delete('/profile/leadership-experience/{id}', [TalentProfileController::class, 'removeLeadershipExperienceAjax'])->name('profile.leadership-experience.remove');
-        
+
         // Gigs/Freelance routes (AJAX)
         Route::post('/profile/gigs-freelance', [TalentProfileController::class, 'addGigsFreelanceAjax'])->name('profile.gigs-freelance.add');
         Route::delete('/profile/gigs-freelance/{id}', [TalentProfileController::class, 'removeGigsFreelanceAjax'])->name('profile.gigs-freelance.remove');

@@ -16,6 +16,7 @@ class Institution extends Model implements Auditable
     protected $fillable = [
         'name',
         'email',
+        'student_email_domain',
         'phone',
         'address',
         'city',

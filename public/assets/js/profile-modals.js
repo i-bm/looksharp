@@ -362,6 +362,7 @@ function submitAddEducation(event) {
         institution_id: formData.get("institution_id") || null,
         degree_type: formData.get("degree_type"),
         field_of_study: formData.get("field_of_study"),
+        level: formData.get("level") || null,
         start_date_day: formData.get("education_start_date_day"),
         start_date_month: formData.get("education_start_date_month"),
         start_date_year: formData.get("education_start_date_year"),
