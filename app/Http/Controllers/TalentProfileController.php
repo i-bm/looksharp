@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AvailabilityEnum;
 use App\Enums\PreferredLocationEnum;
 use App\Enums\UserRoleEnum;
+use App\Models\CareerInterestArea;
 use App\Models\Institution;
 use App\Models\TalentCertification;
 use App\Models\TalentEducation;
@@ -20,7 +21,9 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TalentProfileController extends Controller
@@ -77,7 +80,7 @@ class TalentProfileController extends Controller
         // Don't allow skipping ahead to incomplete steps
         if ($step > $progress['current_step']) {
             return redirect()->route('talent.profile.build.step', ['step' => $progress['current_step']])
-                ->with('error', 'Please complete the previous steps first.');
+                ->with('error', 'Please complete the previous steps first.'); // TODO:return a proper error message
         }
 
         $data = [
@@ -387,7 +390,7 @@ class TalentProfileController extends Controller
                 'error' => 'File is too large. Maximum size is 2MB. Please try a smaller file.',
             ], 413);
         } catch (\Exception $e) {
-            \Log::error('Photo upload error: '.$e->getMessage(), [
+            Log::error('Photo upload error: '.$e->getMessage(), [
                 'profile_id' => $profile->id,
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -524,7 +527,7 @@ class TalentProfileController extends Controller
                 'error' => 'File is too large. Maximum size is 5MB. Please try a smaller file.',
             ], 413);
         } catch (\Exception $e) {
-            \Log::error('Resume upload error: '.$e->getMessage(), [
+            Log::error('Resume upload error: '.$e->getMessage(), [
                 'profile_id' => $profile->id,
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -633,7 +636,7 @@ class TalentProfileController extends Controller
 
         $profile->load(['education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'careerInterestAreas']);
         $institutions = Institution::where('is_active', true)->orderBy('name')->get();
-        $careerInterestAreas = \App\Models\CareerInterestArea::active()
+        $careerInterestAreas = CareerInterestArea::active()
             ->parents()
             ->with(['children' => function ($query) {
                 $query->active()->orderBy('order');
@@ -1713,7 +1716,23 @@ class TalentProfileController extends Controller
                 'success' => true,
                 'message' => 'Work preferences updated successfully!',
             ]);
+        } catch (ValidationException $e) {
+            Log::error('Work preferences validation failed', [
+                'errors' => $e->errors(),
+                'profile_id' => $profile->id,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed. Please check your input.',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
+            Log::error('Failed to update work preferences: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
