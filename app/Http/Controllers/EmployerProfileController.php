@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\EmployerCompanyStatusEnum;
 use App\Enums\UserRoleEnum;
+use App\Http\Requests\EmployerCompany\StoreEmployerCompanyRequest;
+use App\Http\Requests\EmployerCompany\SubmitEmployerCompanyRequest;
+use App\Http\Requests\EmployerCompany\UpdateEmployerCompanyRequest;
+use App\Models\EmployerCompany;
+use App\Services\EmployerCompanyService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class EmployerProfileController extends Controller
 {
-    public function __construct()
+    public function __construct(private EmployerCompanyService $employerCompanyService)
     {
         $this->middleware('auth')->except('public');
         $this->middleware('role:'.UserRoleEnum::EMPLOYER->value)->except('public');
@@ -23,16 +29,14 @@ class EmployerProfileController extends Controller
     {
         $user = Auth::user();
 
-        // TODO: Implement when EmployerProfile or Company model exists
-        // $company = $user->company;
-        // if (!$company) {
-        //     return redirect()->route('dashboard')
-        //         ->with('error', 'Company profile not found. Please contact support.');
-        // }
+        $company = $user->employerCompany();
+
+        if (! $company) {
+            return view('pages.employer.company.create');
+        }
 
         return view('pages.employer.company.show', [
-            'message' => 'Company profile feature coming soon.',
-            // 'company' => $company,
+            'company' => $company,
         ]);
     }
 
@@ -43,22 +47,106 @@ class EmployerProfileController extends Controller
     {
         $user = Auth::user();
 
-        // TODO: Implement when EmployerProfile or Company model exists
+        $company = $user->employerCompany();
+        if (! $company) {
+            return redirect()->route('employer.company.show')
+                ->with('info', 'Please create your company profile first.');
+        }
+
+        if (! $company->isEditableByEmployer()) {
+            return redirect()->route('employer.company.show')
+                ->with('info', 'Your company profile cannot be edited right now.');
+        }
 
         return view('pages.employer.company.edit', [
-            'message' => 'Company profile editing feature coming soon.',
+            'company' => $company,
         ]);
     }
 
     /**
      * Update company profile information.
      */
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateEmployerCompanyRequest $request): RedirectResponse
     {
-        // TODO: Implement when EmployerProfile or Company model exists
+        $user = Auth::user();
+        $company = $user->employerCompany();
 
-        return redirect()->route('employer.company.show')
-            ->with('info', 'Company profile update feature coming soon.');
+        if (! $company) {
+            return redirect()->route('employer.company.show')
+                ->with('error', 'Company profile not found. Please create one first.');
+        }
+
+        try {
+            $this->employerCompanyService->updateCompanyByEmployer($user, $company, $request->validated());
+
+            return redirect()->route('employer.company.show')
+                ->with('success', 'Company profile updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: update failed', [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Create a company profile (draft).
+     */
+    public function store(StoreEmployerCompanyRequest $request): RedirectResponse
+    {
+        $user = Auth::user();
+
+        try {
+            $company = $this->employerCompanyService->createCompanyForEmployer($user, $request->validated());
+
+            return redirect()->route('employer.company.show')
+                ->with('success', 'Company profile created. Please review and submit for approval.');
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: store failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Submit company profile for admin review.
+     */
+    public function submit(SubmitEmployerCompanyRequest $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $company = $user->employerCompany();
+
+        if (! $company) {
+            return redirect()->route('employer.company.show')
+                ->with('error', 'Company profile not found. Please create one first.');
+        }
+
+        try {
+            $this->employerCompanyService->submitCompanyForReview($user, $company);
+
+            return redirect()->route('employer.company.show')
+                ->with('success', 'Company profile submitted for review.');
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: submit failed', [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('employer.company.show')
+                ->with('error', $e->getMessage());
+        }
+
     }
 
     /**
@@ -66,12 +154,14 @@ class EmployerProfileController extends Controller
      */
     public function public(string $id): View
     {
-        // TODO: Implement when EmployerProfile or Company model exists
-        // $company = Company::where('id', $id)->firstOrFail();
+        /** @var EmployerCompany $company */
+        $company = EmployerCompany::query()
+            ->where('id', $id)
+            ->where('status', EmployerCompanyStatusEnum::APPROVED->value)
+            ->firstOrFail();
 
         return view('pages.employer.company.public', [
-            'message' => 'Public company profile feature coming soon.',
-            'id' => $id,
+            'company' => $company,
         ]);
     }
 }

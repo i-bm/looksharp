@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\CareerInterestAreaController;
 use App\Http\Controllers\Admin\ContentModerationController;
+use App\Http\Controllers\Admin\EmployerCompanyController as AdminEmployerCompanyController;
 use App\Http\Controllers\Admin\InstitutionController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -157,9 +158,11 @@ Route::middleware('auth')->group(function () {
     // Employer-specific profile routes
     Route::middleware('role:employer')->prefix('employer')->name('employer.')->group(function () {
         Route::get('/company', [EmployerProfileController::class, 'show'])->name('company.show');
+        Route::post('/company', [EmployerProfileController::class, 'store'])->name('company.store');
         Route::get('/company/edit', [EmployerProfileController::class, 'edit'])->name('company.edit');
         Route::put('/company', [EmployerProfileController::class, 'update'])->name('company.update');
         Route::patch('/company', [EmployerProfileController::class, 'update']);
+        Route::post('/company/submit', [EmployerProfileController::class, 'submit'])->name('company.submit');
     });
 
     // University-specific profile routes
@@ -210,6 +213,16 @@ Route::middleware('auth')->group(function () {
         // Institutions Routes
         Route::resource('institutions', InstitutionController::class);
         Route::post('/institutions/sync-gtec', [InstitutionController::class, 'syncFromGTEC'])->name('institutions.sync-gtec');
+
+        // Employer Companies (approval + provisioning)
+        Route::get('/employer-companies', [AdminEmployerCompanyController::class, 'index'])->name('employer-companies.index');
+        Route::get('/employer-companies/create', [AdminEmployerCompanyController::class, 'create'])->name('employer-companies.create');
+        Route::post('/employer-companies', [AdminEmployerCompanyController::class, 'store'])->name('employer-companies.store');
+        Route::get('/employer-companies/{id}', [AdminEmployerCompanyController::class, 'show'])->name('employer-companies.show');
+        Route::post('/employer-companies/{id}/approve', [AdminEmployerCompanyController::class, 'approve'])->name('employer-companies.approve');
+        Route::post('/employer-companies/{id}/needs-changes', [AdminEmployerCompanyController::class, 'needsChanges'])->name('employer-companies.needs-changes');
+        Route::post('/employer-companies/{id}/reject', [AdminEmployerCompanyController::class, 'reject'])->name('employer-companies.reject');
+        Route::post('/employer-companies/{id}/suspend', [AdminEmployerCompanyController::class, 'suspend'])->name('employer-companies.suspend');
     });
 });
 

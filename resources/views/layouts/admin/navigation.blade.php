@@ -64,6 +64,14 @@
             </li>
 
             <li
+                class="dashboard-nav-item {{ request()->routeIs('admin.employer-companies.*') ? 'dashboard-nav-item-active' : '' }}">
+                <a href="{{ route('admin.employer-companies.index') }}" class="dashboard-nav-link">
+                    <i class="bi bi-buildings"></i>
+                    <span>Employer Companies</span>
+                </a>
+            </li>
+
+            <li
                 class="dashboard-nav-item {{ request()->routeIs('admin.settings.*') ? 'dashboard-nav-item-active' : '' }}">
                 <a href="{{ route('admin.settings.index') }}" class="dashboard-nav-link">
                     <i class="bi bi-gear"></i>
