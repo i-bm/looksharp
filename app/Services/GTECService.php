@@ -28,7 +28,7 @@ class GTECService
             'Regionally-Owned (West Africa) Tertiary Institution',
             'Public Technical University',
             'Private Tertiary Institutions Offering HND/Degree Programmes',
-            'Public College of Education',
+            // 'Public College of Education',
             'Public Degree Awarding and Professional Institution',
             // 'Private Nurses/Health Training College',
             // 'Public Nurses/Health Training College',
