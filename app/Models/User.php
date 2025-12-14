@@ -64,8 +64,24 @@ class User extends Authenticatable implements Auditable
         return $this->hasOne(TalentProfile::class);
     }
 
+    /**
+     * Get the admin profile for the user.
+     */
+    public function adminProfile(): HasOne
+    {
+        return $this->hasOne(AdminProfile::class);
+    }
+
     public function getFullNameAttribute(): string
     {
-        return "{$this->first_name} {$this->last_name}";
+        // Try to get name from profile first, then fall back to user table
+        if ($this->talentProfile) {
+            return $this->talentProfile->full_name;
+        }
+        if ($this->adminProfile) {
+            return $this->adminProfile->full_name;
+        }
+
+        return trim("{$this->first_name} {$this->last_name}");
     }
 }

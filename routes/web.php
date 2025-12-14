@@ -1,5 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Admin\CareerInterestAreaController;
+use App\Http\Controllers\Admin\ContentModerationController;
+use App\Http\Controllers\Admin\InstitutionController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\PasswordlessAuthController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\DashboardController;
@@ -55,6 +63,23 @@ Route::middleware('guest')->group(function () {
 
     // Catch-all route for login forms (must be last)
     Route::get('/login/{userType?}', [PasswordlessAuthController::class, 'showLoginForm'])->name('login');
+});
+
+// Admin Authentication Routes
+Route::middleware('guest')->prefix('admin')->name('admin.')->group(function () {
+    // Rate limit admin OTP requests: 10 requests per 15 minutes per IP
+    Route::post('/login/otp', [AdminAuthController::class, 'requestOtp'])
+        ->middleware('throttle:'.env('LOGIN_OTP_THROTTLE', 10).','.env('LOGIN_OTP_THROTTLE_INTERVAL', 15))
+        ->name('login.otp');
+
+    Route::get('/login/verify', [AdminAuthController::class, 'showOtpVerification'])->name('login.verify.show');
+
+    // Rate limit admin OTP verification: 10 attempts per 15 minutes per IP
+    Route::post('/login/verify', [AdminAuthController::class, 'verifyOtp'])
+        ->middleware('throttle:'.env('LOGIN_OTP_VERIFICATION_THROTTLE', 10).','.env('LOGIN_OTP_VERIFICATION_THROTTLE_INTERVAL', 15))
+        ->name('login.verify');
+
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
 });
 
 // Authenticated routes
@@ -148,6 +173,43 @@ Route::middleware('auth')->group(function () {
     // Routes that require complete profile (for talent users)
     Route::middleware('talent.profile.complete')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    });
+
+    // Admin Dashboard Routes
+    Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // User Management Routes
+        Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+        Route::get('/users/{id}', [UserManagementController::class, 'show'])->name('users.show');
+        Route::put('/users/{id}/activate', [UserManagementController::class, 'activate'])->name('users.activate');
+        Route::put('/users/{id}/deactivate', [UserManagementController::class, 'deactivate'])->name('users.deactivate');
+
+        // Content Moderation Routes
+        Route::get('/content', [ContentModerationController::class, 'index'])->name('content.index');
+
+        // Analytics Routes
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+        // Settings Routes
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+        // Career Interest Areas Routes
+        Route::resource('career-interest-areas', CareerInterestAreaController::class)
+            ->names([
+                'index' => 'career-interest-areas.index',
+                'create' => 'career-interest-areas.create',
+                'store' => 'career-interest-areas.store',
+                'show' => 'career-interest-areas.show',
+                'edit' => 'career-interest-areas.edit',
+                'update' => 'career-interest-areas.update',
+                'destroy' => 'career-interest-areas.destroy',
+            ]);
+
+        // Institutions Routes
+        Route::resource('institutions', InstitutionController::class);
+        Route::post('/institutions/sync-gtec', [InstitutionController::class, 'syncFromGTEC'])->name('institutions.sync-gtec');
     });
 });
 

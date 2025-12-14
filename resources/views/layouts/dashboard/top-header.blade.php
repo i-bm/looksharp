@@ -1,11 +1,18 @@
 @if(Auth::check())
 @php
 $user = Auth::user();
-$profile = $user->talentProfile;
-$fullName = $profile ? $profile->full_name : ($user->name ?? 'User');
+// Check for admin profile first, then talent profile
+$profile = $user->adminProfile ?? $user->talentProfile;
+$fullName = $profile ? $profile->full_name : ($user->full_name ?? 'User');
 $initials = '';
 if ($profile) {
-$initials = strtoupper(substr($profile->first_name ?? '', 0, 1) . substr($profile->last_name ?? '', 0, 1));
+$firstInitial = substr($profile->first_name ?? '', 0, 1);
+$lastInitial = substr($profile->last_name ?? '', 0, 1);
+$initials = strtoupper($firstInitial . $lastInitial);
+} elseif ($user->first_name || $user->last_name) {
+$firstInitial = substr($user->first_name ?? '', 0, 1);
+$lastInitial = substr($user->last_name ?? '', 0, 1);
+$initials = strtoupper($firstInitial . $lastInitial);
 } elseif ($user->name) {
 $nameParts = explode(' ', $user->name);
 $initials = strtoupper(substr($nameParts[0] ?? '', 0, 1) . substr($nameParts[1] ?? '', 0, 1));
@@ -62,6 +69,12 @@ $initials = 'U';
                 </button>
                 <!-- User Dropdown Menu -->
                 <div class="dashboard-top-user-menu" id="userMenuDropdown">
+                    @if($user->hasRole('admin'))
+                    <a href="{{ route('admin.settings.index') }}" class="dashboard-top-user-menu-item">
+                        <i class="bi bi-gear"></i>
+                        <span>Settings</span>
+                    </a>
+                    @else
                     <a href="{{ route('talent.profile.show') }}" class="dashboard-top-user-menu-item">
                         <i class="bi bi-person"></i>
                         <span>Profile</span>
@@ -70,6 +83,7 @@ $initials = 'U';
                         <i class="bi bi-gear"></i>
                         <span>Settings</span>
                     </a>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}"
                         class="dashboard-top-user-menu-item dashboard-top-user-menu-item-form">
                         @csrf

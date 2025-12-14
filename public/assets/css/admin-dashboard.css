@@ -1,0 +1,221 @@
+/* Admin Dashboard Specific Styles */
+
+/* Admin Navigation */
+.dashboard-sidebar .dashboard-logo-text {
+    font-weight: 600;
+    color: #F53003;
+}
+
+/* Admin Page Header */
+.dashboard-page-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1b1b18;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-page-subtitle {
+    color: #666;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.dashboard-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    text-decoration: none;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.dashboard-back-link:hover {
+    color: #F53003;
+}
+
+/* Filter Form */
+.dashboard-filter-form {
+    padding: 1.5rem;
+}
+
+/* Table Actions */
+.dashboard-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.dashboard-table-link {
+    color: #666;
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.dashboard-table-link:hover {
+    background-color: #f5f5f5;
+    color: #F53003;
+}
+
+.dashboard-table-link.text-success:hover {
+    color: #28a745;
+    background-color: #d4edda;
+}
+
+.dashboard-table-link.text-danger:hover {
+    color: #dc3545;
+    background-color: #f8d7da;
+}
+
+/* Pagination */
+.dashboard-pagination {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.dashboard-pagination .pagination {
+    margin: 0;
+}
+
+/* Card Body */
+.dashboard-card-body {
+    padding: 1.5rem;
+}
+
+.dashboard-card-body dl {
+    margin: 0;
+}
+
+.dashboard-card-body dt {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-card-body dd {
+    margin-bottom: 1rem;
+    color: #666;
+}
+
+/* Empty State */
+.dashboard-empty-state {
+    padding: 3rem 1.5rem;
+    text-align: center;
+}
+
+/* Status Badges */
+.dashboard-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.dashboard-status-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.dashboard-status-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.dashboard-status-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.dashboard-status-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Badge Styles */
+.badge {
+    padding: 0.35em 0.65em;
+    font-size: 0.875em;
+    font-weight: 600;
+    border-radius: 0.25rem;
+}
+
+/* Form Controls */
+.form-label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #F53003;
+    box-shadow: 0 0 0 0.2rem rgba(245, 48, 3, 0.25);
+}
+
+/* Alert Styles */
+.alert {
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .dashboard-page-title {
+        font-size: 1.5rem;
+    }
+
+    .dashboard-filter-form .row {
+        margin: 0;
+    }
+
+    .dashboard-filter-form .col-md-3,
+    .dashboard-filter-form .col-md-2 {
+        padding: 0.5rem 0;
+    }
+
+    .dashboard-table {
+        font-size: 0.875rem;
+    }
+
+    .dashboard-table th,
+    .dashboard-table td {
+        padding: 0.5rem;
+    }
+}

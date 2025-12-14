@@ -169,6 +169,11 @@ class PasswordlessAuthController extends Controller
      */
     protected function redirectAfterLogin($user)
     {
+        // Check if user has admin role and redirect to admin dashboard
+        if ($user->hasRole('admin')) {
+            return redirect()->intended('/admin/dashboard');
+        }
+
         $userType = $user->user_type;
 
         return match ($userType) {
