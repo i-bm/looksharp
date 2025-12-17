@@ -296,3 +296,4 @@ class CareerInterestAreaController extends Controller
         }
     }
 }
+

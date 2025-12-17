@@ -35,7 +35,7 @@ class UserSeeder extends Seeder
         // Admin User
         $admin = DB::transaction(function () {
             $user = User::create([
-                'email' => 'admin@looksharp.com',
+                'email' => 'admin@joinlooksharp.com',
                 'password' => null,
                 'user_type' => 'admin',
                 'email_verified_at' => now(),
