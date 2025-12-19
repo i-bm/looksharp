@@ -15,9 +15,7 @@ use Illuminate\View\View;
 
 class EmployerCompanyController extends Controller
 {
-    public function __construct(private EmployerCompanyService $employerCompanyService)
-    {
-    }
+    public function __construct(private EmployerCompanyService $employerCompanyService) {}
 
     public function index(Request $request): View
     {
@@ -49,14 +47,14 @@ class EmployerCompanyController extends Controller
 
         $title = 'Employer Companies';
 
-        return view('admin.employer-companies.index', compact('companies', 'title', 'status'));
+        return view('pages.dashboard.admin.employer-companies.index', compact('companies', 'title', 'status'));
     }
 
     public function create(): View
     {
         $title = 'Provision Employer Company';
 
-        return view('admin.employer-companies.create', compact('title'));
+        return view('pages.dashboard.admin.employer-companies.create', compact('title'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -172,4 +170,3 @@ class EmployerCompanyController extends Controller
             ->with('success', 'Company suspended.');
     }
 }
-

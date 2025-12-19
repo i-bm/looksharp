@@ -25,9 +25,9 @@
                                 Wish it existed sooner!"
                             </p>
                             <div>
-                                <p class="auth-testimonial-name">Esther Nanegbe</p>
+                                <p class="auth-testimonial-name">Student</p>
                                 <p class="auth-testimonial-title">
-                                    Master's IT for Business Student at University of Ghana</p>
+                                    University of Ghana</p>
                             </div>
                         </div>
                     </div>
@@ -56,8 +56,7 @@
                             <label class="auth-label">Email</label>
                             <input type="email" name="email" id="email" value="{{ old('email', '') }}"
                                 placeholder="esther.nanegbe@ug.edu.gh" required autocomplete="email" autofocus
-                                class="form-input-default"
-                                onfocus="this.classList.add('form-input-focus')"
+                                class="form-input-default" onfocus="this.classList.add('form-input-focus')"
                                 onblur="this.classList.remove('form-input-focus')">
                             @error('email')
                             <span class="invalid-feedback auth-error-message" role="alert">
@@ -69,11 +68,12 @@
                         <div class="form-inner mb-20" style="position: relative;">
                             <label class="auth-label">Password</label>
                             <input type="password" name="password" id="password" required
-                                autocomplete="current-password" placeholder="••••••••"
-                                class="form-input-default" style="padding-right: 45px; border-color: var(--primary-color2);"
+                                autocomplete="current-password" placeholder="••••••••" class="form-input-default"
+                                style="padding-right: 45px; border-color: var(--primary-color2);"
                                 onfocus="this.classList.add('form-input-focus')"
                                 onblur="this.classList.remove('form-input-focus')">
-                            <i class="bi bi-eye-slash" id="togglePassword" style="position: absolute; right: 20px; bottom: 21px; color: var(--text-color); cursor: pointer;"></i>
+                            <i class="bi bi-eye-slash" id="togglePassword"
+                                style="position: absolute; right: 20px; bottom: 21px; color: var(--text-color); cursor: pointer;"></i>
                             @error('password')
                             <span class="invalid-feedback auth-error-message" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -84,18 +84,22 @@
                         <!-- Forgot Password and Remember Me -->
                         <div class="flex justify-between items-center mb-30 gap-15" style="flex-wrap: wrap;">
                             <a href="{{ Route::has('password.request') ? route('password.request') : '#' }}"
-                                class="text-primary2" style="font-family: var(--font-suse); font-weight: 600; font-size: 16px; text-decoration: none;">
+                                class="text-primary2"
+                                style="font-family: var(--font-suse); font-weight: 600; font-size: 16px; text-decoration: none;">
                                 Forgot password?
                             </a>
                             <div class="flex items-center gap-10">
-                                <label for="remember" class="text-text-color cursor-pointer" style="font-family: var(--font-suse); font-size: 16px; margin: 0; order: 2;">
+                                <label for="remember" class="text-text-color cursor-pointer"
+                                    style="font-family: var(--font-suse); font-size: 16px; margin: 0; order: 2;">
                                     Remember sign in details
                                 </label>
                                 <div style="position: relative; width: 44px; height: 24px; order: 1;">
                                     <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked'
                                         : 'checked' }} style="position: absolute; opacity: 0; width: 0; height: 0;">
-                                    <label for="remember" class="toggle-switch" style="display: block; width: 44px; height: 24px; background: var(--primary-color2); border-radius: 12px; cursor: pointer; position: relative; transition: all 0.3s;">
-                                        <span style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: var(--white-color); border-radius: 50%; transition: all 0.3s; transform: translateX(20px);"></span>
+                                    <label for="remember" class="toggle-switch"
+                                        style="display: block; width: 44px; height: 24px; background: var(--primary-color2); border-radius: 12px; cursor: pointer; position: relative; transition: all 0.3s;">
+                                        <span
+                                            style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: var(--white-color); border-radius: 50%; transition: all 0.3s; transform: translateX(20px);"></span>
                                     </label>
                                 </div>
                             </div>

@@ -7,7 +7,7 @@
         <div class="row g-0 auth-row">
             <!-- Left Panel - Dark Background -->
             <div class="col-lg-6 d-none d-lg-flex auth-side-panel"
-                style="background-image: url('{{ asset('assets/img/feature-img-3.jpg') }}');">
+                style="background-image: url('{{ asset('assets/img/feature-img-4.jpg') }}');">
                 <!-- Dark Overlay for better text readability at bottom -->
                 <div class="auth-side-panel-overlay"></div>
                 <div class="auth-side-panel-content">
@@ -20,14 +20,13 @@
                     <div class="auth-testimonial-container">
                         <div class="auth-testimonial-wrapper">
                             <p class="auth-testimonial-quote">
-                                "Looksharp changed everything.
-                                One-tap applies, real companies, no more ghosting.<br>
-                                Wish it existed sooner!"
+                                "Looksharp has transformed our hiring process.
+                                We connect with top talent faster and more efficiently than ever before."
                             </p>
                             <div>
-                                <p class="auth-testimonial-name">Student</p>
+                                <p class="auth-testimonial-name">HR Team</p>
                                 <p class="auth-testimonial-title">
-                                    University of Ghana</p>
+                                    Leading Tech Company in Ghana</p>
                             </div>
                         </div>
                     </div>
@@ -43,11 +42,11 @@
                     <!-- Title -->
                     <div class="auth-form-header">
                         <h2 class="auth-form-title">
-                            Create your account
+                            Create your employer account
                         </h2>
                         <p class="auth-form-subtitle">
-                            Join thousands of students and graduates finding their dream internships and early career
-                            opportunities.
+                            Join leading companies in Ghana to find the best talent for your internships, attachments,
+                            and entry-level positions.
                         </p>
                     </div>
 
@@ -83,7 +82,7 @@
                     <!-- Login Link -->
                     <div class="auth-form-link-container">
                         <p class="auth-form-link mb-0">
-                            Already have an account? <a href="{{ route('login', $displayUserType ?? 'talent') }}"
+                            Already have an account? <a href="{{ route('login', $displayUserType ?? 'employer') }}"
                                 class="auth-form-link-primary">
                                 Sign in
                             </a>

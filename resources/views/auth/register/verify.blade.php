@@ -21,6 +21,9 @@
             <!-- Right Panel - White Background with Form -->
             <div class="col-lg-6 auth-form-panel">
                 <div class="auth-form-wrapper">
+                    <div class="text-center mb-4 d-lg-none">
+                        <img src="{{ asset('assets/img/logo-red.png') }}" alt="Logo" width="200">
+                    </div>
                     <!-- Title -->
                     <div class="auth-form-header">
                         <h2 class="auth-form-title">
@@ -46,8 +49,7 @@
                             <label class="auth-label">Verification Code</label>
                             <input type="text" name="otp" id="otp" value="{{ old('otp', '') }}" placeholder="000000"
                                 required autocomplete="off" autofocus maxlength="6" pattern="[0-9]{6}"
-                                class="auth-otp-input"
-                                onfocus="this.classList.add('form-input-focus')"
+                                class="auth-otp-input" onfocus="this.classList.add('form-input-focus')"
                                 onblur="this.classList.remove('form-input-focus')"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
                             @error('otp')
@@ -58,7 +60,8 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" class="primary-btn1 btn-hover auth-form-button" style="margin-bottom: 20px;">
+                        <button type="submit" class="primary-btn1 btn-hover auth-form-button"
+                            style="margin-bottom: 20px;">
                             Verify & Create Account
                         </button>
                     </form>
@@ -66,17 +69,18 @@
                     <!-- Resend OTP Section (outside main form) -->
                     <div class="text-center" style="margin-bottom: 20px;" id="resend-section"
                         data-resend-route="{{ route('register.otp') }}"
-                        data-countdown-seconds="{{ $countdownSeconds ?? 60 }}"
-                        data-otp-sent-at="{{ $otpSentAt ?? '' }}"
+                        data-countdown-seconds="{{ $countdownSeconds ?? 60 }}" data-otp-sent-at="{{ $otpSentAt ?? '' }}"
                         data-throttle-remaining="{{ isset($throttleInfo['remaining_seconds']) ? $throttleInfo['remaining_seconds'] : 0 }}">
                         <p class="auth-form-link mb-0">
                             Didn't receive the code?
-                            <button type="button" id="resend-otp-btn" class="border-none bg-white cursor-pointer" style="color: var(--primary-color2); font-weight: 600; font-family: var(--font-suse); font-size: 16px; padding: 0;">
+                            <button type="button" id="resend-otp-btn" class="border-none bg-white cursor-pointer"
+                                style="color: var(--primary-color2); font-weight: 600; font-family: var(--font-suse); font-size: 16px; padding: 0;">
                                 <span id="resend-text">Resend code</span>
                                 <span id="resend-countdown" class="hidden"></span>
                             </button>
                         </p>
-                        <div id="resend-error" class="hidden" style="color: var(--primary-color1); margin-top: 10px; font-size: 14px;"></div>
+                        <div id="resend-error" class="hidden"
+                            style="color: var(--primary-color1); margin-top: 10px; font-size: 14px;"></div>
                     </div>
 
                     <!-- Back to Registration -->
@@ -96,4 +100,3 @@
 @push('scripts')
 <script src="{{ asset('assets/js/otp-resend.js') }}"></script>
 @endpush
-

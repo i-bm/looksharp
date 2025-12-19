@@ -22,7 +22,7 @@
                                     </svg>
                                     <span></span>
                                 </a>
-                                <a class="primary-btn2 btn-hover" href="{{ url('/login') }}">
+                                <a class="primary-btn2 btn-hover" href="{{ url('/register/employer') }}">
                                     I'm an Employer
                                     <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                                         <g>

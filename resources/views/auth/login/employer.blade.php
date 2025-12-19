@@ -56,7 +56,8 @@
                     <!-- Sign Up Link -->
                     <div class="auth-form-link-container">
                         <p class="auth-form-link mb-0">
-                            Don't have an account? <a href="#" class="auth-form-link-primary">
+                            Don't have an account? <a href="{{ url('/register/employer') }}"
+                                class="auth-form-link-primary">
                                 Sign up
                             </a>
                         </p>

@@ -27,7 +27,7 @@ class SettingsController extends Controller
             'system_email' => config('mail.from.address'),
         ];
 
-        return view('admin.settings.index', compact('settings', 'title'));
+        return view('pages.dashboard.admin.settings.index', compact('settings', 'title'));
     }
 
     /**

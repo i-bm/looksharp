@@ -30,7 +30,7 @@ class AnalyticsController extends Controller
             $analytics = $this->adminService->getAnalyticsData();
             $title = 'Analytics & Reports';
 
-            return view('admin.analytics.index', compact('analytics', 'title'));
+            return view('pages.dashboard.admin.analytics.index', compact('analytics', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load analytics page', [
                 'user_id' => $user->id,

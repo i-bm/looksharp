@@ -25,9 +25,9 @@
                                 Wish it existed sooner!"
                             </p>
                             <div>
-                                <p class="auth-testimonial-name">Esther Nanegbe</p>
+                                <p class="auth-testimonial-name">Student</p>
                                 <p class="auth-testimonial-title">
-                                    Master's IT for Business Student at University of Ghana</p>
+                                    University of Ghana</p>
                             </div>
                         </div>
                     </div>
@@ -37,9 +37,12 @@
             <!-- Right Panel - White Background with Form -->
             <div class="col-lg-6 auth-form-panel">
                 <div class="auth-form-wrapper">
-                    <div class="auth-form-logo mb-5 text-center d-block d-lg-none">
+                    {{-- <div class="auth-form-logo mb-5 text-center d-block d-lg-none">
                         <img src="{{ asset('assets/img/logo-red.png') }}" width="180" alt="Logo"
                             class="auth-form-logo-img">
+                    </div> --}}
+                    <div class="text-center mb-4 d-lg-none">
+                        <img src="{{ asset('assets/img/logo-red.png') }}" alt="Logo" width="200">
                     </div>
                     <!-- Title -->
                     <div class="auth-form-header">
