@@ -17,6 +17,7 @@ class EmployerCompany extends Model implements Auditable
 {
     /** @use HasFactory<\Database\Factories\EmployerCompanyFactory> */
     use HasFactory, HasUuids, SoftDeletes;
+
     use \OwenIt\Auditing\Auditable;
 
     /**
@@ -41,6 +42,7 @@ class EmployerCompany extends Model implements Auditable
         'primary_contact_email',
         'primary_contact_phone',
         'status',
+        'wizard_complete',
         'submitted_at',
         'reviewed_by_user_id',
         'review_notes',
@@ -55,6 +57,7 @@ class EmployerCompany extends Model implements Auditable
     protected function casts(): array
     {
         return [
+            'wizard_complete' => 'boolean',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
@@ -92,4 +95,3 @@ class EmployerCompany extends Model implements Auditable
         return $this->status === EmployerCompanyStatusEnum::APPROVED->value;
     }
 }
-

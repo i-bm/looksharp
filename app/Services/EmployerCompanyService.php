@@ -15,9 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 class EmployerCompanyService
 {
-    public function __construct(private NotificationService $notificationService)
-    {
-    }
+    public function __construct(private NotificationService $notificationService) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -57,6 +55,7 @@ class EmployerCompanyService
                     'primary_contact_email' => $data['primary_contact_email'] ?? null,
                     'primary_contact_phone' => $data['primary_contact_phone'] ?? null,
                     'status' => EmployerCompanyStatusEnum::DRAFT->value,
+                    'wizard_complete' => false,
                 ]);
 
                 EmployerCompanyMember::create([
@@ -219,6 +218,7 @@ class EmployerCompanyService
                     'primary_contact_email' => $companyData['primary_contact_email'] ?? $inviteEmail,
                     'primary_contact_phone' => $companyData['primary_contact_phone'] ?? null,
                     'status' => EmployerCompanyStatusEnum::DRAFT->value,
+                    'wizard_complete' => false,
                 ]);
 
                 EmployerCompanyMember::create([
@@ -399,5 +399,93 @@ class EmployerCompanyService
             $this->notificationService->sendEmail($email, $subject, $content);
         }
     }
-}
 
+    /**
+     * Get wizard progress information.
+     */
+    public function getWizardProgress(EmployerCompany $company): array
+    {
+        Log::info('EmployerCompanyService: getWizardProgress', [
+            'company_id' => $company->id,
+        ]);
+
+        $steps = [
+            'basic_info' => [
+                'completed' => ! empty($company->legal_name),
+                'step' => 1,
+            ],
+            'contact_location' => [
+                'completed' => ! empty($company->country) || ! empty($company->city),
+                'step' => 2,
+            ],
+            'registration' => [
+                'completed' => ! empty($company->registration_number),
+                'step' => 3,
+            ],
+            'primary_contact' => [
+                'completed' => ! empty($company->primary_contact_name) || ! empty($company->primary_contact_email),
+                'step' => 4,
+            ],
+        ];
+
+        // Determine current step (first incomplete step, or last step if all complete)
+        $currentStep = 1;
+        foreach ($steps as $stepKey => $stepData) {
+            if (! $stepData['completed']) {
+                $currentStep = $stepData['step'];
+                break;
+            }
+            $currentStep = $stepData['step'];
+        }
+
+        // Calculate completeness score (percentage of completed steps)
+        $completedSteps = 0;
+        foreach ($steps as $stepData) {
+            if ($stepData['completed']) {
+                $completedSteps++;
+            }
+        }
+        $completenessScore = (int) (($completedSteps / count($steps)) * 100);
+
+        // Update wizard_complete flag if all steps are complete
+        $allStepsComplete = $completedSteps === count($steps);
+        if ($allStepsComplete && ! $company->wizard_complete) {
+            try {
+                DB::transaction(function () use ($company) {
+                    $company->update(['wizard_complete' => true]);
+                    $company->refresh();
+                    Log::info('EmployerCompanyService: wizard marked as complete', [
+                        'company_id' => $company->id,
+                    ]);
+                });
+            } catch (\Exception $e) {
+                Log::error('EmployerCompanyService: failed to update wizard_complete', [
+                    'company_id' => $company->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        } elseif (! $allStepsComplete && $company->wizard_complete) {
+            // If wizard was marked complete but steps are now incomplete, reset it
+            try {
+                DB::transaction(function () use ($company) {
+                    $company->update(['wizard_complete' => false]);
+                    $company->refresh();
+                    Log::info('EmployerCompanyService: wizard marked as incomplete', [
+                        'company_id' => $company->id,
+                    ]);
+                });
+            } catch (\Exception $e) {
+                Log::error('EmployerCompanyService: failed to update wizard_complete', [
+                    'company_id' => $company->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return [
+            'steps' => $steps,
+            'current_step' => $currentStep,
+            'completeness_score' => $completenessScore,
+        ];
+    }
+}

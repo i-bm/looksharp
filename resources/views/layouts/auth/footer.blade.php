@@ -12,6 +12,8 @@
 
 <!-- Custom JS -->
 <script src="{{ asset('assets/js/script.js')}}"></script>
+<!-- Select Search Component JS -->
+<script src="{{ asset('assets/js/select-search.js')}}"></script>
 <script>
     $('form').on('submit', function () {
             $(this).find('button[type="submit"], button').each(function () {

@@ -157,6 +157,15 @@ Route::middleware('auth')->group(function () {
 
     // Employer-specific profile routes
     Route::middleware('role:employer')->prefix('employer')->name('employer.')->group(function () {
+        // Profile building routes (accessible even with incomplete profile)
+        // Redirects to company page if profile is already complete
+        Route::middleware('redirect.if.company.complete')->group(function () {
+            Route::get('/company/build', [EmployerProfileController::class, 'showWizard'])->name('company.build');
+            Route::get('/company/build/step/{step}', [EmployerProfileController::class, 'step'])->name('company.build.step');
+            Route::post('/company/build/step/{step}', [EmployerProfileController::class, 'saveStep'])->name('company.build.save');
+            Route::get('/company/complete', [EmployerProfileController::class, 'complete'])->name('company.complete');
+        });
+
         Route::get('/company', [EmployerProfileController::class, 'show'])->name('company.show');
         Route::post('/company', [EmployerProfileController::class, 'store'])->name('company.store');
         Route::get('/company/edit', [EmployerProfileController::class, 'edit'])->name('company.edit');
@@ -173,8 +182,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/profile', [UniversityProfileController::class, 'update']);
     });
 
-    // Routes that require complete profile (for talent users)
-    Route::middleware('talent.profile.complete')->group(function () {
+    // Routes that require complete profile (for talent users) or complete company wizard (for employers)
+    Route::middleware(['talent.profile.complete', 'ensure.employer.company.complete'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
 

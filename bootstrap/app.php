@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'talent.profile.complete' => \App\Http\Middleware\EnsureTalentProfileComplete::class,
             'redirect.if.profile.complete' => \App\Http\Middleware\RedirectIfProfileComplete::class,
+            'redirect.if.company.complete' => \App\Http\Middleware\RedirectIfCompanyComplete::class,
+            'ensure.employer.company.complete' => \App\Http\Middleware\EnsureEmployerCompanyComplete::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
