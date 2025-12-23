@@ -28,7 +28,9 @@ Route::get('/universities', [UniversityController::class, 'index'])->name('unive
 
 // Registration Routes
 Route::middleware('guest')->group(function () {
-    // Specific routes must come before the catch-all route
+    // Unified registration route (no user type in URL)
+    Route::get('/register', [RegistrationController::class, 'showRegistrationForm'])->name('register');
+
     // Rate limit registration OTP requests: 3 requests per 15 minutes per IP
     Route::post('/register/otp', [RegistrationController::class, 'requestRegistrationOtp'])
         ->middleware('throttle:'.env('REGISTRATION_OTP_THROTTLE', 3).','.env('REGISTRATION_OTP_THROTTLE_INTERVAL', 15))
@@ -40,11 +42,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/register/verify', [RegistrationController::class, 'verifyRegistrationOtp'])
         ->middleware('throttle:'.env('REGISTRATION_OTP_VERIFICATION_THROTTLE', 3).','.env('REGISTRATION_OTP_VERIFICATION_THROTTLE_INTERVAL', 15))
         ->name('register.verify');
-
-    Route::get('/register/email', [RegistrationController::class, 'showEmailRegistration'])->name('register.email');
-
-    // Catch-all route for registration forms (must be last)
-    Route::get('/register/{userType?}', [RegistrationController::class, 'showRegistrationForm'])->name('register');
 });
 
 // Passwordless Authentication Routes
@@ -62,8 +59,13 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:'.env('LOGIN_OTP_VERIFICATION_THROTTLE', 10).','.env('LOGIN_OTP_VERIFICATION_THROTTLE_INTERVAL', 15))
         ->name('login.verify');
 
-    // Catch-all route for login forms (must be last)
-    Route::get('/login/{userType?}', [PasswordlessAuthController::class, 'showLoginForm'])->name('login');
+    // Unified login route
+    Route::get('/login', [PasswordlessAuthController::class, 'showLoginForm'])->name('login');
+
+    // Redirect old user-type-specific login routes to unified login (backward compatibility)
+    Route::get('/login/{userType}', function ($userType) {
+        return redirect()->route('login');
+    })->where('userType', 'talent|employer|university');
 });
 
 // Admin Authentication Routes
@@ -83,8 +85,14 @@ Route::middleware('guest')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
 });
 
+// User Type Selection Routes (accessible to guests with verified OTP and authenticated users)
+Route::get('/register/select-type', [RegistrationController::class, 'showUserTypeSelection'])->name('register.select-type');
+Route::post('/register/select-type', [RegistrationController::class, 'selectUserType'])
+    ->middleware('throttle:5,1')
+    ->name('register.select-type.store');
+
 // Authenticated routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
     // Logout route (accessible to all authenticated users)
     Route::post('/logout', [PasswordlessAuthController::class, 'logout'])->name('logout');
 
@@ -100,7 +108,7 @@ Route::middleware('auth')->group(function () {
         });
 
         // Student email verification routes (outside redirect middleware so user can verify)
-        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email');
+        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email.show');
         Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
         Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
 

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\UserRoleEnum;
 use App\Models\OtpToken;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +49,7 @@ class AuthService
     }
 
     /**
-     * Request OTP for email and user type (login only - user must exist).
+     * Request OTP for email (user type auto-detected from user record).
      *
      * @throws \Exception
      */
@@ -58,8 +57,17 @@ class AuthService
     {
         // Check if user exists (login requires existing account)
         $user = User::where('email', $email)->first();
-        if (!$user) {
+        if (! $user) {
             throw new \Exception('No account found with this email. Please register first.');
+        }
+
+        // Auto-detect user type from user record if not provided
+        if ($userType === null && $user->user_type !== null) {
+            $userType = $user->user_type;
+            Log::info('Auto-detected user type from user record', [
+                'email' => $email,
+                'user_type' => $userType,
+            ]);
         }
 
         // Check throttling with detailed status
@@ -102,12 +110,28 @@ class AuthService
     }
 
     /**
-     * Verify OTP and return authenticated user.
+     * Verify OTP and return authenticated user (user type auto-detected from user record).
      *
      * @throws \Exception
      */
     public function verifyOtp(string $email, string $otp, ?string $userType = null): ?User
     {
+        // Find existing user to get user type if not provided
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            throw new \Exception('No account found with this email. Please register first.');
+        }
+
+        // Auto-detect user type from user record if not provided
+        if ($userType === null && $user->user_type !== null) {
+            $userType = $user->user_type;
+            Log::info('Auto-detected user type from user record during OTP verification', [
+                'email' => $email,
+                'user_type' => $userType,
+            ]);
+        }
+
         // Find valid OTP token
         $otpToken = OtpToken::where('email', $email)
             ->where('otp_code', $otp)
@@ -149,18 +173,13 @@ class AuthService
         // Mark as verified
         $otpToken->markAsVerified();
 
-        // Find existing user (login only - do not create new users)
-        $user = User::where('email', $email)->first();
-
-        if (!$user) {
-            // Cleanup the verified OTP before throwing error
-            $otpToken->delete();
-            throw new \Exception('No account found with this email. Please register first.');
-        }
-
-        // Update user type if it was null
+        // Update user type if it was null (shouldn't happen, but safety check)
         if ($user->user_type === null && $userType !== null) {
             $user->update(['user_type' => $userType]);
+            Log::info('Updated user type from null during OTP verification', [
+                'email' => $email,
+                'user_type' => $userType,
+            ]);
         }
 
         // Cleanup the verified OTP
@@ -255,13 +274,20 @@ class AuthService
 
     /**
      * Request OTP for registration (new user signup).
+     * For unified registration, userType is optional and will be selected after OTP verification.
      *
      * @throws \Exception
      */
-    public function requestRegistrationOtp(string $email, string $userType): array
+    public function requestRegistrationOtp(string $email, ?string $userType = null): array
     {
+        Log::info('Requesting registration OTP', [
+            'email' => $email,
+            'user_type' => $userType,
+        ]);
+
         // Check if user already exists
         if (User::where('email', $email)->exists()) {
+            Log::warning('Registration OTP request failed: User already exists', ['email' => $email]);
             throw new \Exception('An account with this email already exists. Please login instead.');
         }
 
@@ -280,22 +306,52 @@ class AuthService
         $otp = $this->generateOtp();
         $expiresAt = now()->addMinutes($this->getOtpExpiryMinutes());
 
-        // Create or update OTP token with user_type
-        OtpToken::updateOrCreate(
-            [
-                'email' => $email,
-                'user_type' => $userType,
-            ],
-            [
-                'otp_code' => $otp,
-                'attempts' => 0,
-                'expires_at' => $expiresAt,
-                'verified_at' => null,
-            ]
-        );
+        // Create or update OTP token (user_type can be null for unified registration)
+        // For unified registration (null user_type), match only on email
+        // For specific user_type, match on both email and user_type
+        if ($userType === null) {
+            // For unified registration, update/create based on email only
+            $existingToken = OtpToken::where('email', $email)
+                ->whereNull('user_type')
+                ->first();
+
+            if ($existingToken) {
+                $existingToken->update([
+                    'otp_code' => $otp,
+                    'attempts' => 0,
+                    'expires_at' => $expiresAt,
+                    'verified_at' => null,
+                ]);
+            } else {
+                OtpToken::create([
+                    'email' => $email,
+                    'user_type' => null,
+                    'otp_code' => $otp,
+                    'attempts' => 0,
+                    'expires_at' => $expiresAt,
+                    'verified_at' => null,
+                ]);
+            }
+        } else {
+            // For specific user_type, use updateOrCreate with both email and user_type
+            OtpToken::updateOrCreate(
+                [
+                    'email' => $email,
+                    'user_type' => $userType,
+                ],
+                [
+                    'otp_code' => $otp,
+                    'attempts' => 0,
+                    'expires_at' => $expiresAt,
+                    'verified_at' => null,
+                ]
+            );
+        }
 
         // Send OTP email
         $this->sendOtpEmail($email, $otp, $userType);
+
+        Log::info('Registration OTP sent successfully', ['email' => $email]);
 
         return [
             'success' => true,
@@ -305,28 +361,30 @@ class AuthService
     }
 
     /**
-     * Verify registration OTP and create new user account.
+     * Verify registration OTP (without creating account).
+     * Account creation happens after user type selection.
      *
      * @throws \Exception
      */
-    public function verifyRegistrationOtp(string $email, string $otp, string $userType): User
+    public function verifyRegistrationOtp(string $email, string $otp): bool
     {
+        Log::info('Verifying registration OTP', ['email' => $email]);
+
         // Check if user already exists
         if (User::where('email', $email)->exists()) {
+            Log::warning('Registration OTP verification failed: User already exists', ['email' => $email]);
             throw new \Exception('An account with this email already exists. Please login instead.');
         }
 
-        // Find valid OTP token
+        // Find valid OTP token (user_type can be any for registration)
         $otpToken = OtpToken::where('email', $email)
             ->where('otp_code', $otp)
-            ->where('user_type', $userType)
             ->valid()
             ->first();
 
         if (! $otpToken) {
             // Increment attempts for existing token if found
             $existingToken = OtpToken::where('email', $email)
-                ->where('user_type', $userType)
                 ->unverified()
                 ->first();
 
@@ -335,30 +393,67 @@ class AuthService
 
                 if ($existingToken->attempts >= $this->getMaxAttempts()) {
                     $existingToken->delete();
+                    Log::warning('Registration OTP verification failed: Max attempts exceeded', ['email' => $email]);
                     throw new \Exception('Maximum verification attempts exceeded. Please request a new OTP.');
                 }
             }
 
+            Log::warning('Registration OTP verification failed: Invalid or expired OTP', ['email' => $email]);
             throw new \Exception('Invalid or expired OTP code.');
         }
 
         // Check if max attempts exceeded
         if ($otpToken->attempts >= $this->getMaxAttempts()) {
             $otpToken->delete();
+            Log::warning('Registration OTP verification failed: Max attempts exceeded', ['email' => $email]);
             throw new \Exception('Maximum verification attempts exceeded. Please request a new OTP.');
         }
 
         // Check if expired
         if ($otpToken->isExpired()) {
             $otpToken->delete();
+            Log::warning('Registration OTP verification failed: OTP expired', ['email' => $email]);
             throw new \Exception('OTP has expired. Please request a new one.');
+        }
+
+        // Mark as verified (but don't delete yet - we'll use it to track the verified email)
+        $otpToken->markAsVerified();
+
+        Log::info('Registration OTP verified successfully', ['email' => $email]);
+
+        return true;
+    }
+
+    /**
+     * Complete registration by creating user account after user type selection.
+     *
+     * @throws \Exception
+     */
+    public function completeRegistration(string $email, string $userType): User
+    {
+        Log::info('Completing registration', [
+            'email' => $email,
+            'user_type' => $userType,
+        ]);
+
+        // Check if user already exists
+        if (User::where('email', $email)->exists()) {
+            Log::warning('Registration completion failed: User already exists', ['email' => $email]);
+            throw new \Exception('An account with this email already exists. Please login instead.');
+        }
+
+        // Verify that OTP was verified for this email
+        $otpToken = OtpToken::where('email', $email)
+            ->whereNotNull('verified_at')
+            ->first();
+
+        if (! $otpToken) {
+            Log::warning('Registration completion failed: No verified OTP found', ['email' => $email]);
+            throw new \Exception('OTP verification required. Please verify your email first.');
         }
 
         try {
             $user = DB::transaction(function () use ($email, $userType, $otpToken) {
-                // Mark as verified
-                $otpToken->markAsVerified();
-
                 // Create new user (registration - user should not exist)
                 $extractedName = $this->extractNameFromEmail($email);
                 $nameParts = explode(' ', $extractedName, 2);
@@ -366,12 +461,27 @@ class AuthService
                 $user = User::create([
                     'email' => $email,
                     'user_type' => $userType,
+                    'user_type_checked' => true,
                     'password' => null,
                 ]);
 
-                $user->assignRole(UserRoleEnum::from($userType)->value);
+                Log::info('User created successfully', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'user_type' => $userType,
+                ]);
+
+                // Map 'university_admin' back to 'university' for role assignment (enum uses 'university')
+                $roleName = $userType === 'university_admin' ? 'university' : $userType;
+                $user->assignRole($roleName);
+
                 // Cleanup the verified OTP
                 $otpToken->delete();
+
+                Log::info('Registration completed successfully', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
 
                 return $user;
             });
@@ -389,7 +499,7 @@ class AuthService
 
             return $user;
         } catch (\Exception $e) {
-            Log::error('Failed to verify registration OTP: '.$e->getMessage(), [
+            Log::error('Failed to complete registration: '.$e->getMessage(), [
                 'email' => $email,
                 'user_type' => $userType,
                 'trace' => $e->getTraceAsString(),

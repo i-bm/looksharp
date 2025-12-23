@@ -7,7 +7,7 @@
         <div class="row g-0 auth-row">
             <!-- Left Panel - Dark Background -->
             <div class="col-lg-6 d-none d-lg-flex auth-side-panel"
-                style="background-image: url('{{ asset('assets/img/feature-img-6.jpg') }}');">
+                style="background-image: url('{{ asset('assets/img/feature-img-6.jpg') }}'); padding: 40px;">
                 <!-- Dark Overlay for better text readability at bottom -->
                 <div class="auth-side-panel-overlay"></div>
                 <div class="auth-side-panel-content">
@@ -43,14 +43,12 @@
                         @csrf
 
                         <input type="hidden" name="email" value="{{ $email }}">
-                        <input type="hidden" name="user_type" value="{{ $userType ?? null }}">
 
                         <div class="form-inner mb-20">
                             <label class="auth-label">Verification Code</label>
                             <input type="text" name="otp" id="otp" value="{{ old('otp', '') }}" placeholder="000000"
                                 required autocomplete="off" autofocus maxlength="6" pattern="[0-9]{6}"
-                                class="auth-otp-input"
-                                onfocus="this.classList.add('form-input-focus')"
+                                class="auth-otp-input" onfocus="this.classList.add('form-input-focus')"
                                 onblur="this.classList.remove('form-input-focus')"
                                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
                             @error('otp')
@@ -61,7 +59,8 @@
                         </div>
 
                         <!-- Submit Button -->
-                        <button type="submit" class="primary-btn1 btn-hover auth-form-button" style="margin-bottom: 20px;">
+                        <button type="submit" class="primary-btn1 btn-hover auth-form-button"
+                            style="margin-bottom: 20px;">
                             Verify & Continue
                         </button>
                     </form>
@@ -73,19 +72,20 @@
                         data-throttle-remaining="{{ isset($throttleInfo['remaining_seconds']) ? $throttleInfo['remaining_seconds'] : 0 }}">
                         <p class="auth-form-link mb-0">
                             Didn't receive the code?
-                            <button type="button" id="resend-otp-btn" class="border-none bg-white cursor-pointer" style="color: var(--primary-color2); font-weight: 600; font-family: var(--font-suse); font-size: 16px; padding: 0;">
+                            <button type="button" id="resend-otp-btn" class="border-none bg-white cursor-pointer"
+                                style="color: var(--primary-color2); font-weight: 600; font-family: var(--font-suse); font-size: 16px; padding: 0;">
                                 <span id="resend-text">Resend code</span>
                                 <span id="resend-countdown" class="hidden"></span>
                             </button>
                         </p>
-                        <div id="resend-error" class="hidden" style="color: var(--primary-color1); margin-top: 10px; font-size: 14px;">
+                        <div id="resend-error" class="hidden"
+                            style="color: var(--primary-color1); margin-top: 10px; font-size: 14px;">
                         </div>
                     </div>
 
                     <!-- Back to Login -->
                     <div class="auth-form-link-container">
-                        <a href="{{ route('login', ['userType' => $userType === 'university_admin' ? 'university' : ($userType ?? 'talent')]) }}"
-                            class="auth-form-link">
+                        <a href="{{ route('login') }}" class="auth-form-link">
                             ← Back to login
                         </a>
                     </div>

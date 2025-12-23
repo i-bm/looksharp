@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\UserRoleEnum;
 use App\Http\Controllers\Controller;
 use App\Services\AuthService;
+use App\Services\NotificationService;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class RegistrationController extends Controller
 {
@@ -15,80 +16,33 @@ class RegistrationController extends Controller
 
     protected $registrationService;
 
-    public function __construct(AuthService $authService, RegistrationService $registrationService)
+    protected $notificationService;
+
+    public function __construct(AuthService $authService, RegistrationService $registrationService, NotificationService $notificationService)
     {
         $this->authService = $authService;
         $this->registrationService = $registrationService;
+        $this->notificationService = $notificationService;
         $this->middleware('guest');
     }
 
     /**
-     * Show registration form for user type.
+     * Show unified registration form (email entry only, no user type selection).
      */
-    public function showRegistrationForm(Request $request, ?string $userType = null)
+    public function showRegistrationForm(Request $request)
     {
-        $validUserTypes = [UserRoleEnum::TALENT->value, UserRoleEnum::EMPLOYER->value, UserRoleEnum::UNIVERSITY->value];
-
-        // Validate user type
-        if ($userType && ! in_array($userType, $validUserTypes)) {
-            abort(404);
-        }
-
-        // Map 'university' to 'university_admin' for internal use
-        $internalUserType = $userType === 'university' ? 'university_admin' : $userType;
-
-        // Default to talent if no user type specified
-        $userType = $userType ?? UserRoleEnum::TALENT->value;
-        $internalUserType = $internalUserType ?? UserRoleEnum::TALENT->value;
-
         // Clear any existing registration session when starting new registration
         $this->clearRegistrationSession($request);
 
-        // Store user_type in session for secure multi-step flow
-        $request->session()->put('registration.user_type', $internalUserType);
-
-        $view = "auth.register.{$userType}";
-
-        return view($view, [
-            'userType' => $internalUserType,
-            'displayUserType' => $userType,
-        ]);
+        return view('auth.register.index');
     }
 
     /**
-     * Show email registration form.
-     */
-    public function showEmailRegistration(Request $request)
-    {
-        // Retrieve user_type from session (secure, server-side only)
-        $userType = $this->validateRegistrationSession($request);
-
-        if (! $userType) {
-            // If no valid session, redirect to registration selection
-            return redirect()->route('register');
-        }
-
-        // Map 'university_admin' to 'university' for display
-        $displayUserType = $userType === 'university_admin' ? 'university' : $userType;
-
-        return view('auth.register.email', [
-            'userType' => $userType,
-            'displayUserType' => $displayUserType,
-        ]);
-    }
-
-    /**
-     * Handle registration OTP request.
+     * Handle registration OTP request (unified - no user type required).
      */
     public function requestRegistrationOtp(Request $request)
     {
-        // Get user_type from session (secure, server-side only)
-        $userType = $this->validateRegistrationSession($request);
-
-        if (! $userType) {
-            return redirect()->route('register')
-                ->withErrors(['email' => 'Please select a registration type first.']);
-        }
+        Log::info('Registration OTP request received');
 
         // Get email from request (initial request) or session (resend)
         $email = $request->input('email') ?? $request->session()->get('registration.email');
@@ -109,15 +63,15 @@ class RegistrationController extends Controller
         }
 
         try {
-            $result = $this->authService->requestRegistrationOtp(
-                $email,
-                $userType
-            );
+            // Request OTP without user type (unified registration)
+            $result = $this->authService->requestRegistrationOtp($email);
 
             // Store email in session for OTP verification step
             $request->session()->put('registration.email', $email);
             // Store resend timestamp for countdown timer
             $request->session()->put('registration.otp_sent_at', now()->toIso8601String());
+
+            Log::info('Registration OTP sent successfully', ['email' => $email]);
 
             return redirect()->route('register.verify.show')
                 ->with('success', 'OTP has been sent to your email address.');
@@ -135,6 +89,11 @@ class RegistrationController extends Controller
                 ]);
             }
 
+            Log::error('Registration OTP request failed', [
+                'email' => $email,
+                'error' => $errorMessage,
+            ]);
+
             return back()
                 ->withInput()
                 ->withErrors(['email' => $errorMessage]);
@@ -146,16 +105,12 @@ class RegistrationController extends Controller
      */
     public function showOtpVerification(Request $request)
     {
-        // Retrieve email and user_type from session (secure, server-side only)
+        // Retrieve email from session
         $email = $request->session()->get('registration.email');
-        $userType = $this->validateRegistrationSession($request);
 
-        if (! $email || ! $userType) {
+        if (! $email) {
             return redirect()->route('register');
         }
-
-        // Map 'university_admin' to 'university' for display
-        $displayUserType = $userType === 'university_admin' ? 'university' : $userType;
 
         // Get resend timestamp and throttle info from session
         $otpSentAt = $request->session()->get('registration.otp_sent_at');
@@ -164,8 +119,6 @@ class RegistrationController extends Controller
 
         return view('auth.register.verify', [
             'email' => $email,
-            'userType' => $userType,
-            'displayUserType' => $displayUserType,
             'otpSentAt' => $otpSentAt,
             'throttleInfo' => $throttleInfo,
             'countdownSeconds' => $countdownSeconds,
@@ -173,15 +126,18 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Verify registration OTP and create account.
+     * Verify registration OTP and redirect to user type selection.
      */
     public function verifyRegistrationOtp(Request $request)
     {
-        // Get user_type and email from session (secure, server-side only)
-        $userType = $this->validateRegistrationSession($request);
+        Log::info('Registration OTP verification request received');
+
+        // Get email from session
         $email = $request->session()->get('registration.email');
 
-        if (! $userType || ! $email) {
+        if (! $email) {
+            Log::warning('Registration OTP verification failed: No email in session');
+
             return redirect()->route('register')
                 ->withErrors(['otp' => 'Session expired. Please start registration again.']);
         }
@@ -191,16 +147,96 @@ class RegistrationController extends Controller
         ]);
 
         try {
-            $user = $this->authService->verifyRegistrationOtp(
-                $email,
-                $validated['otp'],
-                $userType
-            );
+            // Verify OTP (doesn't create account yet)
+            $this->authService->verifyRegistrationOtp($email, $validated['otp']);
 
-            logger()->info('User verified', ['user' => $user]);
+            Log::info('Registration OTP verified successfully', ['email' => $email]);
+
+            // Mark OTP as verified in session
+            $request->session()->put('registration.otp_verified', true);
+
+            // Redirect to user type selection
+            return redirect()->route('register.select-type')
+                ->with('success', 'Email verified! Please select your account type.');
+
+        } catch (\Exception $e) {
+            Log::error('Registration OTP verification failed', [
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['otp' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Show user type selection page.
+     */
+    public function showUserTypeSelection(Request $request)
+    {
+        // Check if OTP was verified
+        $email = $request->session()->get('registration.email');
+        $otpVerified = $request->session()->get('registration.otp_verified', false);
+
+        if (! $email || ! $otpVerified) {
+            Log::warning('User type selection accessed without verified OTP', [
+                'email' => $email,
+                'otp_verified' => $otpVerified,
+            ]);
+
+            return redirect()->route('register')
+                ->withErrors(['error' => 'Please verify your email first.']);
+        }
+
+        return view('auth.register.user-type-selection', [
+            'email' => $email,
+        ]);
+    }
+
+    /**
+     * Handle user type selection and create account.
+     */
+    public function selectUserType(Request $request)
+    {
+        Log::info('User type selection request received');
+
+        // Check if OTP was verified
+        $email = $request->session()->get('registration.email');
+        $otpVerified = $request->session()->get('registration.otp_verified', false);
+
+        if (! $email || ! $otpVerified) {
+            Log::warning('User type selection failed: No verified OTP', [
+                'email' => $email,
+                'otp_verified' => $otpVerified,
+            ]);
+
+            return redirect()->route('register')
+                ->withErrors(['error' => 'Please verify your email first.']);
+        }
+
+        $validated = $request->validate([
+            'user_type' => ['required', 'string', 'in:talent,employer,university'],
+        ]);
+
+        // Map 'university' to 'university_admin' for internal use
+        $userType = $validated['user_type'] === 'university' ? 'university_admin' : $validated['user_type'];
+
+        try {
+            // Create user account with selected type
+            $user = $this->authService->completeRegistration($email, $userType);
+
+            Log::info('User account created successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'user_type' => $userType,
+            ]);
+
             // Initialize talent profile if user type is talent
             if ($user->user_type === 'talent') {
                 $this->registrationService->initializeTalentProfile($user);
+                Log::info('Talent profile initialized', ['user_id' => $user->id]);
             }
 
             // Clear registration session data after successful registration
@@ -209,13 +245,22 @@ class RegistrationController extends Controller
             // Log the user in
             Auth::login($user, true); // Remember user
 
+            Log::info('User logged in after registration', ['user_id' => $user->id]);
+
             // Redirect based on user type
             return $this->redirectAfterRegistration($user);
 
         } catch (\Exception $e) {
+            Log::error('User type selection failed', [
+                'email' => $email,
+                'user_type' => $userType,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return back()
                 ->withInput()
-                ->withErrors(['otp' => $e->getMessage()]);
+                ->withErrors(['user_type' => $e->getMessage()]);
         }
     }
 
@@ -235,30 +280,15 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Validate registration session and return user_type if valid.
-     *
-     * @return string|null Returns user_type if valid, null otherwise
-     */
-    protected function validateRegistrationSession(Request $request): ?string
-    {
-        $userType = $request->session()->get('registration.user_type');
-        $validUserTypes = ['talent', 'employer', 'university_admin'];
-
-        if (! $userType || ! in_array($userType, $validUserTypes)) {
-            return null;
-        }
-
-        return $userType;
-    }
-
-    /**
      * Clear all registration session data.
      */
     protected function clearRegistrationSession(Request $request): void
     {
         $request->session()->forget([
-            'registration.user_type',
             'registration.email',
+            'registration.otp_verified',
+            'registration.otp_sent_at',
+            'registration.throttle_info',
         ]);
     }
 }

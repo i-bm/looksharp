@@ -339,7 +339,7 @@ class TalentProfileController extends Controller
                             $request->session()->put('student_verification.student_email', $validated['student_email']);
 
                             // Redirect to OTP verification page
-                            return redirect()->route('talent.profile.verify-student-email')
+                            return redirect()->route('talent.profile.verify-student-email.show')
                                 ->with('success', 'OTP has been sent to your student email address.');
                         } else {
                             // Non-student verification flow (existing flow)

@@ -1,0 +1,118 @@
+/* ==========================================
+   USER TYPE SELECTION PAGE STYLES
+   ========================================== */
+
+.user-type-selection-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.user-type-card {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    padding: 24px;
+    background: var(--white-color);
+    transition: all 0.3s ease;
+    margin-bottom: 0;
+}
+
+.user-type-card:hover {
+    border-color: var(--primary-color2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.user-type-card.active {
+    border-color: var(--primary-color2);
+    background: rgba(236, 28, 36, 0.05);
+    box-shadow: 0 4px 12px rgba(236, 28, 36, 0.15);
+}
+
+.user-type-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.user-type-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.user-type-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(236, 28, 36, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--primary-color2);
+    transition: all 0.3s ease;
+}
+
+.user-type-card.active .user-type-icon {
+    background: var(--primary-color2);
+    color: var(--white-color);
+}
+
+.user-type-title {
+    font-family: var(--font-bricolageGrotesque);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--title-color);
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+.user-type-card.active .user-type-title {
+    color: var(--primary-color2);
+}
+
+.user-type-description {
+    font-family: var(--font-suse);
+    font-size: 14px;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .user-type-card {
+        padding: 20px;
+    }
+
+    .user-type-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .user-type-title {
+        font-size: 18px;
+    }
+
+    .user-type-description {
+        font-size: 13px;
+    }
+}
+
+/* Disabled submit button styling */
+#submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#submit-btn:disabled:hover {
+    transform: none;
+}
+

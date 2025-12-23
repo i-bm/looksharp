@@ -7,7 +7,7 @@
         <div class="row g-0 auth-row">
             <!-- Left Panel - Dark Background -->
             <div class="col-lg-6 d-none d-lg-flex auth-side-panel"
-                style="background-image: url('{{ asset('assets/img/feature-img-6.jpg') }}');">
+                style="background-image: url('{{ asset('assets/img/feature-img-6.jpg') }}'); padding: 40px;">
                 <!-- Dark Overlay for better text readability at bottom -->
                 <div class="auth-side-panel-overlay"></div>
                 <div class="auth-side-panel-content">
@@ -62,7 +62,7 @@
                         <!-- Submit Button -->
                         <button type="submit" class="primary-btn1 btn-hover auth-form-button"
                             style="margin-bottom: 20px;">
-                            Verify & Create Account
+                            Verify Email
                         </button>
                     </form>
 
@@ -85,7 +85,7 @@
 
                     <!-- Back to Registration -->
                     <div class="auth-form-link-container">
-                        <a href="{{ route('register.email') }}" class="auth-form-link">
+                        <a href="{{ route('register') }}" class="auth-form-link">
                             ← Back to registration
                         </a>
                     </div>

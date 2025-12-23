@@ -29,6 +29,10 @@
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
     <!-- Select Search Component CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/select-search.css') }}">
+    @if(request()->routeIs('register.select-type'))
+    <!-- User Type Selection CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/user-type-selection.css') }}">
+    @endif
 
     <title>{{config('app.name')}} {{ isset($title) ? " - ".$title : "" }}</title>
     <link rel="icon" href="{{ asset('assets/favicon.png') }}" type="image/gif" sizes="20x20">

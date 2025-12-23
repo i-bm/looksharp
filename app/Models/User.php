@@ -32,6 +32,7 @@ class User extends Authenticatable implements Auditable
         'password',
         'user_type',
         'phone_number',
+        'user_type_checked',
     ];
 
     /**
@@ -54,6 +55,7 @@ class User extends Authenticatable implements Auditable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'user_type_checked' => 'boolean',
         ];
     }
 

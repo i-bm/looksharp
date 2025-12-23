@@ -10,8 +10,12 @@
 <!-- Feather Icon JS -->
 <script src="{{ asset('assets/js/feather.min.js')}}"></script>
 
+<!-- Swiper JS -->
+<script src="{{ asset('assets/js/swiper-bundle.min.js')}}"></script>
+
 <!-- Custom JS -->
 <script src="{{ asset('assets/js/script.js')}}"></script>
+<script src="{{ asset('assets/js/custom.js')}}"></script>
 <!-- Select Search Component JS -->
 <script src="{{ asset('assets/js/select-search.js')}}"></script>
 <script>
