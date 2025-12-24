@@ -279,7 +279,7 @@ class EmployerProfileController extends Controller
     {
         return match ($step) {
             1 => 'Make sure the legal company name is filled.',
-            2 => 'Add at least country or city information.',
+            2 => 'Add at least one contact or location field (city, address, phone, email, website, or LinkedIn).',
             3 => 'Add your registration number or TIN.',
             4 => 'Add at least primary contact name or email.',
             default => 'Complete all required fields.',
@@ -341,14 +341,28 @@ class EmployerProfileController extends Controller
                         'linkedin_url' => ['nullable', 'url', 'max:255'],
                     ]);
 
-                    // Set default country if not provided
-                    if (empty($validated['country'])) {
+                    // Normalize empty strings to null and trim whitespace
+                    $fieldsToNormalize = ['city', 'address', 'phone_number', 'official_email', 'website', 'linkedin_url'];
+                    foreach ($fieldsToNormalize as $field) {
+                        if (isset($validated[$field])) {
+                            $trimmed = trim($validated[$field]);
+                            $validated[$field] = $trimmed !== '' ? $trimmed : null;
+                        } else {
+                            $validated[$field] = null;
+                        }
+                    }
+
+                    // Set default country if not provided, otherwise trim it
+                    if (empty($validated['country']) || trim($validated['country']) === '') {
                         $validated['country'] = 'Ghana';
+                    } else {
+                        $validated['country'] = trim($validated['country']);
                     }
 
                     Log::info('EmployerProfileController: saving step 2', [
                         'user_id' => $user->id,
                         'company_id' => $company->id,
+                        'validated_data' => $validated,
                     ]);
 
                     $this->employerCompanyService->updateCompanyByEmployer($user, $company, $validated);

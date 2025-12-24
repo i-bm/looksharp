@@ -98,23 +98,41 @@ class EmployerCompanyService
 
         try {
             return DB::transaction(function () use ($company, $data) {
-                $company->update([
-                    'legal_name' => (string) ($data['legal_name'] ?? $company->legal_name),
-                    'trading_name' => $data['trading_name'] ?? null,
-                    'industry' => $data['industry'] ?? null,
-                    'company_size' => $data['company_size'] ?? null,
-                    'website' => $data['website'] ?? null,
-                    'linkedin_url' => $data['linkedin_url'] ?? null,
-                    'country' => $data['country'] ?? 'Ghana',
-                    'city' => $data['city'] ?? null,
-                    'address' => $data['address'] ?? null,
-                    'official_email' => $data['official_email'] ?? null,
-                    'phone_number' => $data['phone_number'] ?? null,
-                    'registration_number' => $data['registration_number'] ?? null,
-                    'primary_contact_name' => $data['primary_contact_name'] ?? null,
-                    'primary_contact_title' => $data['primary_contact_title'] ?? null,
-                    'primary_contact_email' => $data['primary_contact_email'] ?? null,
-                    'primary_contact_phone' => $data['primary_contact_phone'] ?? null,
+                $updateData = [];
+
+                // Only include fields that are present in $data array
+                $fields = [
+                    'legal_name', 'trading_name', 'industry', 'company_size',
+                    'website', 'linkedin_url', 'country', 'city', 'address',
+                    'official_email', 'phone_number', 'registration_number',
+                    'primary_contact_name', 'primary_contact_title',
+                    'primary_contact_email', 'primary_contact_phone',
+                ];
+
+                foreach ($fields as $field) {
+                    if (array_key_exists($field, $data)) {
+                        if ($field === 'legal_name' && isset($data[$field])) {
+                            $updateData[$field] = (string) $data[$field];
+                        } else {
+                            $updateData[$field] = $data[$field];
+                        }
+                    }
+                }
+
+                // Ensure country has a default value if it's being updated
+                if (isset($updateData['country']) && (empty($updateData['country']) || trim($updateData['country']) === '')) {
+                    $updateData['country'] = 'Ghana';
+                }
+
+                Log::info('EmployerCompanyService: updating company', [
+                    'company_id' => $company->id,
+                    'update_data' => $updateData,
+                ]);
+
+                $company->update($updateData);
+
+                Log::info('EmployerCompanyService: company updated successfully', [
+                    'company_id' => $company->id,
                 ]);
 
                 return $company->fresh();
@@ -401,6 +419,14 @@ class EmployerCompanyService
     }
 
     /**
+     * Helper to check if a field value is not empty (handles null and whitespace).
+     */
+    private function isFieldNotEmpty(?string $value): bool
+    {
+        return ! empty($value) && trim($value) !== '';
+    }
+
+    /**
      * Get wizard progress information.
      */
     public function getWizardProgress(EmployerCompany $company): array
@@ -411,19 +437,25 @@ class EmployerCompanyService
 
         $steps = [
             'basic_info' => [
-                'completed' => ! empty($company->legal_name),
+                'completed' => $this->isFieldNotEmpty($company->legal_name),
                 'step' => 1,
             ],
             'contact_location' => [
-                'completed' => ! empty($company->country) || ! empty($company->city),
+                'completed' => $this->isFieldNotEmpty($company->city)
+                    || $this->isFieldNotEmpty($company->address)
+                    || $this->isFieldNotEmpty($company->phone_number)
+                    || $this->isFieldNotEmpty($company->official_email)
+                    || $this->isFieldNotEmpty($company->website)
+                    || $this->isFieldNotEmpty($company->linkedin_url),
                 'step' => 2,
             ],
             'registration' => [
-                'completed' => ! empty($company->registration_number),
+                'completed' => $this->isFieldNotEmpty($company->registration_number),
                 'step' => 3,
             ],
             'primary_contact' => [
-                'completed' => ! empty($company->primary_contact_name) || ! empty($company->primary_contact_email),
+                'completed' => $this->isFieldNotEmpty($company->primary_contact_name)
+                    || $this->isFieldNotEmpty($company->primary_contact_email),
                 'step' => 4,
             ],
         ];

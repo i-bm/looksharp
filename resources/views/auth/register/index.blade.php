@@ -17,7 +17,7 @@
                     <!-- Title -->
                     <div class="auth-form-header">
                         <h2 class="auth-form-title">
-                            Sign up with email1
+                            Sign up with email
                         </h2>
                         <p class="auth-form-subtitle">
                             Enter your email address to get started. We'll send you a verification code to create your

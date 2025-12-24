@@ -46,10 +46,13 @@
                             <label class="user-type-card" for="user_type_talent">
                                 <input type="radio" name="user_type" id="user_type_talent" value="talent" required>
                                 <div class="user-type-card-content">
-                                    <div class="user-type-icon">
-                                        <i class="bi bi-person-badge"></i>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-type-icon">
+                                            <i class="bi bi-person-badge"></i>
+                                        </div>
+                                        <h3 class="user-type-title">Talent</h3>
                                     </div>
-                                    <h3 class="user-type-title">Talent</h3>
+
                                     <p class="user-type-description">
                                         I'm a student or graduate looking for internships, attachments, and job
                                         opportunities.
@@ -61,10 +64,12 @@
                             <label class="user-type-card" for="user_type_employer">
                                 <input type="radio" name="user_type" id="user_type_employer" value="employer" required>
                                 <div class="user-type-card-content">
-                                    <div class="user-type-icon">
-                                        <i class="bi bi-building"></i>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-type-icon">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                        <h3 class="user-type-title">Employer</h3>
                                     </div>
-                                    <h3 class="user-type-title">Employer</h3>
                                     <p class="user-type-description">
                                         I represent a company looking to hire talented students and graduates.
                                     </p>
@@ -76,10 +81,12 @@
                                 <input type="radio" name="user_type" id="user_type_university" value="university"
                                     required>
                                 <div class="user-type-card-content">
-                                    <div class="user-type-icon">
-                                        <i class="bi bi-mortarboard"></i>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-type-icon">
+                                            <i class="bi bi-mortarboard"></i>
+                                        </div>
+                                        <h3 class="user-type-title">University</h3>
                                     </div>
-                                    <h3 class="user-type-title">University</h3>
                                     <p class="user-type-description">
                                         I'm from a university or institution managing student placements and career
                                         services.
