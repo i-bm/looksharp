@@ -429,11 +429,14 @@ class AuthService
      *
      * @throws \Exception
      */
-    public function completeRegistration(string $email, string $userType): User
+    public function completeRegistration(string $email, string $userType, ?string $firstName = null, ?string $lastName = null, ?string $phoneNumber = null): User
     {
         Log::info('Completing registration', [
             'email' => $email,
             'user_type' => $userType,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'has_phone' => !empty($phoneNumber),
         ]);
 
         // Check if user already exists
@@ -453,13 +456,23 @@ class AuthService
         }
 
         try {
-            $user = DB::transaction(function () use ($email, $userType, $otpToken) {
-                // Create new user (registration - user should not exist)
-                $extractedName = $this->extractNameFromEmail($email);
-                $nameParts = explode(' ', $extractedName, 2);
+            $user = DB::transaction(function () use ($email, $userType, $firstName, $lastName, $phoneNumber, $otpToken) {
+                // Use provided names if available, otherwise extract from email as fallback
+                $finalFirstName = $firstName;
+                $finalLastName = $lastName;
+
+                if (empty($finalFirstName) || empty($finalLastName)) {
+                    $extractedName = $this->extractNameFromEmail($email);
+                    $nameParts = explode(' ', $extractedName, 2);
+                    $finalFirstName = $finalFirstName ?? $nameParts[0] ?? 'User';
+                    $finalLastName = $finalLastName ?? ($nameParts[1] ?? '');
+                }
 
                 $user = User::create([
                     'email' => $email,
+                    'first_name' => $finalFirstName,
+                    'last_name' => $finalLastName,
+                    'phone_number' => $phoneNumber,
                     'user_type' => $userType,
                     'user_type_checked' => true,
                     'password' => null,
@@ -469,6 +482,8 @@ class AuthService
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'user_type' => $userType,
+                    'first_name' => $finalFirstName,
+                    'last_name' => $finalLastName,
                 ]);
 
                 // Map 'university_admin' back to 'university' for role assignment (enum uses 'university')

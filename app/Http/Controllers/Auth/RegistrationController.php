@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RegistrationOtpRequest;
+use App\Models\PendingRegistration;
 use App\Services\AuthService;
 use App\Services\NotificationService;
 use App\Services\RegistrationService;
@@ -44,22 +46,31 @@ class RegistrationController extends Controller
     {
         Log::info('Registration OTP request received');
 
-        // Get email from request (initial request) or session (resend)
-        $email = $request->input('email') ?? $request->session()->get('registration.email');
+        // Check if this is a resend (email already in session)
+        $emailFromSession = $request->session()->get('registration.email');
+        $isResend = !empty($emailFromSession);
 
-        if (! $email) {
-            // If no email in request or session, validate it as required
+        if ($isResend) {
+            // For resend, validate only consent
+            $request->validate([
+                'consent_to_privacy_policy' => ['required', 'accepted'],
+            ]);
+            $email = $emailFromSession;
+        } else {
+            // For initial request, validate all fields
             $validated = $request->validate([
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['required', 'string', 'max:255'],
+                'phone_number' => ['nullable', 'string', 'max:20'],
                 'email' => ['required', 'email', 'max:255'],
                 'consent_to_privacy_policy' => ['required', 'accepted'],
             ]);
             $email = $validated['email'];
-        } else {
-            // Validate email format if provided
-            $request->validate([
-                'email' => ['nullable', 'email', 'max:255'],
-                'consent_to_privacy_policy' => ['required', 'accepted'],
-            ]);
+
+            // Store basic info in session
+            $request->session()->put('registration.first_name', $validated['first_name']);
+            $request->session()->put('registration.last_name', $validated['last_name']);
+            $request->session()->put('registration.phone_number', $validated['phone_number'] ?? null);
         }
 
         try {
@@ -71,7 +82,10 @@ class RegistrationController extends Controller
             // Store resend timestamp for countdown timer
             $request->session()->put('registration.otp_sent_at', now()->toIso8601String());
 
-            Log::info('Registration OTP sent successfully', ['email' => $email]);
+            Log::info('Registration OTP sent successfully', [
+                'email' => $email,
+                'first_name' => $request->session()->get('registration.first_name'),
+            ]);
 
             return redirect()->route('register.verify.show')
                 ->with('success', 'OTP has been sent to your email address.');
@@ -155,6 +169,32 @@ class RegistrationController extends Controller
             // Mark OTP as verified in session
             $request->session()->put('registration.otp_verified', true);
 
+            // Create pending registration record for follow-up if user abandons
+            try {
+                $firstName = $request->session()->get('registration.first_name');
+                $lastName = $request->session()->get('registration.last_name');
+                $phoneNumber = $request->session()->get('registration.phone_number');
+
+                PendingRegistration::updateOrCreate(
+                    ['email' => $email],
+                    [
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'phone_number' => $phoneNumber,
+                        'otp_verified_at' => now(),
+                        'expires_at' => now()->addDays(7),
+                    ]
+                );
+
+                Log::info('Pending registration record created', ['email' => $email]);
+            } catch (\Exception $e) {
+                // Log but don't fail registration if pending record creation fails
+                Log::warning('Failed to create pending registration record', [
+                    'email' => $email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             // Redirect to user type selection
             return redirect()->route('register.select-type')
                 ->with('success', 'Email verified! Please select your account type.');
@@ -224,19 +264,37 @@ class RegistrationController extends Controller
         $userType = $validated['user_type'] === 'university' ? 'university_admin' : $validated['user_type'];
 
         try {
-            // Create user account with selected type
-            $user = $this->authService->completeRegistration($email, $userType);
+            // Retrieve basic info from session
+            $firstName = $request->session()->get('registration.first_name');
+            $lastName = $request->session()->get('registration.last_name');
+            $phoneNumber = $request->session()->get('registration.phone_number');
+
+            // Create user account with selected type and basic info
+            $user = $this->authService->completeRegistration($email, $userType, $firstName, $lastName, $phoneNumber);
 
             Log::info('User account created successfully', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'user_type' => $userType,
+                'first_name' => $firstName,
             ]);
 
             // Initialize talent profile if user type is talent
             if ($user->user_type === 'talent') {
                 $this->registrationService->initializeTalentProfile($user);
                 Log::info('Talent profile initialized', ['user_id' => $user->id]);
+            }
+
+            // Delete pending registration record since account was created
+            try {
+                PendingRegistration::where('email', $email)->delete();
+                Log::info('Pending registration record deleted after successful registration', ['email' => $email]);
+            } catch (\Exception $e) {
+                // Log but don't fail if deletion fails
+                Log::warning('Failed to delete pending registration record', [
+                    'email' => $email,
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             // Clear registration session data after successful registration
@@ -271,12 +329,15 @@ class RegistrationController extends Controller
     {
         $userType = $user->user_type;
 
-        return match ($userType) {
+        $redirect = match ($userType) {
             'talent' => redirect()->intended('/talent/profile/build'),
             'employer' => redirect()->intended('/dashboard'),
             'university_admin' => redirect()->intended('/dashboard'),
             default => redirect()->intended('/dashboard'),
         };
+
+        // Add welcome message with profile completion prompt
+        return $redirect->with('success', 'Welcome! Complete your profile to get started.');
     }
 
     /**
@@ -286,6 +347,9 @@ class RegistrationController extends Controller
     {
         $request->session()->forget([
             'registration.email',
+            'registration.first_name',
+            'registration.last_name',
+            'registration.phone_number',
             'registration.otp_verified',
             'registration.otp_sent_at',
             'registration.throttle_info',
