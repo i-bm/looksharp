@@ -15,10 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-            'talent.profile.complete' => \App\Http\Middleware\EnsureTalentProfileComplete::class,
-            'redirect.if.profile.complete' => \App\Http\Middleware\RedirectIfProfileComplete::class,
-            'redirect.if.company.complete' => \App\Http\Middleware\RedirectIfCompanyComplete::class,
-            'ensure.employer.company.complete' => \App\Http\Middleware\EnsureEmployerCompanyComplete::class,
+            'ensure.profile.complete' => \App\Http\Middleware\EnsureProfileComplete::class,
             'ensure.user.type.checked' => \App\Http\Middleware\EnsureUserTypeChecked::class,
         ]);
     })

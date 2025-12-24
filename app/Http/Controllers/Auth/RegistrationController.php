@@ -327,17 +327,10 @@ class RegistrationController extends Controller
      */
     protected function redirectAfterRegistration($user)
     {
-        $userType = $user->user_type;
-
-        $redirect = match ($userType) {
-            'talent' => redirect()->intended('/talent/profile/build'),
-            'employer' => redirect()->intended('/dashboard'),
-            'university_admin' => redirect()->intended('/dashboard'),
-            default => redirect()->intended('/dashboard'),
-        };
-
-        // Add welcome message with profile completion prompt
-        return $redirect->with('success', 'Welcome! Complete your profile to get started.');
+        // Redirect all users to dashboard after registration
+        // Middleware will handle redirecting to profile edit if completion < 70%
+        return redirect()->intended('/dashboard')
+            ->with('success', 'Welcome to Looksharp!');
     }
 
     /**

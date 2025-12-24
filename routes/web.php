@@ -98,16 +98,7 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
 
     // Talent-specific profile routes
     Route::middleware('role:talent')->prefix('talent')->name('talent.')->group(function () {
-        // Profile building routes (accessible even with incomplete profile)
-        // Redirects to profile page if profile is already complete
-        Route::middleware('redirect.if.profile.complete')->group(function () {
-            Route::get('/profile/build', [TalentProfileController::class, 'showWizard'])->name('profile.build');
-            Route::get('/profile/build/step/{step}', [TalentProfileController::class, 'step'])->name('profile.build.step');
-            Route::post('/profile/build/step/{step}', [TalentProfileController::class, 'saveStep'])->name('profile.build.save');
-            Route::get('/profile/complete', [TalentProfileController::class, 'complete'])->name('profile.complete');
-        });
-
-        // Student email verification routes (outside redirect middleware so user can verify)
+        // Student email verification routes
         Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email.show');
         Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
         Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
@@ -165,15 +156,6 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
 
     // Employer-specific profile routes
     Route::middleware('role:employer')->prefix('employer')->name('employer.')->group(function () {
-        // Profile building routes (accessible even with incomplete profile)
-        // Redirects to company page if profile is already complete
-        Route::middleware('redirect.if.company.complete')->group(function () {
-            Route::get('/company/build', [EmployerProfileController::class, 'showWizard'])->name('company.build');
-            Route::get('/company/build/step/{step}', [EmployerProfileController::class, 'step'])->name('company.build.step');
-            Route::post('/company/build/step/{step}', [EmployerProfileController::class, 'saveStep'])->name('company.build.save');
-            Route::get('/company/complete', [EmployerProfileController::class, 'complete'])->name('company.complete');
-        });
-
         Route::get('/company', [EmployerProfileController::class, 'show'])->name('company.show');
         Route::post('/company', [EmployerProfileController::class, 'store'])->name('company.store');
         Route::get('/company/edit', [EmployerProfileController::class, 'edit'])->name('company.edit');
@@ -190,8 +172,8 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::patch('/profile', [UniversityProfileController::class, 'update']);
     });
 
-    // Routes that require complete profile (for talent users) or complete company wizard (for employers)
-    Route::middleware(['talent.profile.complete', 'ensure.employer.company.complete'])->group(function () {
+    // Dashboard route - middleware will redirect to profile edit if completion < 70% (only once)
+    Route::middleware('ensure.profile.complete')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
 

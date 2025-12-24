@@ -69,6 +69,10 @@ class EmployerCompanyService
                     'user_id' => $employer->id,
                 ]);
 
+                // Calculate initial completeness score
+                $this->calculateCompletenessScore($company);
+                $company->refresh();
+
                 return $company;
             });
         } catch (\Exception $e) {
@@ -130,6 +134,10 @@ class EmployerCompanyService
                 ]);
 
                 $company->update($updateData);
+
+                // Recalculate completeness score after update
+                $this->calculateCompletenessScore($company);
+                $company->refresh();
 
                 Log::info('EmployerCompanyService: company updated successfully', [
                     'company_id' => $company->id,
@@ -250,6 +258,10 @@ class EmployerCompanyService
                     'admin_user_id' => $admin->id,
                     'invitee_user_id' => $invitee->id,
                 ]);
+
+                // Calculate initial completeness score
+                $this->calculateCompletenessScore($company);
+                $company->refresh();
 
                 return $company->fresh();
             });
@@ -424,6 +436,96 @@ class EmployerCompanyService
     private function isFieldNotEmpty(?string $value): bool
     {
         return ! empty($value) && trim($value) !== '';
+    }
+
+    /**
+     * Calculate and update company profile completeness score (0-100).
+     */
+    public function calculateCompletenessScore(EmployerCompany $company): void
+    {
+        Log::info('EmployerCompanyService: calculateCompletenessScore started', [
+            'company_id' => $company->id,
+        ]);
+
+        try {
+            $score = 0;
+            $maxScore = 100;
+
+            // Basic Info (25 points) - Core required fields
+            $basicInfoFields = [
+                'legal_name' => 10,
+                'trading_name' => 5,
+                'industry' => 5,
+                'company_size' => 5,
+            ];
+            foreach ($basicInfoFields as $field => $points) {
+                if ($this->isFieldNotEmpty($company->$field)) {
+                    $score += $points;
+                }
+            }
+
+            // Contact Information (20 points)
+            $contactFields = [
+                'official_email' => 5,
+                'phone_number' => 5,
+                'website' => 5,
+                'linkedin_url' => 5,
+            ];
+            foreach ($contactFields as $field => $points) {
+                if ($this->isFieldNotEmpty($company->$field)) {
+                    $score += $points;
+                }
+            }
+
+            // Location Information (15 points)
+            $locationFields = [
+                'country' => 5,
+                'city' => 5,
+                'address' => 5,
+            ];
+            foreach ($locationFields as $field => $points) {
+                if ($this->isFieldNotEmpty($company->$field)) {
+                    $score += $points;
+                }
+            }
+
+            // Registration Details (15 points)
+            if ($this->isFieldNotEmpty($company->registration_number)) {
+                $score += 15;
+            }
+
+            // Primary Contact Information (25 points)
+            $primaryContactFields = [
+                'primary_contact_name' => 10,
+                'primary_contact_title' => 5,
+                'primary_contact_email' => 5,
+                'primary_contact_phone' => 5,
+            ];
+            $primaryContactCount = 0;
+            foreach ($primaryContactFields as $field => $points) {
+                if ($this->isFieldNotEmpty($company->$field)) {
+                    $primaryContactCount++;
+                    $score += $points;
+                }
+            }
+
+            // Ensure score doesn't exceed 100
+            $score = min($maxScore, $score);
+
+            $company->update(['profile_completeness_score' => (int) round($score)]);
+
+            Log::info('EmployerCompanyService: completeness score calculated', [
+                'company_id' => $company->id,
+                'score' => (int) round($score),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: calculateCompletenessScore failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            // Don't throw - just log the error so it doesn't break the flow
+        }
     }
 
     /**

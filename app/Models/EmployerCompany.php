@@ -43,6 +43,7 @@ class EmployerCompany extends Model implements Auditable
         'primary_contact_phone',
         'status',
         'wizard_complete',
+        'profile_completeness_score',
         'submitted_at',
         'reviewed_by_user_id',
         'review_notes',

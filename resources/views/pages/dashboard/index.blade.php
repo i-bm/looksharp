@@ -225,7 +225,7 @@
                     </div>
                 </div>
                 <div class="dashboard-actions">
-                    <a href="{{ route('talent.profile.build') }}" class="dashboard-action-item">
+                    <a href="{{ route('talent.profile.edit') }}" class="dashboard-action-item">
                         <i class="bi bi-person-gear"></i>
                         <span>Complete Profile</span>
                     </a>
