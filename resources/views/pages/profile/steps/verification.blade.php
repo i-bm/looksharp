@@ -252,7 +252,14 @@
     }
 
     // Helper function to show error
+    // Uses global Toaster if available, falls back to inline error display
     function showVerificationError(message, isStudent = true) {
+        // Use global Toaster if available
+        if (window.Toaster && typeof window.Toaster.error === 'function') {
+            window.Toaster.error(message);
+        }
+        
+        // Also show inline error for backward compatibility
         const errorDiv = isStudent ? document.getElementById('verification-error') : document.getElementById('verification-error-non-student');
         const errorText = isStudent ? document.getElementById('verification-error-text') : document.getElementById('verification-error-text-non-student');
         if (errorDiv && errorText) {
@@ -315,6 +322,11 @@
                 e.preventDefault();
                 return false;
             }
+        }
+
+        // Show loading message if toaster is available
+        if (window.Toaster && typeof window.Toaster.info === 'function') {
+            window.Toaster.info('Uploading verification document... Please wait.');
         }
     });
 </script>

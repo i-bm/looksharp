@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -31,16 +32,33 @@ class EmployerCompany extends Model implements Auditable
         'company_size',
         'website',
         'linkedin_url',
+        'facebook_url',
+        'twitter_url',
+        'instagram_url',
+        'youtube_url',
         'country',
         'city',
+        'state_or_region',
         'address',
         'official_email',
         'phone_number',
         'registration_number',
+        'ghana_card_document_url',
+        'business_registration_document_url',
+        'verification_status',
+        'verified_at',
+        'verified_by_user_id',
         'primary_contact_name',
         'primary_contact_title',
         'primary_contact_email',
         'primary_contact_phone',
+        'owner_name',
+        'owner_ghana_card_number',
+        'owner_title',
+        'logo_url',
+        'company_description',
+        'year_established',
+        'video_url',
         'status',
         'wizard_complete',
         'profile_completeness_score',
@@ -59,10 +77,13 @@ class EmployerCompany extends Model implements Auditable
     {
         return [
             'wizard_complete' => 'boolean',
+            'year_established' => 'integer',
+            'is_featured' => 'boolean',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',
             'suspended_at' => 'datetime',
+            'verified_at' => 'datetime',
         ];
     }
 
@@ -76,11 +97,33 @@ class EmployerCompany extends Model implements Auditable
         return $this->belongsTo(User::class, 'reviewed_by_user_id');
     }
 
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by_user_id');
+    }
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'employer_company_members', 'employer_company_id', 'user_id')
             ->withPivot(['role'])
             ->withTimestamps();
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(EmployerCompanyPhoto::class)->orderBy('display_order');
+    }
+
+    public function testimonials(): HasMany
+    {
+        return $this->hasMany(EmployerCompanyTestimonial::class)->orderBy('display_order');
+    }
+
+    public function featuredTestimonials(): HasMany
+    {
+        return $this->hasMany(EmployerCompanyTestimonial::class)
+            ->where('is_featured', true)
+            ->orderBy('display_order');
     }
 
     public function isEditableByEmployer(): bool

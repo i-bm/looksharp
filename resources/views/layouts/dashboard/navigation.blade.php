@@ -1,4 +1,33 @@
 @if(Auth::check())
+@php
+// Get current route name
+$currentRoute = request()->route() ? request()->route()->getName() : '';
+
+// Dashboard route
+$isDashboard = $currentRoute === 'dashboard';
+
+// Talent routes
+$isTalentProfile = str_contains($currentRoute, 'talent.profile');
+$isOpportunities = str_contains($currentRoute, 'opportunit') || str_contains($currentRoute, 'job') || str_contains($currentRoute, 'browse');
+$isApplications = str_contains($currentRoute, 'application') || str_contains($currentRoute, 'applied');
+$isInterviews = str_contains($currentRoute, 'interview');
+$isJobAlerts = str_contains($currentRoute, 'alert') || str_contains($currentRoute, 'notification');
+
+// Employer routes
+$isEmployerCompany = str_contains($currentRoute, 'employer.company');
+$isEmployerJobs = str_contains($currentRoute, 'employer.job') || str_contains($currentRoute, 'employer.post');
+$isEmployerApplicants = str_contains($currentRoute, 'employer.applicant');
+$isEmployerAnalytics = str_contains($currentRoute, 'employer.analytics') || str_contains($currentRoute, 'analytics');
+
+// Settings routes
+$isSettings = str_contains($currentRoute, 'settings') || str_contains($currentRoute, 'account') || str_contains($currentRoute, 'security');
+
+// Parent menu expansion flags
+$isOpportunitiesParent = $isOpportunities || $isApplications;
+$isCompanyParent = $isEmployerCompany;
+$isJobsParent = $isEmployerJobs || $isEmployerApplicants;
+$isSettingsParent = $isSettings;
+@endphp
 <!-- Sidebar Backdrop (Mobile) -->
 <div class="dashboard-sidebar-backdrop" id="sidebarBackdrop"></div>
 
@@ -16,7 +45,7 @@
 
     <nav class="dashboard-nav">
         <ul class="dashboard-nav-list">
-            <li class="dashboard-nav-item dashboard-nav-item-active">
+            <li class="dashboard-nav-item {{ $isDashboard ? 'dashboard-nav-item-active' : '' }}">
                 <a href="{{ route('dashboard') }}" class="dashboard-nav-link">
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
@@ -25,7 +54,7 @@
 
             @if(Auth::check() && Auth::user()->hasRole('talent'))
             <!-- Talent Navigation -->
-            <li class="dashboard-nav-item">
+            <li class="dashboard-nav-item {{ $isTalentProfile ? 'dashboard-nav-item-active' : '' }}">
                 <a href="{{ route('talent.profile.show') }}" class="dashboard-nav-link">
                     <i class="bi bi-person-badge"></i>
                     <span>Profile</span>
@@ -33,20 +62,20 @@
 
             </li>
 
-            <li class="dashboard-nav-item dashboard-nav-item-parent">
+            <li class="dashboard-nav-item dashboard-nav-item-parent {{ $isOpportunitiesParent ? 'active' : '' }}">
                 <a href="#" class="dashboard-nav-link dashboard-nav-link-toggle">
                     <i class="bi bi-briefcase"></i>
                     <span>Opportunities</span>
                     <i class="bi bi-chevron-down dashboard-nav-arrow"></i>
                 </a>
                 <ul class="dashboard-nav-submenu">
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ $isOpportunities ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-search"></i>
                             <span>Browse Jobs</span>
                         </a>
                     </li>
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ $isApplications ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-file-check"></i>
                             <span>My Applications</span>
@@ -61,14 +90,14 @@
                 </ul>
             </li>
 
-            <li class="dashboard-nav-item">
+            <li class="dashboard-nav-item {{ $isInterviews ? 'dashboard-nav-item-active' : '' }}">
                 <a href="#" class="dashboard-nav-link">
                     <i class="bi bi-calendar-check"></i>
                     <span>Interviews</span>
                 </a>
             </li>
 
-            <li class="dashboard-nav-item">
+            <li class="dashboard-nav-item {{ $isJobAlerts ? 'dashboard-nav-item-active' : '' }}">
                 <a href="#" class="dashboard-nav-link">
                     <i class="bi bi-bell"></i>
                     <span>Job Alerts</span>
@@ -76,14 +105,14 @@
             </li>
             @elseif(Auth::check() && Auth::user()->hasRole('employer'))
             <!-- Employer Navigation -->
-            <li class="dashboard-nav-item dashboard-nav-item-parent">
+            <li class="dashboard-nav-item dashboard-nav-item-parent {{ $isCompanyParent ? 'active' : '' }}">
                 <a href="#" class="dashboard-nav-link dashboard-nav-link-toggle">
                     <i class="bi bi-building"></i>
                     <span>Company</span>
                     <i class="bi bi-chevron-down dashboard-nav-arrow"></i>
                 </a>
                 <ul class="dashboard-nav-submenu">
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ $isEmployerCompany ? 'dashboard-nav-item-active' : '' }}">
                         <a href="{{ route('employer.company.show') }}" class="dashboard-nav-link">
                             <i class="bi bi-building-gear"></i>
                             <span>Company Profile</span>
@@ -98,26 +127,26 @@
                 </ul>
             </li>
 
-            <li class="dashboard-nav-item dashboard-nav-item-parent">
+            <li class="dashboard-nav-item dashboard-nav-item-parent {{ $isJobsParent ? 'active' : '' }}">
                 <a href="#" class="dashboard-nav-link dashboard-nav-link-toggle">
                     <i class="bi bi-briefcase"></i>
                     <span>Jobs</span>
                     <i class="bi bi-chevron-down dashboard-nav-arrow"></i>
                 </a>
                 <ul class="dashboard-nav-submenu">
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ $isEmployerJobs ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-plus-circle"></i>
                             <span>Post Job</span>
                         </a>
                     </li>
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ $isEmployerJobs ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-list-ul"></i>
                             <span>All Jobs</span>
                         </a>
                     </li>
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ $isEmployerApplicants ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-people"></i>
                             <span>Applicants</span>
@@ -126,7 +155,7 @@
                 </ul>
             </li>
 
-            <li class="dashboard-nav-item">
+            <li class="dashboard-nav-item {{ $isEmployerAnalytics ? 'dashboard-nav-item-active' : '' }}">
                 <a href="#" class="dashboard-nav-link">
                     <i class="bi bi-graph-up"></i>
                     <span>Analytics</span>
@@ -134,26 +163,26 @@
             </li>
             @endif
 
-            <li class="dashboard-nav-item dashboard-nav-item-parent">
+            <li class="dashboard-nav-item dashboard-nav-item-parent {{ $isSettingsParent ? 'active' : '' }}">
                 <a href="#" class="dashboard-nav-link dashboard-nav-link-toggle">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                     <i class="bi bi-chevron-down dashboard-nav-arrow"></i>
                 </a>
                 <ul class="dashboard-nav-submenu">
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ str_contains($currentRoute, 'account') ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-person"></i>
                             <span>Account</span>
                         </a>
                     </li>
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ str_contains($currentRoute, 'security') ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-shield-lock"></i>
                             <span>Security</span>
                         </a>
                     </li>
-                    <li class="dashboard-nav-item">
+                    <li class="dashboard-nav-item {{ str_contains($currentRoute, 'notification') ? 'dashboard-nav-item-active' : '' }}">
                         <a href="#" class="dashboard-nav-link">
                             <i class="bi bi-bell"></i>
                             <span>Notifications</span>

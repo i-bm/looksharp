@@ -143,8 +143,9 @@ class TalentProfileController extends Controller
 
         // Check if file was uploaded
         if (! $request->hasFile('photo')) {
-            // Check if it's a size issue
-            if ($request->getContentLength() > 0) {
+            // Check if it's a size issue - if Content-Length header exists and is large, file might be too big
+            $contentLength = $request->header('Content-Length');
+            if ($contentLength && (int) $contentLength > 0) {
                 $maxSize = ini_get('upload_max_filesize');
 
                 return response()->json([
@@ -281,8 +282,9 @@ class TalentProfileController extends Controller
 
         // Check if file was uploaded
         if (! $request->hasFile('resume')) {
-            // Check if it's a size issue
-            if ($request->getContentLength() > 0) {
+            // Check if it's a size issue - if Content-Length header exists and is large, file might be too big
+            $contentLength = $request->header('Content-Length');
+            if ($contentLength && (int) $contentLength > 0) {
                 $maxSize = ini_get('upload_max_filesize');
 
                 return response()->json([

@@ -1198,7 +1198,31 @@ function toggleGigsEndDate(checkbox) {
 }
 
 // Show message
+// Uses global Toaster if available, falls back to old method for backward compatibility
 function showMessage(type, message) {
+    // Use global Toaster if available
+    if (window.Toaster && typeof window.Toaster.show === 'function') {
+        // Map types to Toaster methods
+        switch (type) {
+            case "success":
+                window.Toaster.success(message);
+                break;
+            case "error":
+                window.Toaster.error(message);
+                break;
+            case "info":
+                window.Toaster.info(message);
+                break;
+            case "warning":
+                window.Toaster.warning(message);
+                break;
+            default:
+                window.Toaster.info(message);
+        }
+        return;
+    }
+
+    // Fallback to old method
     const messagesContainer = document.getElementById("profile-messages");
     if (!messagesContainer) return;
 

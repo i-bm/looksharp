@@ -29,6 +29,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
     <!-- Select Search Component CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/select-search.css') }}">
+    <!-- Autocomplete Component CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/autocomplete.css') }}">
     @if(request()->routeIs('register.select-type'))
     <!-- User Type Selection CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/user-type-selection.css') }}">

@@ -20,5 +20,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Handle PostTooLargeException (413 errors)
+        $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'File is too large. Maximum upload size is 20MB. Please try a smaller file.',
+                ], 413);
+            }
+
+            return redirect()->back()
+                ->with('error', 'File is too large. Maximum upload size is 20MB. Please try a smaller file.');
+        });
     })->create();

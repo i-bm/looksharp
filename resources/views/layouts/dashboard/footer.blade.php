@@ -26,7 +26,12 @@
 <!-- Custom JS -->
 <script src="{{ asset('assets/js/select-dropdown.js') }}"></script>
 <script src="{{ asset('assets/js/custom.js') }}"></script>
-
+<!-- Select Search Component JS -->
+<script src="{{ asset('assets/js/select-search.js')}}"></script>
+<!-- Autocomplete Component JS -->
+<script src="{{ asset('assets/js/autocomplete.js') }}"></script>
+<!-- Toaster JS -->
+<script src="{{ asset('assets/js/toaster.js') }}"></script>
 <!-- Dashboard JS -->
 <script>
     // Sidebar Toggle

@@ -6,12 +6,17 @@ namespace App\Services;
 
 use App\Enums\EmployerCompanyMemberRoleEnum;
 use App\Enums\EmployerCompanyStatusEnum;
+use App\Enums\EmployerCompanyVerificationStatusEnum;
 use App\Enums\UserRoleEnum;
 use App\Models\EmployerCompany;
 use App\Models\EmployerCompanyMember;
+use App\Models\EmployerCompanyPhoto;
+use App\Models\EmployerCompanyTestimonial;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class EmployerCompanyService
 {
@@ -107,10 +112,13 @@ class EmployerCompanyService
                 // Only include fields that are present in $data array
                 $fields = [
                     'legal_name', 'trading_name', 'industry', 'company_size',
-                    'website', 'linkedin_url', 'country', 'city', 'address',
+                    'website', 'linkedin_url', 'facebook_url', 'twitter_url',
+                    'instagram_url', 'youtube_url', 'country', 'city', 'state_or_region', 'address',
                     'official_email', 'phone_number', 'registration_number',
                     'primary_contact_name', 'primary_contact_title',
                     'primary_contact_email', 'primary_contact_phone',
+                    'owner_name', 'owner_ghana_card_number', 'owner_title',
+                    'company_description', 'year_established', 'video_url',
                 ];
 
                 foreach ($fields as $field) {
@@ -451,12 +459,12 @@ class EmployerCompanyService
             $score = 0;
             $maxScore = 100;
 
-            // Basic Info (25 points) - Core required fields
+            // Basic Info (20 points) - Core required fields
             $basicInfoFields = [
-                'legal_name' => 10,
-                'trading_name' => 5,
-                'industry' => 5,
-                'company_size' => 5,
+                'legal_name' => 8,
+                'trading_name' => 4,
+                'industry' => 4,
+                'company_size' => 4,
             ];
             foreach ($basicInfoFields as $field => $points) {
                 if ($this->isFieldNotEmpty($company->$field)) {
@@ -464,12 +472,12 @@ class EmployerCompanyService
                 }
             }
 
-            // Contact Information (20 points)
+            // Contact Information (15 points)
             $contactFields = [
-                'official_email' => 5,
-                'phone_number' => 5,
-                'website' => 5,
-                'linkedin_url' => 5,
+                'official_email' => 4,
+                'phone_number' => 4,
+                'website' => 4,
+                'linkedin_url' => 3,
             ];
             foreach ($contactFields as $field => $points) {
                 if ($this->isFieldNotEmpty($company->$field)) {
@@ -477,11 +485,11 @@ class EmployerCompanyService
                 }
             }
 
-            // Location Information (15 points)
+            // Location Information (10 points)
             $locationFields = [
-                'country' => 5,
-                'city' => 5,
-                'address' => 5,
+                'country' => 3,
+                'city' => 4,
+                'address' => 3,
             ];
             foreach ($locationFields as $field => $points) {
                 if ($this->isFieldNotEmpty($company->$field)) {
@@ -489,24 +497,41 @@ class EmployerCompanyService
                 }
             }
 
-            // Registration Details (15 points)
+            // Registration Details (10 points)
             if ($this->isFieldNotEmpty($company->registration_number)) {
-                $score += 15;
+                $score += 10;
             }
 
-            // Primary Contact Information (25 points)
+            // Verification Documents (15 points) - Critical for COM-04
+            if ($this->isFieldNotEmpty($company->ghana_card_document_url)) {
+                $score += 8;
+            }
+            if ($this->isFieldNotEmpty($company->business_registration_document_url)) {
+                $score += 7;
+            }
+
+            // Primary Contact Information (15 points)
             $primaryContactFields = [
-                'primary_contact_name' => 10,
-                'primary_contact_title' => 5,
-                'primary_contact_email' => 5,
-                'primary_contact_phone' => 5,
+                'primary_contact_name' => 6,
+                'primary_contact_title' => 3,
+                'primary_contact_email' => 3,
+                'primary_contact_phone' => 3,
             ];
-            $primaryContactCount = 0;
             foreach ($primaryContactFields as $field => $points) {
                 if ($this->isFieldNotEmpty($company->$field)) {
-                    $primaryContactCount++;
                     $score += $points;
                 }
+            }
+
+            // Branding (15 points) - For EMP-02
+            if ($this->isFieldNotEmpty($company->logo_url)) {
+                $score += 5;
+            }
+            if ($this->isFieldNotEmpty($company->company_description)) {
+                $score += 5;
+            }
+            if ($this->isFieldNotEmpty($company->video_url)) {
+                $score += 5;
             }
 
             // Ensure score doesn't exceed 100
@@ -621,5 +646,474 @@ class EmployerCompanyService
             'current_step' => $currentStep,
             'completeness_score' => $completenessScore,
         ];
+    }
+
+    /**
+     * Upload Ghana Card document for verification.
+     */
+    public function uploadGhanaCardDocument(User $employer, EmployerCompany $company, UploadedFile $file): EmployerCompany
+    {
+        Log::info('EmployerCompanyService: uploadGhanaCardDocument started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $file) {
+                // Delete old document if exists
+                if ($company->ghana_card_document_url) {
+                    Storage::disk('private')->delete($company->ghana_card_document_url);
+                }
+
+                // Store new document in private storage
+                $path = $file->store('employer-verification/ghana-cards', 'private');
+                $company->update([
+                    'ghana_card_document_url' => $path,
+                    'verification_status' => EmployerCompanyVerificationStatusEnum::PENDING->value,
+                ]);
+
+                Log::info('EmployerCompanyService: Ghana Card document uploaded', [
+                    'company_id' => $company->id,
+                ]);
+
+                $this->calculateCompletenessScore($company);
+
+                return $company->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: uploadGhanaCardDocument failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to upload Ghana Card document. Please try again.');
+        }
+    }
+
+    /**
+     * Upload business registration document for verification.
+     */
+    public function uploadBusinessRegistrationDocument(User $employer, EmployerCompany $company, UploadedFile $file): EmployerCompany
+    {
+        Log::info('EmployerCompanyService: uploadBusinessRegistrationDocument started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $file) {
+                // Delete old document if exists
+                if ($company->business_registration_document_url) {
+                    Storage::disk('private')->delete($company->business_registration_document_url);
+                }
+
+                // Store new document in private storage
+                $path = $file->store('employer-verification/business-registration', 'private');
+                $company->update([
+                    'business_registration_document_url' => $path,
+                    'verification_status' => EmployerCompanyVerificationStatusEnum::PENDING->value,
+                ]);
+
+                Log::info('EmployerCompanyService: business registration document uploaded', [
+                    'company_id' => $company->id,
+                ]);
+
+                $this->calculateCompletenessScore($company);
+
+                return $company->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: uploadBusinessRegistrationDocument failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to upload business registration document. Please try again.');
+        }
+    }
+
+    /**
+     * Upload company logo.
+     */
+    public function uploadLogo(User $employer, EmployerCompany $company, UploadedFile $file): EmployerCompany
+    {
+        Log::info('EmployerCompanyService: uploadLogo started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $file) {
+                // Delete old logo if exists
+                if ($company->logo_url) {
+                    Storage::disk('public')->delete($company->logo_url);
+                }
+
+                // Store new logo in public storage
+                $path = $file->store('employer-logos', 'public');
+                $company->update(['logo_url' => $path]);
+
+                Log::info('EmployerCompanyService: logo uploaded', [
+                    'company_id' => $company->id,
+                ]);
+
+                $this->calculateCompletenessScore($company);
+
+                return $company->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: uploadLogo failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to upload logo. Please try again.');
+        }
+    }
+
+    /**
+     * Upload company photo.
+     */
+    public function uploadPhoto(User $employer, EmployerCompany $company, UploadedFile $file, ?string $caption = null): EmployerCompanyPhoto
+    {
+        Log::info('EmployerCompanyService: uploadPhoto started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $file, $caption) {
+                // Store photo in public storage
+                $path = $file->store('employer-photos', 'public');
+
+                // Get the highest display order
+                $maxOrder = EmployerCompanyPhoto::where('employer_company_id', $company->id)
+                    ->max('display_order') ?? 0;
+
+                $photo = EmployerCompanyPhoto::create([
+                    'employer_company_id' => $company->id,
+                    'photo_url' => $path,
+                    'caption' => $caption,
+                    'display_order' => $maxOrder + 1,
+                ]);
+
+                Log::info('EmployerCompanyService: photo uploaded', [
+                    'company_id' => $company->id,
+                    'photo_id' => $photo->id,
+                ]);
+
+                return $photo;
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: uploadPhoto failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to upload photo. Please try again.');
+        }
+    }
+
+    /**
+     * Delete company photo.
+     */
+    public function deletePhoto(User $employer, EmployerCompany $company, string $photoId): bool
+    {
+        Log::info('EmployerCompanyService: deletePhoto started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+            'photo_id' => $photoId,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $photoId) {
+                $photo = EmployerCompanyPhoto::where('employer_company_id', $company->id)
+                    ->findOrFail($photoId);
+
+                // Delete file from storage
+                if ($photo->photo_url) {
+                    Storage::disk('public')->delete($photo->photo_url);
+                }
+
+                // Delete record
+                $deleted = $photo->delete();
+
+                Log::info('EmployerCompanyService: photo deleted', [
+                    'company_id' => $company->id,
+                    'photo_id' => $photoId,
+                ]);
+
+                return $deleted;
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: deletePhoto failed', [
+                'company_id' => $company->id,
+                'photo_id' => $photoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to delete photo. Please try again.');
+        }
+    }
+
+    /**
+     * Upload company video (max 90 seconds).
+     */
+    public function uploadVideo(User $employer, EmployerCompany $company, UploadedFile $file): EmployerCompany
+    {
+        Log::info('EmployerCompanyService: uploadVideo started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $file) {
+                // Delete old video if exists
+                if ($company->video_url) {
+                    Storage::disk('public')->delete($company->video_url);
+                }
+
+                // Store new video in public storage
+                $path = $file->store('employer-videos', 'public');
+                $company->update(['video_url' => $path]);
+
+                Log::info('EmployerCompanyService: video uploaded', [
+                    'company_id' => $company->id,
+                ]);
+
+                $this->calculateCompletenessScore($company);
+
+                return $company->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: uploadVideo failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to upload video. Please try again.');
+        }
+    }
+
+    /**
+     * Create testimonial.
+     */
+    public function createTestimonial(User $employer, EmployerCompany $company, array $data, ?UploadedFile $photoFile = null): EmployerCompanyTestimonial
+    {
+        Log::info('EmployerCompanyService: createTestimonial started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $data, $photoFile) {
+                $photoUrl = null;
+                if ($photoFile) {
+                    $photoUrl = $photoFile->store('employer-testimonials', 'public');
+                }
+
+                // Get the highest display order
+                $maxOrder = EmployerCompanyTestimonial::where('employer_company_id', $company->id)
+                    ->max('display_order') ?? 0;
+
+                $testimonial = EmployerCompanyTestimonial::create([
+                    'employer_company_id' => $company->id,
+                    'employee_name' => $data['employee_name'],
+                    'employee_title' => $data['employee_title'] ?? null,
+                    'testimonial' => $data['testimonial'],
+                    'photo_url' => $photoUrl,
+                    'display_order' => $maxOrder + 1,
+                    'is_featured' => $data['is_featured'] ?? false,
+                ]);
+
+                Log::info('EmployerCompanyService: testimonial created', [
+                    'company_id' => $company->id,
+                    'testimonial_id' => $testimonial->id,
+                ]);
+
+                return $testimonial;
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: createTestimonial failed', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to create testimonial. Please try again.');
+        }
+    }
+
+    /**
+     * Update testimonial.
+     */
+    public function updateTestimonial(User $employer, EmployerCompany $company, string $testimonialId, array $data, ?UploadedFile $photoFile = null): EmployerCompanyTestimonial
+    {
+        Log::info('EmployerCompanyService: updateTestimonial started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+            'testimonial_id' => $testimonialId,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $testimonialId, $data, $photoFile) {
+                $testimonial = EmployerCompanyTestimonial::where('employer_company_id', $company->id)
+                    ->findOrFail($testimonialId);
+
+                $updateData = [
+                    'employee_name' => $data['employee_name'] ?? $testimonial->employee_name,
+                    'employee_title' => $data['employee_title'] ?? $testimonial->employee_title,
+                    'testimonial' => $data['testimonial'] ?? $testimonial->testimonial,
+                    'is_featured' => $data['is_featured'] ?? $testimonial->is_featured,
+                ];
+
+                if ($photoFile) {
+                    // Delete old photo if exists
+                    if ($testimonial->photo_url) {
+                        Storage::disk('public')->delete($testimonial->photo_url);
+                    }
+                    $updateData['photo_url'] = $photoFile->store('employer-testimonials', 'public');
+                }
+
+                $testimonial->update($updateData);
+
+                Log::info('EmployerCompanyService: testimonial updated', [
+                    'company_id' => $company->id,
+                    'testimonial_id' => $testimonialId,
+                ]);
+
+                return $testimonial->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: updateTestimonial failed', [
+                'company_id' => $company->id,
+                'testimonial_id' => $testimonialId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to update testimonial. Please try again.');
+        }
+    }
+
+    /**
+     * Delete testimonial.
+     */
+    public function deleteTestimonial(User $employer, EmployerCompany $company, string $testimonialId): bool
+    {
+        Log::info('EmployerCompanyService: deleteTestimonial started', [
+            'user_id' => $employer->id,
+            'company_id' => $company->id,
+            'testimonial_id' => $testimonialId,
+        ]);
+
+        if (! $company->isEditableByEmployer()) {
+            throw new \Exception('This company profile cannot be edited in its current status.');
+        }
+
+        try {
+            return DB::transaction(function () use ($company, $testimonialId) {
+                $testimonial = EmployerCompanyTestimonial::where('employer_company_id', $company->id)
+                    ->findOrFail($testimonialId);
+
+                // Delete photo from storage if exists
+                if ($testimonial->photo_url) {
+                    Storage::disk('public')->delete($testimonial->photo_url);
+                }
+
+                // Delete record
+                $deleted = $testimonial->delete();
+
+                Log::info('EmployerCompanyService: testimonial deleted', [
+                    'company_id' => $company->id,
+                    'testimonial_id' => $testimonialId,
+                ]);
+
+                return $deleted;
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: deleteTestimonial failed', [
+                'company_id' => $company->id,
+                'testimonial_id' => $testimonialId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to delete testimonial. Please try again.');
+        }
+    }
+
+    /**
+     * Admin: Verify company documents.
+     */
+    public function adminVerifyCompany(User $admin, EmployerCompany $company, bool $verified, ?string $notes = null): EmployerCompany
+    {
+        Log::info('EmployerCompanyService: adminVerifyCompany started', [
+            'admin_user_id' => $admin->id,
+            'company_id' => $company->id,
+            'verified' => $verified,
+        ]);
+
+        if (! $admin->hasRole(UserRoleEnum::ADMIN->value)) {
+            throw new \Exception('Unauthorized.');
+        }
+
+        try {
+            return DB::transaction(function () use ($admin, $company, $verified) {
+                $status = $verified
+                    ? EmployerCompanyVerificationStatusEnum::VERIFIED->value
+                    : EmployerCompanyVerificationStatusEnum::REJECTED->value;
+
+                $company->update([
+                    'verification_status' => $status,
+                    'verified_at' => $verified ? now() : null,
+                    'verified_by_user_id' => $admin->id,
+                ]);
+
+                Log::info('EmployerCompanyService: company verification updated', [
+                    'company_id' => $company->id,
+                    'status' => $status,
+                ]);
+
+                return $company->fresh();
+            });
+        } catch (\Exception $e) {
+            Log::error('EmployerCompanyService: adminVerifyCompany failed', [
+                'admin_user_id' => $admin->id,
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to update company verification. Please try again.');
+        }
     }
 }

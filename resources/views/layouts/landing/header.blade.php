@@ -37,6 +37,8 @@
     <link href="{{ asset('assets/css/boxicons.min.css') }}" rel="stylesheet">
     <!--  Style CSS  -->
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <!-- Toaster CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/toaster.css') }}">
     <!-- Title -->
     <title> {{config('app.name')}} {{isset($title) ? " - ". $title : "" }}</title>
     <link rel="icon" href="{{ asset('assets/favicon.png') }}" type="image/gif" sizes="20x20">

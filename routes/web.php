@@ -17,6 +17,7 @@ use App\Http\Controllers\Pages\EmployerController;
 use App\Http\Controllers\Pages\HomeController;
 use App\Http\Controllers\Pages\StudentController;
 use App\Http\Controllers\Pages\UniversityController;
+use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\TalentProfileController;
 use App\Http\Controllers\UniversityProfileController;
 use Illuminate\Support\Facades\Route;
@@ -162,6 +163,23 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::put('/company', [EmployerProfileController::class, 'update'])->name('company.update');
         Route::patch('/company', [EmployerProfileController::class, 'update']);
         Route::post('/company/submit', [EmployerProfileController::class, 'submit'])->name('company.submit');
+
+        // Section-specific AJAX update routes
+        Route::put('/company/basic-info', [EmployerProfileController::class, 'updateBasicInfo'])->name('company.basic-info.update');
+        Route::put('/company/contact-location', [EmployerProfileController::class, 'updateContactLocation'])->name('company.contact-location.update');
+        Route::put('/company/registration', [EmployerProfileController::class, 'updateRegistration'])->name('company.registration.update');
+        Route::put('/company/primary-contact', [EmployerProfileController::class, 'updatePrimaryContact'])->name('company.primary-contact.update');
+
+        // File upload routes
+        Route::post('/company/verification-document', [EmployerProfileController::class, 'uploadVerificationDocument'])->name('company.verification-document.upload');
+        Route::post('/company/logo', [EmployerProfileController::class, 'uploadLogo'])->name('company.logo.upload');
+        Route::post('/company/photo', [EmployerProfileController::class, 'uploadPhoto'])->name('company.photo.upload');
+        Route::delete('/company/photo/{photoId}', [EmployerProfileController::class, 'deletePhoto'])->name('company.photo.delete');
+        Route::post('/company/video', [EmployerProfileController::class, 'uploadVideo'])->name('company.video.upload');
+
+        // Testimonial routes
+        Route::post('/company/testimonial', [EmployerProfileController::class, 'storeTestimonial'])->name('company.testimonial.store');
+        Route::delete('/company/testimonial/{testimonialId}', [EmployerProfileController::class, 'deleteTestimonial'])->name('company.testimonial.delete');
     });
 
     // University-specific profile routes
@@ -223,6 +241,15 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/employer-companies/{id}/reject', [AdminEmployerCompanyController::class, 'reject'])->name('employer-companies.reject');
         Route::post('/employer-companies/{id}/suspend', [AdminEmployerCompanyController::class, 'suspend'])->name('employer-companies.suspend');
     });
+});
+
+// Autocomplete API Routes (accessible to all users with rate limiting)
+Route::prefix('api/autocomplete')->name('api.autocomplete.')->middleware('throttle:60,1')->group(function () {
+    Route::get('/skills', [AutocompleteController::class, 'skills'])->name('skills');
+    Route::get('/industries', [AutocompleteController::class, 'industries'])->name('industries');
+    Route::get('/institutions', [AutocompleteController::class, 'institutions'])->name('institutions');
+    Route::get('/cities', [AutocompleteController::class, 'cities'])->name('cities');
+    Route::get('/regions', [AutocompleteController::class, 'regions'])->name('regions');
 });
 
 // Public profile routes (accessible without authentication)

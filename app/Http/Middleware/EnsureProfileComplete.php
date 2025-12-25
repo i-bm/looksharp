@@ -21,10 +21,13 @@ class EnsureProfileComplete
         'talent.profile.edit',
         'talent.profile.update',
         'employer.company.show',
-        'employer.company.edit',
         'employer.company.update',
         'employer.company.store',
         'employer.company.submit',
+        'employer.company.basic-info.update',
+        'employer.company.contact-location.update',
+        'employer.company.registration.update',
+        'employer.company.primary-contact.update',
         'logout',
     ];
 
@@ -111,20 +114,20 @@ class EnsureProfileComplete
     {
         $company = $user->employerCompany();
 
-        // If no company exists, redirect to edit page to create one (only once)
+        // If no company exists, redirect to show page (which will auto-create draft company)
         if (! $company) {
             $hasBeenPrompted = $request->session()->get('profile_completion_prompted', false);
 
             if (! $hasBeenPrompted) {
-                // First time - set flag and redirect to company edit
+                // First time - set flag and redirect to company show
                 $request->session()->put('profile_completion_prompted', true);
 
-                Log::info('EnsureProfileComplete: redirecting employer to company edit (no company exists)', [
+                Log::info('EnsureProfileComplete: redirecting employer to company show (no company exists)', [
                     'user_id' => $user->id,
                     'route' => $request->route()?->getName(),
                 ]);
 
-                return redirect()->route('employer.company.edit')
+                return redirect()->route('employer.company.show')
                     ->with('info', 'Please create your company profile to get started.');
             }
 
@@ -146,17 +149,17 @@ class EnsureProfileComplete
         $hasBeenPrompted = $request->session()->get('profile_completion_prompted', false);
 
         if (! $hasBeenPrompted) {
-            // First time - set flag and redirect to company edit
+            // First time - set flag and redirect to company show
             $request->session()->put('profile_completion_prompted', true);
 
-            Log::info('EnsureProfileComplete: redirecting employer to company edit (first time)', [
+            Log::info('EnsureProfileComplete: redirecting employer to company show (first time)', [
                 'user_id' => $user->id,
                 'company_id' => $company->id,
                 'completion_score' => $completionScore,
                 'route' => $request->route()?->getName(),
             ]);
 
-            return redirect()->route('employer.company.edit')
+            return redirect()->route('employer.company.show')
                 ->with('info', 'Please complete your company profile to get the most out of Looksharp.');
         }
 
@@ -186,10 +189,13 @@ class EnsureProfileComplete
         }
 
         if (str_starts_with($routeName, 'employer.company.show') ||
-            str_starts_with($routeName, 'employer.company.edit') ||
             str_starts_with($routeName, 'employer.company.update') ||
             str_starts_with($routeName, 'employer.company.store') ||
-            str_starts_with($routeName, 'employer.company.submit')) {
+            str_starts_with($routeName, 'employer.company.submit') ||
+            str_starts_with($routeName, 'employer.company.basic-info.update') ||
+            str_starts_with($routeName, 'employer.company.contact-location.update') ||
+            str_starts_with($routeName, 'employer.company.registration.update') ||
+            str_starts_with($routeName, 'employer.company.primary-contact.update')) {
             return true;
         }
 
