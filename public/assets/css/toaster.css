@@ -1,0 +1,76 @@
+/**
+ * Global Toaster Notification Styles
+ */
+
+#global-toast-container {
+    z-index: 9999;
+    top: 20px;
+    right: 20px;
+    max-width: 400px;
+    width: 100%;
+}
+
+/* Toast animations */
+#global-toast-container .toast {
+    margin-bottom: 10px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.375rem;
+}
+
+/* Ensure toasts don't overlap on mobile */
+@media (max-width: 576px) {
+    #global-toast-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: calc(100% - 20px);
+    }
+}
+
+/* Toast body styling */
+#global-toast-container .toast-body {
+    flex: 1;
+    padding: 0.75rem;
+    word-wrap: break-word;
+}
+
+#global-toast-container .toast-body i {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Close button styling */
+#global-toast-container .btn-close {
+    opacity: 0.8;
+    padding: 0.5rem;
+}
+
+#global-toast-container .btn-close:hover {
+    opacity: 1;
+}
+
+/* Success toast */
+#global-toast-container .toast.bg-success {
+    background-color: #198754 !important;
+}
+
+/* Error toast */
+#global-toast-container .toast.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* Warning toast */
+#global-toast-container .toast.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+/* Info toast */
+#global-toast-container .toast.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+/* Ensure proper stacking */
+#global-toast-container .toast:not(:last-child) {
+    margin-bottom: 10px;
+}
+

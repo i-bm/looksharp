@@ -35,7 +35,7 @@ class AdminDashboardController extends Controller
             $stats = $this->adminService->getDashboardStats();
             $title = 'Admin Dashboard';
 
-            return view('admin.dashboard.index', compact('stats', 'title'));
+            return view('pages.dashboard.admin.dashboard.index', compact('stats', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load admin dashboard', [
                 'user_id' => $user->id,

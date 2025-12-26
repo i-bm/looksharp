@@ -30,6 +30,6 @@ class ContentModerationController extends Controller
             'pending_approvals' => 0,
         ];
 
-        return view('admin.content.index', compact('contentStats', 'title'));
+        return view('pages.dashboard.admin.content-moderation.index', compact('contentStats', 'title'));
     }
 }

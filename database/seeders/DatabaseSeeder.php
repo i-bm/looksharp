@@ -17,6 +17,10 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             InstitutionsSeeder::class,
             CareerInterestAreasSeeder::class,
+            IndustrySeeder::class,
+            CountriesSeeder::class,
+            RegionsSeeder::class,
+            CitiesSeeder::class,
         ]);
     }
 }

@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -31,6 +32,7 @@ class User extends Authenticatable implements Auditable
         'password',
         'user_type',
         'phone_number',
+        'user_type_checked',
     ];
 
     /**
@@ -53,6 +55,7 @@ class User extends Authenticatable implements Auditable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'user_type_checked' => 'boolean',
         ];
     }
 
@@ -70,6 +73,18 @@ class User extends Authenticatable implements Auditable
     public function adminProfile(): HasOne
     {
         return $this->hasOne(AdminProfile::class);
+    }
+
+    public function employerCompanies(): BelongsToMany
+    {
+        return $this->belongsToMany(EmployerCompany::class, 'employer_company_members', 'user_id', 'employer_company_id')
+            ->withPivot(['role'])
+            ->withTimestamps();
+    }
+
+    public function employerCompany(): ?EmployerCompany
+    {
+        return $this->employerCompanies()->first();
     }
 
     public function getFullNameAttribute(): string

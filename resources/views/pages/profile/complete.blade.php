@@ -52,7 +52,7 @@
                 style="text-decoration: none; padding: 12px 24px; display: inline-block;">
                 Go to Dashboard
             </a>
-            <a href="{{ route('talent.profile.build') }}"
+            <a href="{{ route('talent.profile.edit') }}"
                 style="text-decoration: none; padding: 12px 24px; display: inline-block; border: 2px solid #2196F3; color: #2196F3; border-radius: 4px;">
                 Edit Profile
             </a>

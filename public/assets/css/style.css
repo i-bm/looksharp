@@ -139,7 +139,7 @@ body {
   padding: 0;
   font-family: var(--font-suse);
   color: var(--title-color);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 30px;
 }
@@ -23964,5 +23964,396 @@ header.style-4 .mobile-logo-area .menu-close-btn:hover i {
 @media (max-width: 991px) {
   .industries-contact-section .industries-contact-area .industries-img-area-wrapper .industries-img-bg {
     display: none;
+  }
+}
+
+/*=====================================
+Employer Company Profile Sections CSS
+========================================*/
+.company-profile-sections {
+  margin-top: 30px;
+}
+
+.company-section-card {
+  border: 1px solid var(--borders-color);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  background-color: var(--white-color);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.company-section-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(245, 48, 3, 0.2);
+}
+
+.company-section-card.collapsed .company-section-content {
+  display: none;
+}
+
+.company-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--borders-color);
+  transition: background-color 0.3s ease;
+}
+
+.company-section-header:hover {
+  background-color: #fafafa;
+}
+
+.company-section-card.collapsed .company-section-header {
+  border-bottom: none;
+}
+
+.company-section-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.company-section-status-icon {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.company-section-status-icon .bi-check-circle-fill {
+  color: #28a745;
+}
+
+.company-section-status-icon .bi-exclamation-circle {
+  color: #ffc107;
+}
+
+.company-section-status-icon .bi-circle {
+  color: var(--text-color);
+  opacity: 0.4;
+}
+
+.company-section-title {
+  font-family: var(--font-bricolageGrotesque);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--title-color);
+  line-height: 1.4;
+}
+
+.company-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-edit-section {
+  font-family: var(--font-suse);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--borders-color);
+  background-color: var(--white-color);
+  color: var(--title-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit-section:hover {
+  background-color: var(--primary-color1);
+  border-color: var(--primary-color1);
+  color: var(--white-color);
+}
+
+.btn-edit-section i {
+  font-size: 14px;
+}
+
+.btn-toggle-section {
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  color: var(--text-color);
+  font-size: 18px;
+  transition: transform 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.btn-toggle-section:hover {
+  background-color: #f8f9fa;
+  color: var(--primary-color1);
+}
+
+.company-section-card.collapsed .btn-toggle-section i {
+  transform: rotate(-90deg);
+}
+
+.company-section-content {
+  padding: 24px;
+}
+
+.company-section-view {
+  animation: fadeIn 0.3s ease;
+}
+
+.company-section-view strong {
+  font-family: var(--font-suse);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--title-color);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.company-section-view > div > div {
+  font-family: var(--font-suse);
+  font-size: 15px;
+  color: var(--text-color);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.company-section-view > div > div:last-child {
+  margin-bottom: 0;
+}
+
+.company-section-view a {
+  color: var(--primary-color1);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.company-section-view a:hover {
+  color: #d42800;
+  text-decoration: underline;
+}
+
+.company-section-edit {
+  animation: fadeIn 0.3s ease;
+}
+
+.company-section-edit-form {
+  margin-top: 0;
+}
+
+.company-section-edit-form .form-label {
+  font-family: var(--font-suse);
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: var(--title-color);
+}
+
+.company-section-edit-form .form-control {
+  font-family: var(--font-suse);
+  border: 1px solid var(--borders-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 15px;
+  color: var(--title-color);
+  transition: all 0.3s ease;
+  background-color: var(--white-color);
+}
+
+.company-section-edit-form .form-control:focus {
+  border-color: var(--primary-color1);
+  box-shadow: 0 0 0 3px rgba(245, 48, 3, 0.1);
+  outline: none;
+}
+
+.company-section-edit-form .form-control::placeholder {
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.company-section-edit-form .invalid-feedback {
+  display: none;
+  font-size: 12px;
+  color: #dc3545;
+  margin-top: 6px;
+  font-family: var(--font-suse);
+}
+
+.company-section-edit-form .form-control.is-invalid {
+  border-color: #dc3545;
+}
+
+.company-section-edit-form .form-control.is-invalid ~ .invalid-feedback {
+  display: block;
+}
+
+.company-section-edit-form .btn-primary,
+.company-section-edit-form .primary-btn1 {
+  font-family: var(--font-suse);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 24px;
+  border-radius: 24px;
+  background-color: var(--primary-color1);
+  border: none;
+  color: var(--white-color);
+  transition: all 0.6s ease;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.company-section-edit-form .primary-btn1:hover {
+  color: var(--white-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(235, 21, 66, 0.4);
+}
+
+/* Animation span - must be empty or last child */
+.company-section-edit-form .primary-btn1 > span:last-child {
+  position: absolute;
+  display: block;
+  width: 0;
+  height: 0;
+  border-radius: 36px;
+  background-color: var(--black-color);
+  transition: all 0.6s ease;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+}
+
+.company-section-edit-form .primary-btn1:hover > span:last-child {
+  width: 225%;
+  height: 1000.5px;
+}
+
+/* Text and icon positioning - ensure they're above animation */
+.company-section-edit-form .primary-btn1 svg {
+  fill: var(--white-color);
+  transition: all 0.6s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.company-section-edit-form .primary-btn1:hover svg {
+  fill: var(--white-color);
+  transform: translateX(2px);
+}
+
+/* Ensure button text and content are visible above animation span */
+.company-section-edit-form .primary-btn1 > *:not(span:last-child) {
+  position: relative;
+  z-index: 2;
+}
+
+.company-section-edit-form .btn-outline-secondary {
+  font-family: var(--font-suse);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background-color: var(--white-color);
+  border: 1px solid var(--borders-color);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+.company-section-edit-form .btn-outline-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: var(--text-color);
+  color: var(--title-color);
+}
+
+.company-section-edit-form .form-text {
+  font-family: var(--font-suse);
+  font-size: 13px;
+  color: var(--text-color);
+  margin-top: 6px;
+}
+
+.company-section-edit-form .alert-info {
+  font-family: var(--font-suse);
+  font-size: 14px;
+  background-color: #e7f3ff;
+  border-color: #b8daff;
+  color: #004085;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+/* Profile completeness badge styling */
+.dashboard-card-subtitle strong {
+  color: var(--primary-color1);
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .company-section-header {
+    padding: 16px 20px;
+    flex-wrap: wrap;
+  }
+
+  .company-section-title {
+    font-size: 16px;
+  }
+
+  .company-section-content {
+    padding: 20px;
+  }
+
+  .company-section-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+
+  .btn-edit-section {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .company-section-header {
+    padding: 14px 16px;
+  }
+
+  .company-section-content {
+    padding: 16px;
+  }
+
+  .company-section-title {
+    font-size: 15px;
+  }
+
+  .company-section-status-icon {
+    font-size: 20px;
   }
 }/*# sourceMappingURL=style.css.map */

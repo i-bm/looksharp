@@ -86,8 +86,7 @@
 
     <!-- Back to Verification -->
     <div style="text-align: center; margin-top: 20px;">
-        <a href="{{ route('talent.profile.build.step', ['step' => 4]) }}"
-            style="color: #666; text-decoration: none; font-size: 14px;">
+        <a href="{{ route('talent.profile.edit') }}" style="color: #666; text-decoration: none; font-size: 14px;">
             ← Back to verification
         </a>
     </div>

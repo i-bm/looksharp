@@ -582,6 +582,26 @@
             },
         },
     });
+    // Auth Login Slider
+    var swiper = new Swiper(".auth-login-slider", {
+        slidesPerView: 1,
+        speed: 1500,
+        spaceBetween: 0,
+        autoplay: {
+            delay: 4000,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: true,
+        },
+        effect: "fade",
+        fadeEffect: {
+            crossFade: true,
+        },
+        loop: true,
+        pagination: {
+            el: ".auth-slider-pagination",
+            clickable: true,
+        },
+    });
     //wow js
     jQuery(window).on("load", function () {
         new WOW().init();

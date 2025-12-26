@@ -39,392 +39,6 @@ class TalentProfileController extends Controller
     }
 
     /**
-     * Show the profile wizard or redirect to current step.
-     */
-    public function showWizard(): RedirectResponse|View
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        $progress = $this->profileService->getWizardProgress($profile);
-
-        // Redirect to current step
-        return redirect()->route('talent.profile.build.step', ['step' => $progress['current_step']]);
-    }
-
-    /**
-     * Show a specific wizard step.
-     */
-    public function step(int $step): View|RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        $progress = $this->profileService->getWizardProgress($profile);
-        $validSteps = [1, 2, 3, 4];
-
-        // Validate step number
-        if (! in_array($step, $validSteps)) {
-            return redirect()->route('talent.profile.build.step', ['step' => $progress['current_step']]);
-        }
-
-        // Don't allow skipping ahead to incomplete steps
-        if ($step > $progress['current_step']) {
-            $currentStepName = $this->getStepName($progress['current_step']);
-            $requirements = $this->getStepRequirements($progress['current_step']);
-            $errorMessage = "Please complete Step {$progress['current_step']}: {$currentStepName} before proceeding. {$requirements}";
-
-            return redirect()->route('talent.profile.build.step', ['step' => $progress['current_step']])
-                ->with('error', $errorMessage);
-        }
-
-        $data = [
-            'profile' => $profile,
-            'progress' => $progress,
-            'current_step' => $step,
-        ];
-
-        // Add step-specific data
-        switch ($step) {
-            case 1:
-                // Basic info - no additional data needed
-                break;
-            case 2:
-                $data['education'] = $profile->education()->with('institution')->get();
-                $data['institutions'] = Institution::where('is_active', true)->orderBy('name')->get();
-                break;
-            case 3:
-                $data['skills'] = $profile->skills;
-                break;
-            case 4:
-                // Verification - pass current status options
-                $data['currentStatusOptions'] = CurrentStatusEnum::cases();
-                break;
-        }
-
-        return view('pages.profile.wizard', $data);
-    }
-
-    /**
-     * Get user-friendly step name for a given step number.
-     */
-    private function getStepName(int $step): string
-    {
-        return match ($step) {
-            1 => 'Basic Info',
-            2 => 'Education',
-            3 => 'Skills',
-            4 => 'Verification',
-            default => 'Unknown Step',
-        };
-    }
-
-    /**
-     * Get step-specific requirements message.
-     */
-    private function getStepRequirements(int $step): string
-    {
-        return match ($step) {
-            1 => 'Make sure all required fields (name, date of birth, gender, location, and profile photo) are filled.',
-            2 => 'Add at least one education record.',
-            3 => 'Add at least 3 skills.',
-            4 => 'Upload your verification document.',
-            default => 'Complete all required fields.',
-        };
-    }
-
-    /**
-     * Save step data.
-     */
-    public function saveStep(Request $request, int $step): RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        try {
-            switch ($step) {
-                case 1:
-                    // Validate individual date fields
-                    $validated = $request->validate([
-                        'first_name' => ['required', 'string', 'max:255'],
-                        'last_name' => ['required', 'string', 'max:255'],
-                        'dob_day' => ['required', 'integer', 'min:1', 'max:31'],
-                        'dob_month' => ['required', 'integer', 'min:1', 'max:12'],
-                        'dob_year' => ['required', 'integer', 'min:'.(date('Y') - 100), 'max:'.(date('Y') - 13)],
-                        'gender' => ['required', Rule::in(['male', 'female', 'other', 'prefer_not_to_say'])],
-                        'location' => ['required', 'string', 'max:255'],
-                        'phone_number' => ['nullable', 'string', 'max:20'],
-                        'bio' => ['nullable', 'string', 'max:1000'],
-                    ]);
-
-                    // Validate and combine day, month, year into date_of_birth using helper
-                    $dateValidation = validateDateComponents(
-                        $validated['dob_day'],
-                        $validated['dob_month'],
-                        $validated['dob_year']
-                    );
-
-                    if (! $dateValidation['valid']) {
-                        return back()
-                            ->withInput()
-                            ->withErrors(['date_of_birth' => $dateValidation['error']]);
-                    }
-
-                    // Validate that the date is before today and user is at least 13 years old
-                    $dateOfBirth = Carbon::createFromFormat('Y-m-d', $dateValidation['date']);
-                    if ($dateOfBirth->isFuture() || $dateOfBirth->age < 13) {
-                        return back()
-                            ->withInput()
-                            ->withErrors(['date_of_birth' => 'Date of birth must be in the past and you must be at least 13 years old.']);
-                    }
-
-                    // Add combined date to validated data
-                    $validated['date_of_birth'] = $dateValidation['date'];
-                    unset($validated['dob_day'], $validated['dob_month'], $validated['dob_year']);
-
-                    $this->profileService->saveBasicInfo($profile, $validated);
-                    break;
-
-                case 2:
-                    // Validate individual date fields
-                    $validated = $request->validate([
-                        'institution_id' => ['nullable', 'uuid', 'exists:institutions,id'],
-                        'degree_type' => ['required', Rule::enum(\App\Enums\DegreeTypeEnum::class)],
-                        'field_of_study' => ['required', 'string', 'max:255'],
-                        'level' => ['nullable', 'string', 'max:50'],
-                        'start_date_day' => ['required', 'integer', 'min:1', 'max:31'],
-                        'start_date_month' => ['required', 'integer', 'min:1', 'max:12'],
-                        'start_date_year' => ['required', 'integer', 'min:'.(date('Y') - 50), 'max:'.(date('Y') + 10)],
-                        'end_date_day' => ['nullable', 'integer', 'min:1', 'max:31'],
-                        'end_date_month' => ['nullable', 'integer', 'min:1', 'max:12'],
-                        'end_date_year' => ['nullable', 'integer', 'min:'.(date('Y') - 50), 'max:'.(date('Y') + 10)],
-                        'is_current' => ['boolean'],
-                        'gpa' => ['nullable', 'numeric', 'min:0', 'max:5'],
-                        'is_primary' => ['boolean'],
-                    ]);
-
-                    // Validate and combine start_date
-                    $startDateValidation = validateDateComponents(
-                        $validated['start_date_day'],
-                        $validated['start_date_month'],
-                        $validated['start_date_year']
-                    );
-
-                    if (! $startDateValidation['valid']) {
-                        return back()
-                            ->withInput()
-                            ->withErrors(['start_date' => $startDateValidation['error']]);
-                    }
-
-                    $validated['start_date'] = $startDateValidation['date'];
-                    unset($validated['start_date_day'], $validated['start_date_month'], $validated['start_date_year']);
-
-                    // Validate and combine end_date if provided and not currently enrolled
-                    if (! ($validated['is_current'] ?? false)) {
-                        if (! empty($validated['end_date_day']) && ! empty($validated['end_date_month']) && ! empty($validated['end_date_year'])) {
-                            $endDateValidation = validateDateComponents(
-                                $validated['end_date_day'],
-                                $validated['end_date_month'],
-                                $validated['end_date_year']
-                            );
-
-                            if (! $endDateValidation['valid']) {
-                                return back()
-                                    ->withInput()
-                                    ->withErrors(['end_date' => $endDateValidation['error']]);
-                            }
-
-                            // Validate that end_date is after start_date
-                            $startDate = Carbon::createFromFormat('Y-m-d', $validated['start_date']);
-                            $endDate = Carbon::createFromFormat('Y-m-d', $endDateValidation['date']);
-
-                            if ($endDate->lte($startDate)) {
-                                return back()
-                                    ->withInput()
-                                    ->withErrors(['end_date' => 'End date must be after start date.']);
-                            }
-
-                            $validated['end_date'] = $endDateValidation['date'];
-                        }
-                        unset($validated['end_date_day'], $validated['end_date_month'], $validated['end_date_year']);
-                    } else {
-                        // Clear end_date if currently enrolled
-                        $validated['end_date'] = null;
-                        unset($validated['end_date_day'], $validated['end_date_month'], $validated['end_date_year']);
-                    }
-
-                    $this->profileService->saveEducation($profile, $validated);
-                    break;
-
-                case 3:
-                    $validated = $request->validate([
-                        'skill_name' => ['required', 'string', 'max:255'],
-                        'proficiency_level' => ['required', Rule::enum(\App\Enums\ProficiencyLevelEnum::class)],
-                    ]);
-                    $this->profileService->saveSkill($profile, $validated);
-                    break;
-
-                case 4:
-                    try {
-                        Log::info('Verification step 4 submission started', [
-                            'user_id' => Auth::id(),
-                            'has_file' => $request->hasFile('verification_document'),
-                        ]);
-
-                        // First validate current_status to determine which fields are needed
-                        $currentStatus = $request->validate([
-                            'current_status' => ['required', Rule::enum(CurrentStatusEnum::class)],
-                        ])['current_status'];
-
-                        Log::info('Current status validated', [
-                            'user_id' => Auth::id(),
-                            'current_status' => $currentStatus,
-                            'has_file' => $request->hasFile('verification_document'),
-                        ]);
-
-                        // Build validation rules based on current_status
-                        $rules = [
-                            'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-                        ];
-
-                        if ($currentStatus === CurrentStatusEnum::STUDENT->value) {
-                            // Student-specific validation
-                            $rules['student_id'] = ['required', 'string', 'max:255'];
-                            $rules['student_email'] = ['required', 'email', 'max:255'];
-                        } else {
-                            // Non-student validation
-                            $rules['verification_type'] = ['required', Rule::in(['ghana_card', 'student_id', 'passport'])];
-                        }
-
-                        $validated = $request->validate($rules);
-                        $validated['current_status'] = $currentStatus;
-
-                        Log::info('Verification step 4 validation passed', [
-                            'user_id' => Auth::id(),
-                            'current_status' => $currentStatus,
-                        ]);
-
-                        // Handle student verification flow
-                        if ($validated['current_status'] === CurrentStatusEnum::STUDENT->value) {
-                            if (! $request->hasFile('verification_document')) {
-                                return back()
-                                    ->withInput()
-                                    ->withErrors(['verification_document' => 'Please upload your student ID card.']);
-                            }
-
-                            $otpResult = $this->profileService->submitStudentVerification(
-                                $profile,
-                                $validated['student_id'],
-                                $validated['student_email'],
-                                $request->file('verification_document')
-                            );
-
-                            // Store OTP sent timestamp for resend countdown
-                            $request->session()->put('student_verification.otp_sent_at', now()->toIso8601String());
-                            $request->session()->put('student_verification.student_email', $validated['student_email']);
-
-                            // Redirect to OTP verification page
-                            return redirect()->route('talent.profile.verify-student-email')
-                                ->with('success', 'OTP has been sent to your student email address.');
-                        } else {
-                            // Non-student verification flow (existing flow)
-                            if (! $request->hasFile('verification_document')) {
-                                return back()
-                                    ->withInput()
-                                    ->withErrors(['verification_document' => 'Please upload your verification document.']);
-                            }
-
-                            $this->profileService->uploadVerificationDocument(
-                                $profile,
-                                $request->file('verification_document'),
-                                $validated['verification_type']
-                            );
-
-                            // Update current status for non-students
-                            $profile->update(['current_status' => $validated['current_status']]);
-                        }
-                    } catch (\Illuminate\Validation\ValidationException $e) {
-                        $errors = $e->errors();
-                        if (isset($errors['verification_document'])) {
-                            $docErrors = $errors['verification_document'];
-                            $errorMessage = is_array($docErrors) ? implode(', ', $docErrors) : $docErrors;
-
-                            // Improve error messages
-                            if (str_contains(strtolower($errorMessage), 'max')) {
-                                $errorMessage = 'File is too large. Maximum size is 5MB.';
-                            } elseif (str_contains(strtolower($errorMessage), 'mimes')) {
-                                $errorMessage = 'Invalid file type. Please upload a PDF, JPG, JPEG, or PNG file.';
-                            }
-
-                            return back()
-                                ->withInput()
-                                ->withErrors(['verification_document' => $errorMessage]);
-                        }
-                        throw $e;
-                    } catch (\Illuminate\Http\Exceptions\PostTooLargeException $e) {
-                        return back()
-                            ->withInput()
-                            ->withErrors(['verification_document' => 'File is too large. Maximum size is 5MB. Please try a smaller file.']);
-                    } catch (\Exception $e) {
-                        return back()
-                            ->withInput()
-                            ->withErrors(['error' => $e->getMessage()]);
-                    }
-                    break;
-
-                default:
-                    return redirect()->route('talent.profile.build')
-                        ->with('error', 'Invalid step.');
-            }
-
-            $progress = $this->profileService->getWizardProgress($profile);
-
-            // Check if all steps are completed
-            $allStepsComplete = true;
-            foreach ($progress['steps'] as $stepData) {
-                if (! $stepData['completed']) {
-                    $allStepsComplete = false;
-                    break;
-                }
-            }
-
-            // If all steps complete, redirect to completion page
-            if ($allStepsComplete) {
-
-                $profile->is_profile_building_step_completed = 1;
-                $profile->save();
-
-                return redirect()->route('talent.profile.show')
-                    ->with('success', 'Profile is almost complete! Please complete the remaining steps to get your profile verified.');
-            }
-
-            // Otherwise, go to next step
-            return redirect()->route('talent.profile.build.step', ['step' => $step + 1])
-                ->with('success', 'Step saved successfully!');
-
-        } catch (\Exception $e) {
-            return back()
-                ->withInput()
-                ->withErrors(['error' => $e->getMessage()]);
-        }
-    }
-
-    /**
      * Show student email verification page.
      */
     public function showVerifyStudentEmail(): View|RedirectResponse
@@ -438,7 +52,7 @@ class TalentProfileController extends Controller
         }
 
         if (empty($profile->student_email)) {
-            return redirect()->route('talent.profile.build.step', ['step' => 4])
+            return redirect()->route('talent.profile.edit')
                 ->with('error', 'Please submit your student verification first.');
         }
 
@@ -529,8 +143,9 @@ class TalentProfileController extends Controller
 
         // Check if file was uploaded
         if (! $request->hasFile('photo')) {
-            // Check if it's a size issue
-            if ($request->getContentLength() > 0) {
+            // Check if it's a size issue - if Content-Length header exists and is large, file might be too big
+            $contentLength = $request->header('Content-Length');
+            if ($contentLength && (int) $contentLength > 0) {
                 $maxSize = ini_get('upload_max_filesize');
 
                 return response()->json([
@@ -667,8 +282,9 @@ class TalentProfileController extends Controller
 
         // Check if file was uploaded
         if (! $request->hasFile('resume')) {
-            // Check if it's a size issue
-            if ($request->getContentLength() > 0) {
+            // Check if it's a size issue - if Content-Length header exists and is large, file might be too big
+            $contentLength = $request->header('Content-Length');
+            if ($contentLength && (int) $contentLength > 0) {
                 $maxSize = ini_get('upload_max_filesize');
 
                 return response()->json([
@@ -764,7 +380,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteEducation($education);
 
-            return redirect()->route('talent.profile.build.step', ['step' => 2])
+            return redirect()->route('talent.profile.edit')
                 ->with('success', 'Education record removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -791,32 +407,11 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteSkill($skill);
 
-            return redirect()->route('talent.profile.build.step', ['step' => 3])
+            return redirect()->route('talent.profile.edit')
                 ->with('success', 'Skill removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
-    }
-
-    /**
-     * Show profile completion page.
-     */
-    public function complete(): View|RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found.');
-        }
-
-        $progress = $this->profileService->getWizardProgress($profile);
-
-        return view('pages.profile.complete', [
-            'profile' => $profile,
-            'progress' => $progress,
-        ]);
     }
 
     /**
@@ -943,7 +538,12 @@ class TalentProfileController extends Controller
 
             unset($validated['dob_day'], $validated['dob_month'], $validated['dob_year']);
 
-            $this->profileService->updateProfile($profile, $validated);
+            $updatedProfile = $this->profileService->updateProfile($profile, $validated);
+
+            // Clear session flag if profile reaches 70%+ completion
+            if ($updatedProfile->profile_completeness_score >= 70) {
+                $request->session()->forget('profile_completion_prompted');
+            }
 
             return redirect()->route('talent.profile.show')
                 ->with('success', 'Profile updated successfully!');

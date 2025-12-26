@@ -1,0 +1,204 @@
+/* Select Search Component Styles */
+.select-search-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.select-search-container {
+    position: relative;
+    width: 100%;
+}
+
+.select-search-display {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #fff;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-height: 42px;
+}
+
+.select-search-display:hover {
+    border-color: #999;
+}
+
+.select-search-display.active {
+    border-color: var(--primary-color2, #007bff);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.select-search-text {
+    flex: 1;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.select-search-text.placeholder {
+    color: #999;
+}
+
+.select-search-arrow {
+    color: #666;
+    font-size: 12px;
+    transition: transform 0.2s ease;
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
+.select-search-display.active .select-search-arrow {
+    transform: rotate(180deg);
+}
+
+.select-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 300px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.select-search-input-wrapper {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.select-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.select-search-input:focus {
+    border-color: var(--primary-color2, #007bff);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.select-search-options {
+    overflow-y: auto;
+    max-height: 250px;
+    padding: 4px 0;
+}
+
+.select-search-option {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: #333;
+    font-size: 14px;
+}
+
+.select-search-option:hover {
+    background-color: #f0f0f0;
+}
+
+.select-search-option.selected {
+    background-color: var(--primary-color2, #007bff);
+    color: #fff;
+}
+
+.select-search-option.highlighted {
+    background-color: #e3f2fd;
+}
+
+.select-search-option.no-results {
+    padding: 16px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    cursor: default;
+}
+
+.select-search-option.no-results:hover {
+    background-color: transparent;
+}
+
+.select-search-other-wrapper {
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.select-search-other-input {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.select-search-other-input:focus {
+    border-color: var(--primary-color2, #007bff);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+/* Disabled state */
+.select-search-display.disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Loading state */
+.select-search-display.loading {
+    position: relative;
+}
+
+.select-search-display.loading::after {
+    content: '';
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ddd;
+    border-top-color: var(--primary-color2, #007bff);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .select-search-dropdown {
+        max-height: 250px;
+    }
+
+    .select-search-options {
+        max-height: 200px;
+    }
+}
+

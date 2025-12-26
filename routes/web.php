@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\CareerInterestAreaController;
 use App\Http\Controllers\Admin\ContentModerationController;
+use App\Http\Controllers\Admin\EmployerCompanyController as AdminEmployerCompanyController;
 use App\Http\Controllers\Admin\InstitutionController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Pages\EmployerController;
 use App\Http\Controllers\Pages\HomeController;
 use App\Http\Controllers\Pages\StudentController;
 use App\Http\Controllers\Pages\UniversityController;
+use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\TalentProfileController;
 use App\Http\Controllers\UniversityProfileController;
 use Illuminate\Support\Facades\Route;
@@ -27,7 +29,9 @@ Route::get('/universities', [UniversityController::class, 'index'])->name('unive
 
 // Registration Routes
 Route::middleware('guest')->group(function () {
-    // Specific routes must come before the catch-all route
+    // Unified registration route (no user type in URL)
+    Route::get('/register', [RegistrationController::class, 'showRegistrationForm'])->name('register');
+
     // Rate limit registration OTP requests: 3 requests per 15 minutes per IP
     Route::post('/register/otp', [RegistrationController::class, 'requestRegistrationOtp'])
         ->middleware('throttle:'.env('REGISTRATION_OTP_THROTTLE', 3).','.env('REGISTRATION_OTP_THROTTLE_INTERVAL', 15))
@@ -39,11 +43,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/register/verify', [RegistrationController::class, 'verifyRegistrationOtp'])
         ->middleware('throttle:'.env('REGISTRATION_OTP_VERIFICATION_THROTTLE', 3).','.env('REGISTRATION_OTP_VERIFICATION_THROTTLE_INTERVAL', 15))
         ->name('register.verify');
-
-    Route::get('/register/email', [RegistrationController::class, 'showEmailRegistration'])->name('register.email');
-
-    // Catch-all route for registration forms (must be last)
-    Route::get('/register/{userType?}', [RegistrationController::class, 'showRegistrationForm'])->name('register');
 });
 
 // Passwordless Authentication Routes
@@ -61,8 +60,13 @@ Route::middleware('guest')->group(function () {
         ->middleware('throttle:'.env('LOGIN_OTP_VERIFICATION_THROTTLE', 10).','.env('LOGIN_OTP_VERIFICATION_THROTTLE_INTERVAL', 15))
         ->name('login.verify');
 
-    // Catch-all route for login forms (must be last)
-    Route::get('/login/{userType?}', [PasswordlessAuthController::class, 'showLoginForm'])->name('login');
+    // Unified login route
+    Route::get('/login', [PasswordlessAuthController::class, 'showLoginForm'])->name('login');
+
+    // Redirect old user-type-specific login routes to unified login (backward compatibility)
+    Route::get('/login/{userType}', function ($userType) {
+        return redirect()->route('login');
+    })->where('userType', 'talent|employer|university');
 });
 
 // Admin Authentication Routes
@@ -82,24 +86,21 @@ Route::middleware('guest')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
 });
 
+// User Type Selection Routes (accessible to guests with verified OTP and authenticated users)
+Route::get('/register/select-type', [RegistrationController::class, 'showUserTypeSelection'])->name('register.select-type');
+Route::post('/register/select-type', [RegistrationController::class, 'selectUserType'])
+    ->middleware('throttle:5,1')
+    ->name('register.select-type.store');
+
 // Authenticated routes
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
     // Logout route (accessible to all authenticated users)
     Route::post('/logout', [PasswordlessAuthController::class, 'logout'])->name('logout');
 
     // Talent-specific profile routes
     Route::middleware('role:talent')->prefix('talent')->name('talent.')->group(function () {
-        // Profile building routes (accessible even with incomplete profile)
-        // Redirects to profile page if profile is already complete
-        Route::middleware('redirect.if.profile.complete')->group(function () {
-            Route::get('/profile/build', [TalentProfileController::class, 'showWizard'])->name('profile.build');
-            Route::get('/profile/build/step/{step}', [TalentProfileController::class, 'step'])->name('profile.build.step');
-            Route::post('/profile/build/step/{step}', [TalentProfileController::class, 'saveStep'])->name('profile.build.save');
-            Route::get('/profile/complete', [TalentProfileController::class, 'complete'])->name('profile.complete');
-        });
-
-        // Student email verification routes (outside redirect middleware so user can verify)
-        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email');
+        // Student email verification routes
+        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email.show');
         Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
         Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
 
@@ -157,9 +158,29 @@ Route::middleware('auth')->group(function () {
     // Employer-specific profile routes
     Route::middleware('role:employer')->prefix('employer')->name('employer.')->group(function () {
         Route::get('/company', [EmployerProfileController::class, 'show'])->name('company.show');
+        Route::post('/company', [EmployerProfileController::class, 'store'])->name('company.store');
         Route::get('/company/edit', [EmployerProfileController::class, 'edit'])->name('company.edit');
         Route::put('/company', [EmployerProfileController::class, 'update'])->name('company.update');
         Route::patch('/company', [EmployerProfileController::class, 'update']);
+        Route::post('/company/submit', [EmployerProfileController::class, 'submit'])->name('company.submit');
+
+        // Section-specific AJAX update routes
+        Route::put('/company/basic-info', [EmployerProfileController::class, 'updateBasicInfo'])->name('company.basic-info.update');
+        Route::put('/company/contact-location', [EmployerProfileController::class, 'updateContactLocation'])->name('company.contact-location.update');
+        Route::put('/company/registration', [EmployerProfileController::class, 'updateRegistration'])->name('company.registration.update');
+        Route::put('/company/primary-contact', [EmployerProfileController::class, 'updatePrimaryContact'])->name('company.primary-contact.update');
+        Route::put('/company/branding', [EmployerProfileController::class, 'updateBranding'])->name('company.branding.update');
+
+        // File upload routes
+        Route::post('/company/verification-document', [EmployerProfileController::class, 'uploadVerificationDocument'])->name('company.verification-document.upload');
+        Route::post('/company/logo', [EmployerProfileController::class, 'uploadLogo'])->name('company.logo.upload');
+        Route::post('/company/photo', [EmployerProfileController::class, 'uploadPhoto'])->name('company.photo.upload');
+        Route::delete('/company/photo/{photoId}', [EmployerProfileController::class, 'deletePhoto'])->name('company.photo.delete');
+        Route::post('/company/video', [EmployerProfileController::class, 'uploadVideo'])->name('company.video.upload');
+
+        // Testimonial routes
+        Route::post('/company/testimonial', [EmployerProfileController::class, 'storeTestimonial'])->name('company.testimonial.store');
+        Route::delete('/company/testimonial/{testimonialId}', [EmployerProfileController::class, 'deleteTestimonial'])->name('company.testimonial.delete');
     });
 
     // University-specific profile routes
@@ -170,8 +191,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/profile', [UniversityProfileController::class, 'update']);
     });
 
-    // Routes that require complete profile (for talent users)
-    Route::middleware('talent.profile.complete')->group(function () {
+    // Dashboard route - middleware will redirect to profile edit if completion < 70% (only once)
+    Route::middleware('ensure.profile.complete')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
 
@@ -210,7 +231,26 @@ Route::middleware('auth')->group(function () {
         // Institutions Routes
         Route::resource('institutions', InstitutionController::class);
         Route::post('/institutions/sync-gtec', [InstitutionController::class, 'syncFromGTEC'])->name('institutions.sync-gtec');
+
+        // Employer Companies (approval + provisioning)
+        Route::get('/employer-companies', [AdminEmployerCompanyController::class, 'index'])->name('employer-companies.index');
+        Route::get('/employer-companies/create', [AdminEmployerCompanyController::class, 'create'])->name('employer-companies.create');
+        Route::post('/employer-companies', [AdminEmployerCompanyController::class, 'store'])->name('employer-companies.store');
+        Route::get('/employer-companies/{id}', [AdminEmployerCompanyController::class, 'show'])->name('employer-companies.show');
+        Route::post('/employer-companies/{id}/approve', [AdminEmployerCompanyController::class, 'approve'])->name('employer-companies.approve');
+        Route::post('/employer-companies/{id}/needs-changes', [AdminEmployerCompanyController::class, 'needsChanges'])->name('employer-companies.needs-changes');
+        Route::post('/employer-companies/{id}/reject', [AdminEmployerCompanyController::class, 'reject'])->name('employer-companies.reject');
+        Route::post('/employer-companies/{id}/suspend', [AdminEmployerCompanyController::class, 'suspend'])->name('employer-companies.suspend');
     });
+});
+
+// Autocomplete API Routes (accessible to all users with rate limiting)
+Route::prefix('api/autocomplete')->name('api.autocomplete.')->middleware('throttle:60,1')->group(function () {
+    Route::get('/skills', [AutocompleteController::class, 'skills'])->name('skills');
+    Route::get('/industries', [AutocompleteController::class, 'industries'])->name('industries');
+    Route::get('/institutions', [AutocompleteController::class, 'institutions'])->name('institutions');
+    Route::get('/cities', [AutocompleteController::class, 'cities'])->name('cities');
+    Route::get('/regions', [AutocompleteController::class, 'regions'])->name('regions');
 });
 
 // Public profile routes (accessible without authentication)

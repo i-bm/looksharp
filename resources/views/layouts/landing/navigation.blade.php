@@ -41,8 +41,19 @@
                             Universities </a>
                     </li>
                 </ul>
-                <a class="primary-btn1 btn-hover d-xl-none" href="{{ route('login') }}">
-                    Get Started
+                <a class="primary-btn2 btn-hover d-xl-none mb-2" href="{{ route('login') }}">
+                    Sign In
+                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+                        <g>
+                            <path
+                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z">
+                            </path>
+                        </g>
+                    </svg>
+                    <span></span>
+                </a>
+                <a class="primary-btn1 btn-hover d-xl-none" href="{{ route('register') }}">
+                    Sign Up
                     <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
                         <g>
                             <path
@@ -55,7 +66,7 @@
             </div>
         </div>
         <div class="nav-right">
-            <div class="contact-area">
+            <div class="contact-area gap-2">
                 {{-- <div class="search-and-login">
                     <div class="search-bar">
                         <div class="search-btn">
@@ -100,15 +111,14 @@
                     </a>
                 </div> --}}
                 <a class=" {{ request()->is('/') ? 'primary-btn1' : 'primary-btn2' }} btn-hover text-white d-xl-flex d-none"
+                    href="{{ route('register') }}">
+                    Sign Up
+                </a>
+
+                <a class=" {{ request()->is('/') ? 'primary-btn2' : 'primary-btn1' }} btn-hover text-white d-xl-flex d-none"
                     href="{{ route('login') }}">
-                    Get Started
-                    <svg width="10" height="10" viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
-                        <g>
-                            <path
-                                d="M5.83333 4.16667V0H4.16667V4.16667H0V5.83333H4.16667V10H5.83333V5.83333H10V4.16667H5.83333Z" />
-                        </g>
-                    </svg>
-                    <span></span>
+                    Sign In
+
                 </a>
             </div>
             <div class="sidebar-button mobile-menu-btn">

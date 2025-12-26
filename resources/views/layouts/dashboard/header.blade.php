@@ -39,6 +39,12 @@
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
     <!-- Dashboard CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/dashboard.css') }}">
+    <!-- Select Search Component CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/select-search.css') }}">
+    <!-- Autocomplete Component CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/autocomplete.css') }}">
+    <!-- Toaster CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/toaster.css') }}">
     <!-- Title -->
     <title> {{config('app.name')}} {{isset($title) ? " - ". $title : "" }}</title>
     <link rel="icon" href="{{ asset('assets/favicon.png') }}" type="image/gif" sizes="20x20">
