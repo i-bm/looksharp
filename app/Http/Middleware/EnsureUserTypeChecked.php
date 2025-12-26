@@ -30,6 +30,11 @@ class EnsureUserTypeChecked
 
         $user = Auth::user();
 
+        // Skip check for admin users - they don't need to select a user type
+        if ($user->hasRole('admin')) {
+            return $next($request);
+        }
+
         // Check if user has completed type selection
         if (! $user->user_type_checked) {
             Log::info('User type not checked, redirecting to selection page', [

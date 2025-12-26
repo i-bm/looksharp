@@ -221,6 +221,13 @@ class EmployerProfileController extends Controller
             return response()->json(['error' => 'This company profile cannot be edited in its current status.'], 403);
         }
 
+        // Normalize year_established: convert empty string to null
+        $requestData = $request->all();
+        if (isset($requestData['year_established']) && ($requestData['year_established'] === '' || trim($requestData['year_established']) === '')) {
+            $requestData['year_established'] = null;
+            $request->merge($requestData);
+        }
+
         $validated = $request->validate([
             'legal_name' => ['required', 'string', 'max:255'],
             'trading_name' => ['nullable', 'string', 'max:255'],
@@ -229,6 +236,7 @@ class EmployerProfileController extends Controller
             'company_size' => ['required', 'string', 'max:50'],
             'company_description' => ['nullable', 'string', 'max:5000'],
             'year_established' => ['nullable', 'integer', 'min:1900', 'max:'.date('Y')],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'], // 5MB max
         ]);
 
         // If "Others(Please Specify)" is selected and other_industry is provided, use other_industry
@@ -238,6 +246,18 @@ class EmployerProfileController extends Controller
         unset($validated['other_industry']);
 
         try {
+            // Handle logo upload if provided
+            if ($request->hasFile('logo')) {
+                $this->employerCompanyService->uploadLogo($user, $company, $request->file('logo'));
+                Log::info('EmployerProfileController: logo uploaded with basic info update', [
+                    'user_id' => $user->id,
+                    'company_id' => $company->id,
+                ]);
+            }
+
+            // Remove logo from validated array as it's handled separately
+            unset($validated['logo']);
+
             $updatedCompany = $this->employerCompanyService->updateCompanyByEmployer($user, $company, $validated);
 
             Log::info('EmployerProfileController: basic info updated via AJAX', [
@@ -250,9 +270,106 @@ class EmployerProfileController extends Controller
                 'message' => 'Basic information updated successfully.',
                 'company' => $updatedCompany->fresh(),
                 'completeness_score' => $updatedCompany->profile_completeness_score,
+                'logo_url' => $updatedCompany->logo_url ? asset('storage/'.$updatedCompany->logo_url) : null,
             ]);
         } catch (\Exception $e) {
             Log::error('EmployerProfileController: updateBasicInfo failed', [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Update branding section (AJAX).
+     */
+    public function updateBranding(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $company = $user->employerCompany();
+
+        if (! $company) {
+            return response()->json(['error' => 'Company profile not found.'], 404);
+        }
+
+        if (! $company->isEditableByEmployer()) {
+            return response()->json(['error' => 'This company profile cannot be edited in its current status.'], 403);
+        }
+
+        // Normalize year_established: convert empty string to null
+        $requestData = $request->all();
+        if (isset($requestData['year_established']) && ($requestData['year_established'] === '' || trim($requestData['year_established']) === '')) {
+            $requestData['year_established'] = null;
+            $request->merge($requestData);
+        }
+
+        $validated = $request->validate([
+            'company_description' => ['nullable', 'string', 'max:5000'],
+            'year_established' => ['nullable', 'integer', 'min:1900', 'max:'.date('Y')],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'], // 5MB max
+            'photos.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:10240'], // 10MB max per photo
+        ]);
+
+        try {
+            // Handle logo upload if provided
+            if ($request->hasFile('logo')) {
+                $this->employerCompanyService->uploadLogo($user, $company, $request->file('logo'));
+                Log::info('EmployerProfileController: logo uploaded with branding update', [
+                    'user_id' => $user->id,
+                    'company_id' => $company->id,
+                ]);
+            }
+
+            // Handle photo uploads if provided
+            if ($request->hasFile('photos')) {
+                $uploadedPhotos = [];
+                foreach ($request->file('photos') as $photoFile) {
+                    try {
+                        $photo = $this->employerCompanyService->uploadPhoto($user, $company, $photoFile);
+                        $uploadedPhotos[] = $photo->id;
+                        Log::info('EmployerProfileController: photo uploaded with branding update', [
+                            'user_id' => $user->id,
+                            'company_id' => $company->id,
+                            'photo_id' => $photo->id,
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error('EmployerProfileController: failed to upload photo in branding update', [
+                            'user_id' => $user->id,
+                            'company_id' => $company->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                        // Continue with other photos even if one fails
+                    }
+                }
+                Log::info('EmployerProfileController: photos uploaded with branding update', [
+                    'user_id' => $user->id,
+                    'company_id' => $company->id,
+                    'uploaded_count' => count($uploadedPhotos),
+                ]);
+            }
+
+            // Remove logo and photos from validated array as they're handled separately
+            unset($validated['logo'], $validated['photos']);
+
+            $updatedCompany = $this->employerCompanyService->updateCompanyByEmployer($user, $company, $validated);
+
+            Log::info('EmployerProfileController: branding updated via AJAX', [
+                'user_id' => $user->id,
+                'company_id' => $updatedCompany->id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Branding information updated successfully.',
+                'company' => $updatedCompany->fresh(),
+                'completeness_score' => $updatedCompany->profile_completeness_score,
+                'logo_url' => $updatedCompany->logo_url ? asset('storage/'.$updatedCompany->logo_url) : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: updateBranding failed', [
                 'user_id' => $user->id,
                 'company_id' => $company->id,
                 'error' => $e->getMessage(),

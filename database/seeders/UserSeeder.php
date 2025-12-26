@@ -38,14 +38,16 @@ class UserSeeder extends Seeder
                 'email' => 'admin@looksharp.com',
                 'password' => null,
                 'user_type' => 'admin',
+                'user_type_checked' => true,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]);
             $user->assignRole(UserRoleEnum::ADMIN->value);
 
             // Create admin profile
-            AdminProfile::create([
+            AdminProfile::updateOrCreate([
                 'user_id' => $user->id,
+            ], [
                 'first_name' => 'Admin',
                 'last_name' => 'User',
                 'phone_number' => '+233123456789',

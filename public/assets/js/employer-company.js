@@ -425,23 +425,33 @@
         // Logo upload
         const logoUpload = document.getElementById('logo_upload');
         if (logoUpload) {
-            logoUpload.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    uploadLogo(this);
-                }
-            });
+            // Skip auto-upload if the logo input is inside a form with data-section="branding"
+            const form = logoUpload.closest('form[data-section="branding"]');
+            if (!form) {
+                // Only add auto-upload if not inside branding form (logo will upload with form submission)
+                logoUpload.addEventListener('change', function() {
+                    if (this.files && this.files[0]) {
+                        uploadLogo(this);
+                    }
+                });
+            }
         }
 
         // Photo upload
         const photoUpload = document.getElementById('photo_upload');
         if (photoUpload) {
-            photoUpload.addEventListener('change', function() {
-                if (this.files && this.files.length > 0) {
-                    Array.from(this.files).forEach(file => {
-                        uploadPhoto(file);
-                    });
-                }
-            });
+            // Skip auto-upload if the photo input is inside a form with data-section="branding"
+            const form = photoUpload.closest('form[data-section="branding"]');
+            if (!form) {
+                // Only add auto-upload if not inside branding form (photos will upload with form submission)
+                photoUpload.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        Array.from(this.files).forEach(file => {
+                            uploadPhoto(file);
+                        });
+                    }
+                });
+            }
         }
 
         // Video upload

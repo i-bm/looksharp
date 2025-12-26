@@ -1,18 +1,21 @@
-<form class="company-section-edit-form branding-section" data-section="branding" action="{{ route('employer.company.basic-info.update') }}" method="POST">
+<form class="company-section-edit-form branding-section" data-section="branding"
+    action="{{ route('employer.company.branding.update') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
-    
+
     <!-- Logo Upload -->
     <div class="mb-4">
         <label class="form-label">Company Logo</label>
         <div class="logo-upload-area">
             @if($company->logo_url)
             <div class="current-logo mb-3">
-                <img src="{{ asset('storage/'.$company->logo_url) }}" alt="Company Logo" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                <img src="{{ asset('storage/'.$company->logo_url) }}" alt="Company Logo"
+                    style="max-width: 200px; max-height: 200px; border-radius: 8px;">
             </div>
             @endif
-            <input type="file" id="logo_upload" class="form-control" accept=".jpg,.jpeg,.png" data-type="logo">
-            <small class="form-text text-muted">Accepted formats: JPG, PNG (Max: 5MB). Recommended size: 400x400px</small>
+            <input type="file" id="logo_upload" name="logo" class="form-control" accept=".jpg,.jpeg,.png">
+            <small class="form-text text-muted">Accepted formats: JPG, PNG (Max: 5MB). Recommended size:
+                400x400px</small>
             <div class="upload-progress mt-2" style="display: none;">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -24,14 +27,17 @@
     <!-- Company Description -->
     <div class="mb-4">
         <label class="form-label">Company Description</label>
-        <textarea name="company_description" class="form-control" rows="5" placeholder="Tell talent about your company culture, values, and what makes you unique...">{{ old('company_description', $company->company_description) }}</textarea>
+        <textarea name="company_description" class="form-control" rows="5"
+            placeholder="Tell talent about your company culture, values, and what makes you unique...">{{ old('company_description', $company->company_description) }}</textarea>
         <small class="form-text text-muted">This will be displayed on your public company page</small>
     </div>
 
     <!-- Year Established -->
     <div class="mb-4">
         <label class="form-label">Year Established</label>
-        <input type="number" name="year_established" class="form-control" value="{{ old('year_established', $company->year_established) }}" placeholder="e.g. 2010" min="1900" max="{{ date('Y') }}">
+        <input type="number" name="year_established" class="form-control"
+            value="{{ old('year_established', $company->year_established) }}" placeholder="e.g. 2010" min="1900"
+            max="{{ date('Y') }}">
     </div>
 
     <!-- Video Upload -->
@@ -40,11 +46,13 @@
         <div class="video-upload-area">
             @if($company->video_url)
             <div class="current-video mb-3">
-                <video controls style="max-width: 100%; border-radius: 8px;" src="{{ asset('storage/'.$company->video_url) }}"></video>
+                <video controls style="max-width: 100%; border-radius: 8px;"
+                    src="{{ asset('storage/'.$company->video_url) }}"></video>
             </div>
             @endif
             <input type="file" id="video_upload" class="form-control" accept=".mp4,.mov,.avi" data-type="video">
-            <small class="form-text text-muted">Accepted formats: MP4, MOV, AVI (Max: 50MB, Max duration: 90 seconds)</small>
+            <small class="form-text text-muted">Accepted formats: MP4, MOV, AVI (Max: 50MB, Max duration: 90
+                seconds)</small>
             <div class="upload-progress mt-2" style="display: none;">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -61,12 +69,14 @@
                 @foreach($company->photos as $photo)
                 <div class="col-md-3 photo-item" data-photo-id="{{ $photo->id }}">
                     <div class="card">
-                        <img src="{{ asset('storage/'.$photo->photo_url) }}" class="card-img-top" alt="Company Photo" style="height: 150px; object-fit: cover;">
+                        <img src="{{ asset('storage/'.$photo->photo_url) }}" class="card-img-top" alt="Company Photo"
+                            style="height: 150px; object-fit: cover;">
                         <div class="card-body p-2">
                             @if($photo->caption)
                             <p class="card-text small mb-1">{{ Str::limit($photo->caption, 30) }}</p>
                             @endif
-                            <button type="button" class="btn btn-sm btn-danger delete-photo-btn" data-photo-id="{{ $photo->id }}">
+                            <button type="button" class="btn btn-sm btn-danger delete-photo-btn"
+                                data-photo-id="{{ $photo->id }}">
                                 <i class="bi bi-trash"></i> Delete
                             </button>
                         </div>
@@ -74,8 +84,10 @@
                 </div>
                 @endforeach
             </div>
-            <input type="file" id="photo_upload" class="form-control" accept=".jpg,.jpeg,.png" data-type="photo" multiple>
-            <small class="form-text text-muted">Accepted formats: JPG, PNG (Max: 10MB per photo). You can upload multiple photos.</small>
+            <input type="file" id="photo_upload" name="photos[]" class="form-control" accept=".jpg,.jpeg,.png"
+                data-type="photo" multiple>
+            <small class="form-text text-muted">Accepted formats: JPG, PNG (Max: 10MB per photo). You can upload
+                multiple photos.</small>
             <div class="upload-progress mt-2" style="display: none;">
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: 0%"></div>
@@ -98,7 +110,8 @@
                             <p class="text-muted small mb-0">{{ $testimonial->employee_title }}</p>
                             @endif
                         </div>
-                        <button type="button" class="btn btn-sm btn-danger delete-testimonial-btn" data-testimonial-id="{{ $testimonial->id }}">
+                        <button type="button" class="btn btn-sm btn-danger delete-testimonial-btn"
+                            data-testimonial-id="{{ $testimonial->id }}">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -110,7 +123,8 @@
             </div>
             @endforeach
 
-            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addTestimonialModal">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                data-bs-target="#addTestimonialModal">
                 <i class="bi bi-plus-circle"></i> Add Testimonial
             </button>
         </div>
@@ -168,4 +182,3 @@
         </div>
     </div>
 </div>
-

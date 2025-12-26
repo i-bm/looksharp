@@ -169,6 +169,7 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::put('/company/contact-location', [EmployerProfileController::class, 'updateContactLocation'])->name('company.contact-location.update');
         Route::put('/company/registration', [EmployerProfileController::class, 'updateRegistration'])->name('company.registration.update');
         Route::put('/company/primary-contact', [EmployerProfileController::class, 'updatePrimaryContact'])->name('company.primary-contact.update');
+        Route::put('/company/branding', [EmployerProfileController::class, 'updateBranding'])->name('company.branding.update');
 
         // File upload routes
         Route::post('/company/verification-document', [EmployerProfileController::class, 'uploadVerificationDocument'])->name('company.verification-document.upload');

@@ -503,7 +503,8 @@ $company->photos->count() > 0;
         videoUpload: '{{ route("employer.company.video.upload") }}',
         testimonialStore: '{{ route("employer.company.testimonial.store") }}',
         testimonialDelete: '{{ route("employer.company.testimonial.delete", ["testimonialId" => ":testimonialId"]) }}',
-        basicInfoUpdate: '{{ route("employer.company.basic-info.update") }}'
+        basicInfoUpdate: '{{ route("employer.company.basic-info.update") }}',
+        brandingUpdate: '{{ route("employer.company.branding.update") }}'
     };
     
     // Pass company data for validation

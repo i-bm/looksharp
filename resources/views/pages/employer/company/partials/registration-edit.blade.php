@@ -40,7 +40,7 @@
                 </div>
                 @endif
                 <input type="file" name="ghana_card" id="ghana_card_upload" class="form-control"
-                    accept=".pdf,.jpg,.jpeg,.png">
+                    accept=".pdf,.jpg,.jpeg,.png" required>
                 <small class="form-text text-muted">Accepted formats: PDF, JPG, PNG (Max: 10MB)</small>
                 <div class="invalid-feedback"></div>
             </div>
@@ -63,7 +63,7 @@
                 </div>
                 @endif
                 <input type="file" name="business_registration" id="business_registration_upload" class="form-control"
-                    accept=".pdf,.jpg,.jpeg,.png">
+                    accept=".pdf,.jpg,.jpeg,.png" required>
                 <small class="form-text text-muted">Accepted formats: PDF, JPG, PNG (Max: 10MB)</small>
                 <div class="invalid-feedback"></div>
             </div>
