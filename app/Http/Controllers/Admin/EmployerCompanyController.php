@@ -115,7 +115,7 @@ class EmployerCompanyController extends Controller
         $company = EmployerCompany::with(['creator', 'reviewer', 'members'])->findOrFail($id);
         $title = 'Company Review';
 
-        return view('admin.employer-companies.show', compact('company', 'title'));
+        return view('pages.dashboard.admin.employer-companies.show', compact('company', 'title'));
     }
 
     public function approve(Request $request, string $id): RedirectResponse

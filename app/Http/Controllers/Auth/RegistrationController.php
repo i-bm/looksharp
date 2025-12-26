@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RegistrationOtpRequest;
 use App\Models\PendingRegistration;
+use App\Models\User;
 use App\Services\AuthService;
 use App\Services\NotificationService;
 use App\Services\RegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class RegistrationController extends Controller
@@ -25,7 +26,16 @@ class RegistrationController extends Controller
         $this->authService = $authService;
         $this->registrationService = $registrationService;
         $this->notificationService = $notificationService;
-        $this->middleware('guest');
+
+        // Apply guest middleware only to methods that should be guest-only
+        // User type selection routes must be accessible to authenticated users
+        // who need to complete their user type selection
+        $this->middleware('guest')->only([
+            'showRegistrationForm',
+            'requestRegistrationOtp',
+            'showOtpVerification',
+            'verifyRegistrationOtp',
+        ]);
     }
 
     /**
@@ -48,7 +58,7 @@ class RegistrationController extends Controller
 
         // Check if this is a resend (email already in session)
         $emailFromSession = $request->session()->get('registration.email');
-        $isResend = !empty($emailFromSession);
+        $isResend = ! empty($emailFromSession);
 
         if ($isResend) {
             // For resend, validate only consent
@@ -213,10 +223,37 @@ class RegistrationController extends Controller
 
     /**
      * Show user type selection page.
+     * Accessible to both:
+     * - Guest users during registration (with verified OTP in session)
+     * - Authenticated users who need to complete their user type selection
      */
     public function showUserTypeSelection(Request $request)
     {
-        // Check if OTP was verified
+        // Check if user is authenticated
+        if (Auth::check()) {
+            $user = Auth::user();
+
+            // If user already has user_type_checked, redirect to dashboard
+            if ($user->user_type_checked) {
+                Log::info('Authenticated user already has user_type_checked, redirecting to dashboard', [
+                    'user_id' => $user->id,
+                ]);
+
+                return redirect()->route('dashboard');
+            }
+
+            Log::info('Showing user type selection to authenticated user', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
+            return view('auth.register.user-type-selection', [
+                'email' => $user->email,
+                'is_authenticated' => true,
+            ]);
+        }
+
+        // Guest user flow: Check if OTP was verified
         $email = $request->session()->get('registration.email');
         $otpVerified = $request->session()->get('registration.otp_verified', false);
 
@@ -232,16 +269,121 @@ class RegistrationController extends Controller
 
         return view('auth.register.user-type-selection', [
             'email' => $email,
+            'is_authenticated' => false,
         ]);
     }
 
     /**
      * Handle user type selection and create account.
+     * Handles both:
+     * - Guest users during registration (creates new account)
+     * - Authenticated users who need to complete their user type selection (updates existing account)
      */
     public function selectUserType(Request $request)
     {
         Log::info('User type selection request received');
 
+        $validated = $request->validate([
+            'user_type' => ['required', 'string', 'in:talent,employer,university'],
+        ]);
+
+        // Map 'university' to 'university_admin' for internal use
+        $userType = $validated['user_type'] === 'university' ? 'university_admin' : $validated['user_type'];
+
+        // Check if user is authenticated (completing user type selection for existing account)
+        if (Auth::check()) {
+            return $this->handleAuthenticatedUserTypeSelection($request, $userType);
+        }
+
+        // Guest user flow: Create new account
+        return $this->handleGuestUserTypeSelection($request, $userType);
+    }
+
+    /**
+     * Handle user type selection for authenticated users (updating existing account).
+     */
+    protected function handleAuthenticatedUserTypeSelection(Request $request, string $userType)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (! $user) {
+            Log::error('Authenticated user not found in handleAuthenticatedUserTypeSelection');
+
+            return redirect()->route('login')
+                ->withErrors(['error' => 'Authentication required.']);
+        }
+
+        Log::info('Handling user type selection for authenticated user', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'user_type' => $userType,
+        ]);
+
+        try {
+            return DB::transaction(function () use ($user, $userType) {
+                // Update user type if not already set
+                if (empty($user->user_type)) {
+                    $user->user_type = $userType;
+                    Log::info('User type updated', [
+                        'user_id' => $user->id,
+                        'user_type' => $userType,
+                    ]);
+                }
+
+                // Mark user type as checked
+                $user->user_type_checked = true;
+                $user->save();
+
+                Log::info('User type selection completed for authenticated user', [
+                    'user_id' => $user->id,
+                    'user_type' => $user->user_type,
+                ]);
+
+                // Assign role if user doesn't have any roles yet
+                if ($user->roles->isEmpty()) {
+                    // Map 'university_admin' back to 'university' for role assignment
+                    $roleName = $userType === 'university_admin' ? 'university' : $userType;
+                    $user->assignRole($roleName);
+                    Log::info('Role assigned to user', [
+                        'user_id' => $user->id,
+                        'role' => $roleName,
+                    ]);
+                }
+
+                // Initialize talent profile if user type is talent and profile doesn't exist
+                if ($user->user_type === 'talent' && ! $user->talentProfile) {
+                    $this->registrationService->initializeTalentProfile($user);
+                    Log::info('Talent profile initialized', ['user_id' => $user->id]);
+                }
+
+                Log::info('User type selection completed successfully', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                ]);
+
+                return redirect()->route('dashboard')
+                    ->with('success', 'Account type selected successfully!');
+            });
+        } catch (\Exception $e) {
+            Log::error('User type selection failed for authenticated user', [
+                'user_id' => $user->id,
+                'user_type' => $userType,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['user_type' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Handle user type selection for guest users (creating new account).
+     */
+    protected function handleGuestUserTypeSelection(Request $request, string $userType)
+    {
         // Check if OTP was verified
         $email = $request->session()->get('registration.email');
         $otpVerified = $request->session()->get('registration.otp_verified', false);
@@ -255,13 +397,6 @@ class RegistrationController extends Controller
             return redirect()->route('register')
                 ->withErrors(['error' => 'Please verify your email first.']);
         }
-
-        $validated = $request->validate([
-            'user_type' => ['required', 'string', 'in:talent,employer,university'],
-        ]);
-
-        // Map 'university' to 'university_admin' for internal use
-        $userType = $validated['user_type'] === 'university' ? 'university_admin' : $validated['user_type'];
 
         try {
             // Retrieve basic info from session
