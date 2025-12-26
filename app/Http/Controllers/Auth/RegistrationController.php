@@ -343,7 +343,8 @@ class RegistrationController extends Controller
                 // Assign role if user doesn't have any roles yet
                 if ($user->roles->isEmpty()) {
                     // Map 'university_admin' back to 'university' for role assignment
-                    $roleName = $userType === 'university_admin' ? 'university' : $userType;
+                    // Use $user->user_type instead of $userType to ensure role matches actual user type
+                    $roleName = $user->user_type === 'university_admin' ? 'university' : $user->user_type;
                     $user->assignRole($roleName);
                     Log::info('Role assigned to user', [
                         'user_id' => $user->id,
