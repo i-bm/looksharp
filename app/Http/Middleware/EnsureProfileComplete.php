@@ -28,6 +28,7 @@ class EnsureProfileComplete
         'employer.company.contact-location.update',
         'employer.company.registration.update',
         'employer.company.primary-contact.update',
+        'employer.company.branding.update',
         'logout',
     ];
 
@@ -195,7 +196,8 @@ class EnsureProfileComplete
             str_starts_with($routeName, 'employer.company.basic-info.update') ||
             str_starts_with($routeName, 'employer.company.contact-location.update') ||
             str_starts_with($routeName, 'employer.company.registration.update') ||
-            str_starts_with($routeName, 'employer.company.primary-contact.update')) {
+            str_starts_with($routeName, 'employer.company.primary-contact.update') ||
+            str_starts_with($routeName, 'employer.company.branding.update')) {
             return true;
         }
 

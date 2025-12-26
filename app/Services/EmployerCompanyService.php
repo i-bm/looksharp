@@ -226,8 +226,15 @@ class EmployerCompanyService
                     [
                         'user_type' => UserRoleEnum::EMPLOYER->value,
                         'password' => null,
+                        'user_type_checked' => true,
                     ]
                 );
+
+                // Ensure user_type and user_type_checked are set correctly
+                // (handles case where user already existed)
+                $invitee->user_type = UserRoleEnum::EMPLOYER->value;
+                $invitee->user_type_checked = true;
+                $invitee->save();
 
                 if (! $invitee->hasRole(UserRoleEnum::EMPLOYER->value)) {
                     $invitee->assignRole(UserRoleEnum::EMPLOYER->value);
