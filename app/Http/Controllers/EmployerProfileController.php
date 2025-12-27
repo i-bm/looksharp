@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BillingCycleEnum;
 use App\Enums\EmployerCompanyStatusEnum;
+use App\Enums\PaymentMethodEnum;
+use App\Enums\SubscriptionTierEnum;
 use App\Enums\UserRoleEnum;
 use App\Http\Requests\EmployerCompany\StoreEmployerCompanyRequest;
 use App\Http\Requests\EmployerCompany\StoreTestimonialRequest;
@@ -12,9 +15,13 @@ use App\Http\Requests\EmployerCompany\UploadLogoRequest;
 use App\Http\Requests\EmployerCompany\UploadPhotoRequest;
 use App\Http\Requests\EmployerCompany\UploadVerificationDocumentRequest;
 use App\Http\Requests\EmployerCompany\UploadVideoRequest;
+use App\Http\Requests\Subscription\StoreSubscriptionRequest;
 use App\Models\EmployerCompany;
 use App\Models\Industry;
+use App\Models\Subscription;
 use App\Services\EmployerCompanyService;
+use App\Services\PaymentService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,10 +31,13 @@ use Illuminate\View\View;
 
 class EmployerProfileController extends Controller
 {
-    public function __construct(private EmployerCompanyService $employerCompanyService)
-    {
-        $this->middleware('auth')->except('public');
-        $this->middleware('role:'.UserRoleEnum::EMPLOYER->value)->except('public');
+    public function __construct(
+        private EmployerCompanyService $employerCompanyService,
+        private SubscriptionService $subscriptionService,
+        private PaymentService $paymentService
+    ) {
+        $this->middleware('auth')->except('public', 'paymentWebhook');
+        $this->middleware('role:'.UserRoleEnum::EMPLOYER->value)->except('public', 'paymentWebhook');
     }
 
     /**
@@ -1068,6 +1078,234 @@ class EmployerProfileController extends Controller
                 'company_id' => $company->id,
                 'testimonial_id' => $testimonialId,
                 'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Show subscription selection page.
+     */
+    public function selectSubscription(): View|RedirectResponse
+    {
+        $user = Auth::user();
+        $company = $user->employerCompany();
+
+        if (! $company) {
+            return redirect()->route('employer.company.edit')
+                ->with('error', 'Please complete company profile setup first.');
+        }
+
+        $packages = config('subscriptions.packages', []);
+        $currentSubscription = $company->subscription;
+
+        return view('pages.employer.company.subscription-select', [
+            'company' => $company,
+            'packages' => $packages,
+            'currentSubscription' => $currentSubscription,
+        ]);
+    }
+
+    /**
+     * Store subscription selection.
+     */
+    public function storeSubscription(StoreSubscriptionRequest $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $company = $user->employerCompany();
+
+        if (! $company) {
+            return redirect()->route('employer.company.edit')
+                ->with('error', 'Please complete company profile setup first.');
+        }
+
+        Log::info('EmployerProfileController: Storing subscription selection', [
+            'user_id' => $user->id,
+            'company_id' => $company->id,
+            'tier' => $request->input('tier'),
+            'billing_cycle' => $request->input('billing_cycle'),
+        ]);
+
+        try {
+            $tier = SubscriptionTierEnum::from($request->input('tier'));
+            $billingCycle = $request->has('billing_cycle') && $request->input('billing_cycle')
+                ? BillingCycleEnum::from($request->input('billing_cycle'))
+                : null;
+
+            // Validate contact email for paid subscriptions
+            if ($tier !== SubscriptionTierEnum::FREE) {
+                $contactEmail = $company->primary_contact_email ?? $company->official_email;
+
+                if (empty($contactEmail)) {
+                    Log::warning('EmployerProfileController: Company contact email missing for paid subscription', [
+                        'user_id' => $user->id,
+                        'company_id' => $company->id,
+                        'tier' => $tier->value,
+                    ]);
+
+                    return redirect()->route('employer.company.show')
+                        ->with('error', 'Please add a contact email (Primary Contact Email or Official Email) to your company profile before selecting a paid subscription plan. Payment processing requires a valid email address.');
+                }
+            }
+
+            $subscription = $this->subscriptionService->createSubscription($company, $tier, $billingCycle);
+
+            // If FREE tier, redirect to company show page
+            if ($tier === SubscriptionTierEnum::FREE) {
+                return redirect()->route('employer.company.show')
+                    ->with('success', 'Free subscription activated successfully!');
+            }
+
+            // For paid tiers: initiate payment and redirect directly to Paystack
+            try {
+                // Use CARD as default - Paystack will show all payment options
+                $paymentMethod = PaymentMethodEnum::CARD;
+                $paymentData = []; // No additional data needed
+
+                $paymentResponse = $this->subscriptionService->processPayment(
+                    $subscription,
+                    $paymentMethod,
+                    $paymentData
+                );
+
+                if (isset($paymentResponse['authorization_url'])) {
+                    return redirect($paymentResponse['authorization_url']);
+                }
+
+                throw new \Exception('Payment authorization URL not received');
+            } catch (\Exception $e) {
+                Log::error('EmployerProfileController: Failed to initiate payment', [
+                    'user_id' => $user->id,
+                    'subscription_id' => $subscription->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
+                // Check if error is about missing email
+                if (str_contains($e->getMessage(), 'Company contact email is required')) {
+                    return redirect()->route('employer.company.show')
+                        ->with('error', 'Please add a contact email (Primary Contact Email or Official Email) to your company profile before selecting a paid subscription plan. Payment processing requires a valid email address.');
+                }
+
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Failed to initiate payment: '.$e->getMessage());
+            }
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: Failed to store subscription', [
+                'user_id' => $user->id,
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            // Check if error is about missing email
+            if (str_contains($e->getMessage(), 'Company contact email is required')) {
+                return redirect()->route('employer.company.show')
+                    ->with('error', 'Please add a contact email (Primary Contact Email or Official Email) to your company profile before selecting a paid subscription plan. Payment processing requires a valid email address.');
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Failed to create subscription: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Handle Paystack payment callback.
+     */
+    public function paymentCallback(Request $request): RedirectResponse
+    {
+        $reference = $request->query('reference');
+
+        if (empty($reference)) {
+            return redirect()->route('employer.subscription.select')
+                ->with('error', 'Invalid payment reference.');
+        }
+
+        Log::info('EmployerProfileController: Processing payment callback', [
+            'reference' => $reference,
+        ]);
+
+        try {
+            // Verify payment
+            $verificationResult = $this->paymentService->verifyPayment($reference);
+
+            if (! $verificationResult['success']) {
+                return redirect()->route('employer.subscription.select')
+                    ->with('error', 'Payment verification failed.');
+            }
+
+            // Find subscription by payment reference
+            $subscription = Subscription::where('payment_reference', $reference)->first();
+
+            if (! $subscription) {
+                Log::warning('EmployerProfileController: Subscription not found for payment reference', [
+                    'reference' => $reference,
+                ]);
+
+                return redirect()->route('employer.subscription.select')
+                    ->with('error', 'Subscription not found.');
+            }
+
+            // Activate subscription if payment successful
+            if ($verificationResult['status'] === 'success') {
+                $this->subscriptionService->activateSubscription($subscription);
+
+                return redirect()->route('employer.company.show')
+                    ->with('success', 'Payment successful! Your subscription has been activated.');
+            }
+
+            return redirect()->route('employer.subscription.select')
+                ->with('error', 'Payment was not successful. Please try again.');
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: Payment callback processing failed', [
+                'reference' => $reference,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return redirect()->route('employer.subscription.select')
+                ->with('error', 'Payment processing error. Please contact support.');
+        }
+    }
+
+    /**
+     * Handle Paystack webhook.
+     */
+    public function paymentWebhook(Request $request): JsonResponse
+    {
+        Log::info('EmployerProfileController: Received Paystack webhook', [
+            'event' => $request->input('event'),
+        ]);
+
+        try {
+            // Verify webhook signature
+            $signature = $request->header('X-Paystack-Signature');
+            $payload = $request->getContent();
+
+            if (! is_string($signature) || $signature === '') {
+                Log::warning('EmployerProfileController: Missing Paystack webhook signature header', [
+                    'event' => $request->input('event'),
+                ]);
+
+                return response()->json(['error' => 'Missing signature'], 401);
+            }
+
+            if (! $this->paymentService->verifyWebhookSignature($signature, $payload)) {
+                Log::warning('EmployerProfileController: Invalid webhook signature');
+
+                return response()->json(['error' => 'Invalid signature'], 401);
+            }
+
+            // Process webhook (handles subscription activation/failure internally)
+            $this->paymentService->handleWebhook($request->all(), $this->subscriptionService);
+
+            return response()->json(['status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error('EmployerProfileController: Webhook processing failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json(['error' => $e->getMessage()], 500);

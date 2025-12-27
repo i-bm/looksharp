@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EmployerCompanyStatusEnum;
+use App\Enums\SubscriptionTierEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -137,5 +139,75 @@ class EmployerCompany extends Model implements Auditable
     public function isApproved(): bool
     {
         return $this->status === EmployerCompanyStatusEnum::APPROVED->value;
+    }
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Get the active subscription for this company.
+     * This method queries for active subscriptions directly instead of relying on latestOfMany(),
+     * to avoid issues where a pending_payment subscription becomes the latest but an older
+     * active subscription still exists.
+     */
+    public function getActiveSubscription(): ?Subscription
+    {
+        return $this->subscriptions()
+            ->active()
+            ->latest()
+            ->first();
+    }
+
+    public function hasActiveSubscription(): bool
+    {
+        $subscription = $this->getActiveSubscription();
+
+        return $subscription !== null;
+    }
+
+    public function currentSubscriptionTier(): ?SubscriptionTierEnum
+    {
+        $subscription = $this->getActiveSubscription();
+
+        if ($subscription === null) {
+            return null;
+        }
+
+        return $subscription->getTierEnum();
+    }
+
+    public function canPostOpportunity(): bool
+    {
+        $subscription = $this->getActiveSubscription();
+
+        if ($subscription === null) {
+            return false;
+        }
+
+        $tier = $subscription->getTierEnum();
+        $packageConfig = config("subscriptions.packages.{$tier->value}");
+
+        if ($packageConfig === null) {
+            return false;
+        }
+
+        $activePostingsLimit = $packageConfig['limits']['active_postings'] ?? null;
+
+        // If limit is null, it means unlimited
+        if ($activePostingsLimit === null) {
+            return true;
+        }
+
+        // TODO: Check actual active postings count
+        // For now, return true if subscription is active
+        // This will be implemented when opportunity posting is added
+        return true;
     }
 }

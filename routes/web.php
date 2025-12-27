@@ -181,6 +181,11 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         // Testimonial routes
         Route::post('/company/testimonial', [EmployerProfileController::class, 'storeTestimonial'])->name('company.testimonial.store');
         Route::delete('/company/testimonial/{testimonialId}', [EmployerProfileController::class, 'deleteTestimonial'])->name('company.testimonial.delete');
+
+        // Subscription routes
+        Route::get('/company/subscription/select', [EmployerProfileController::class, 'selectSubscription'])->name('subscription.select');
+        Route::post('/company/subscription', [EmployerProfileController::class, 'storeSubscription'])->name('subscription.store');
+        Route::get('/company/subscription/payment/callback', [EmployerProfileController::class, 'paymentCallback'])->name('subscription.payment.callback');
     });
 
     // University-specific profile routes
@@ -257,6 +262,9 @@ Route::prefix('api/autocomplete')->name('api.autocomplete.')->middleware('thrott
 Route::get('/profile/{slug}', [TalentProfileController::class, 'public'])->name('talent.profile.public');
 Route::get('/company/{id}', [EmployerProfileController::class, 'public'])->name('employer.company.public');
 Route::get('/university/{id}', [UniversityProfileController::class, 'public'])->name('university.profile.public');
+
+// Webhook routes (no auth required)
+Route::post('/webhooks/paystack/subscription', [EmployerProfileController::class, 'paymentWebhook'])->name('webhooks.paystack.subscription');
 
 // Redirect /home to /dashboard for backward compatibility
 Route::get('/home', function () {

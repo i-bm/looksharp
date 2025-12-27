@@ -1,0 +1,119 @@
+/* ==========================================
+   SUBSCRIPTION SELECT PAGE STYLES
+   ========================================== */
+
+/* Card Title and Subtitle Fonts */
+.subscription-select-page .dashboard-card-title {
+    font-family: var(--font-bricolageGrotesque);
+}
+
+.subscription-select-page .dashboard-card-subtitle {
+    font-family: var(--font-suse);
+}
+
+/* Alert Styles */
+.subscription-select-page .alert {
+    font-family: var(--font-suse);
+    border-radius: 8px;
+    border: none;
+}
+
+/* Subscription Tier Cards */
+.subscription-select-page .subscription-tier-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.subscription-select-page .subscription-tier-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.subscription-select-page .subscription-tier-card.border-primary {
+    border-width: 2px !important;
+}
+
+/* Pricing Display */
+.subscription-select-page .pricing {
+    margin-bottom: 1rem;
+}
+
+.subscription-select-page .pricing .h3 {
+    font-weight: 600;
+    color: var(--title-color);
+}
+
+.subscription-select-page .pricing .text-muted {
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.subscription-select-page .pricing .text-success {
+    color: var(--primary-color1);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Monthly/Annual Price Toggle */
+.subscription-select-page .monthly-price,
+.subscription-select-page .annual-price {
+    display: block;
+}
+
+.subscription-select-page .annual-price {
+    display: none;
+}
+
+/* Billing Cycle Toggle */
+.subscription-select-page #billing-cycle-toggle {
+    display: none;
+}
+
+.subscription-select-page #billing-cycle-toggle .btn-outline-primary {
+    border-color: var(--borders-color);
+    color: var(--text-color);
+    font-family: var(--font-suse);
+    font-weight: 500;
+}
+
+.subscription-select-page #billing-cycle-toggle .btn-check:checked + .btn-outline-primary {
+    background-color: var(--primary-color1);
+    border-color: var(--primary-color1);
+    color: var(--white-color);
+}
+
+.subscription-select-page #billing-cycle-toggle .badge {
+    font-family: var(--font-suse);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Feature List */
+.subscription-select-page .subscription-tier-card .list-unstyled {
+    font-family: var(--font-suse);
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.subscription-select-page .subscription-tier-card .list-unstyled li {
+    margin-bottom: 0.5rem;
+}
+
+.subscription-select-page .subscription-tier-card .list-unstyled strong {
+    font-weight: 600;
+    color: var(--title-color);
+}
+
+/* Select Tier Button */
+.subscription-select-page .select-tier-btn {
+    font-family: var(--font-suse);
+    font-weight: 500;
+    margin-top: auto;
+}
+
+/* Submit Button */
+.subscription-select-page #submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
