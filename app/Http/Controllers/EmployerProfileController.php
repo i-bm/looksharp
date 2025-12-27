@@ -1284,6 +1284,14 @@ class EmployerProfileController extends Controller
             $signature = $request->header('X-Paystack-Signature');
             $payload = $request->getContent();
 
+            if (! is_string($signature) || $signature === '') {
+                Log::warning('EmployerProfileController: Missing Paystack webhook signature header', [
+                    'event' => $request->input('event'),
+                ]);
+
+                return response()->json(['error' => 'Missing signature'], 401);
+            }
+
             if (! $this->paymentService->verifyWebhookSignature($signature, $payload)) {
                 Log::warning('EmployerProfileController: Invalid webhook signature');
 
