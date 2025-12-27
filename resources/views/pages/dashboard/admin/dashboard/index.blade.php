@@ -47,6 +47,17 @@
                 <span class="dashboard-stat-label">New Users This Month</span>
             </div>
         </div>
+
+        <div class="dashboard-stat-card">
+            <div class="dashboard-stat-header">
+                <h3 class="dashboard-stat-title">Submitted Companies</h3>
+                <i class="bi bi-buildings dashboard-stat-icon"></i>
+            </div>
+            <div class="dashboard-stat-value">{{ $stats['employer_companies_submitted'] ?? 0 }}</div>
+            <div class="dashboard-stat-footer">
+                <a class="dashboard-btn-link" href="{{ route('admin.employer-companies.index', ['status' => 'submitted']) }}">Review now</a>
+            </div>
+        </div>
     </div>
 
     <!-- Main Content Grid -->
@@ -163,6 +174,10 @@
                     <a href="{{ route('admin.users.index') }}" class="dashboard-action-item">
                         <i class="bi bi-people"></i>
                         <span>Manage Users</span>
+                    </a>
+                    <a href="{{ route('admin.employer-companies.index') }}" class="dashboard-action-item">
+                        <i class="bi bi-buildings"></i>
+                        <span>Employer Approvals</span>
                     </a>
                     <a href="{{ route('admin.content.index') }}" class="dashboard-action-item">
                         <i class="bi bi-shield-check"></i>

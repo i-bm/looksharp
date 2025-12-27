@@ -246,6 +246,10 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/employer-companies/{id}/needs-changes', [AdminEmployerCompanyController::class, 'needsChanges'])->name('employer-companies.needs-changes');
         Route::post('/employer-companies/{id}/reject', [AdminEmployerCompanyController::class, 'reject'])->name('employer-companies.reject');
         Route::post('/employer-companies/{id}/suspend', [AdminEmployerCompanyController::class, 'suspend'])->name('employer-companies.suspend');
+        Route::post('/employer-companies/{id}/verify', [AdminEmployerCompanyController::class, 'verify'])->name('employer-companies.verify');
+        Route::get('/employer-companies/{id}/documents/{type}', [AdminEmployerCompanyController::class, 'downloadDocument'])
+            ->where('type', 'ghana_card|business_registration')
+            ->name('employer-companies.documents.download');
     });
 });
 

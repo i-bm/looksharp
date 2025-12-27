@@ -23,7 +23,17 @@
         @php
         $contactEmail = $company->primary_contact_email ?? $company->official_email;
         $hasContactEmail = !empty($contactEmail);
+        $isApproved = $company->status === \App\Enums\EmployerCompanyStatusEnum::APPROVED->value;
+        $isVerified = $company->verification_status === \App\Enums\EmployerCompanyVerificationStatusEnum::VERIFIED->value;
         @endphp
+
+        @if(!$isApproved)
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>Approval required:</strong> Your company profile must be approved by an admin before you can select a subscription plan.
+            <a href="{{ route('employer.company.show') }}" class="alert-link">Back to company profile</a>.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
 
         @if(!$hasContactEmail)
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -34,6 +44,14 @@
                 Information</a>
             or <a href="{{ route('employer.company.show') }}#contact-location" class="alert-link">Contact & Location
                 Information</a> section.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+
+        @if($isApproved && !$isVerified)
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <strong>Verification required for paid plans:</strong> To select Starter or Professional, your business must be verified (COM-04).
+            Upload Ghana Card + Business Registration under <a href="{{ route('employer.company.show') }}#registration" class="alert-link">Registration & Verification</a>.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
@@ -105,13 +123,20 @@
                             </ul>
 
                             <button type="button" class="btn btn-primary w-100 select-tier-btn"
-                                data-tier="{{ $tierKey }}" @if($tierKey !=='free' && !$hasContactEmail) disabled
-                                title="Please add a contact email to your company profile first" @endif>
+                                data-tier="{{ $tierKey }}"
+                                @if(!$isApproved) disabled title="Company approval required"
+                                @elseif($tierKey !== 'free' && !$hasContactEmail) disabled title="Please add a contact email to your company profile first"
+                                @elseif($tierKey !== 'free' && !$isVerified) disabled title="Business verification required for paid plans"
+                                @endif>
                                 @if($currentSubscription && $currentSubscription->tier === $tierKey &&
                                 $currentSubscription->isActive())
                                 Current Plan
+                                @elseif(!$isApproved)
+                                Approval Required
                                 @elseif($tierKey !== 'free' && !$hasContactEmail)
                                 Add Email Required
+                                @elseif($tierKey !== 'free' && !$isVerified)
+                                Verification Required
                                 @else
                                 Select Plan
                                 @endif

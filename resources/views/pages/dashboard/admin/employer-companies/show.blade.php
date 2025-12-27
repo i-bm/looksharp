@@ -13,7 +13,9 @@
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('admin.employer-companies.index') }}" class="btn btn-outline-secondary">Back</a>
+            @if($company->status === \App\Enums\EmployerCompanyStatusEnum::APPROVED->value)
             <a href="{{ route('employer.company.public', ['id' => $company->id]) }}" class="btn btn-outline-primary" target="_blank" rel="noopener">Public</a>
+            @endif
         </div>
     </div>
 
@@ -134,6 +136,79 @@
                     <label class="form-label">Suspend (notes required)</label>
                     <textarea name="notes" class="form-control" rows="3" placeholder="Reason for suspension" required>{{ old('notes') }}</textarea>
                     <button type="submit" class="btn btn-danger mt-2">Suspend</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-card mt-3">
+        <h3 class="h5 mb-3">Verification (COM-04)</h3>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="text-muted small">Verification status</div>
+                <div class="fw-semibold">
+                    {{ $company->verification_status ?? 'pending' }}
+                    @if($company->verified_at)
+                    <span class="text-muted small">· {{ $company->verified_at->format('Y-m-d H:i') }}</span>
+                    @endif
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Verified by</div>
+                <div class="fw-semibold">
+                    {{ $company->verifier?->email ?? '—' }}
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="text-muted small">Documents</div>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    @if($company->ghana_card_document_url)
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.employer-companies.documents.download', ['id' => $company->id, 'type' => 'ghana_card']) }}">
+                        Download Ghana Card
+                    </a>
+                    @else
+                    <span class="text-muted">Ghana Card: —</span>
+                    @endif
+
+                    @if($company->business_registration_document_url)
+                    <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.employer-companies.documents.download', ['id' => $company->id, 'type' => 'business_registration']) }}">
+                        Download Business Registration
+                    </a>
+                    @else
+                    <span class="text-muted">Business Registration: —</span>
+                    @endif
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <form method="POST" action="{{ route('admin.employer-companies.verify', ['id' => $company->id]) }}">
+                    @csrf
+                    <input type="hidden" name="verified" value="1" />
+                    <label class="form-label">Mark verified (optional notes)</label>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Optional notes for audit trail">{{ old('notes') }}</textarea>
+                    <button type="submit" class="btn btn-success mt-2" @if(!$company->ghana_card_document_url && !$company->business_registration_document_url) disabled @endif>
+                        Mark Verified
+                    </button>
+                    @if(!$company->ghana_card_document_url && !$company->business_registration_document_url)
+                    <div class="form-text text-muted">No documents uploaded yet.</div>
+                    @endif
+                </form>
+            </div>
+
+            <div class="col-lg-6">
+                <form method="POST" action="{{ route('admin.employer-companies.verify', ['id' => $company->id]) }}">
+                    @csrf
+                    <input type="hidden" name="verified" value="0" />
+                    <label class="form-label">Reject verification (optional notes)</label>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Optional notes for audit trail">{{ old('notes') }}</textarea>
+                    <button type="submit" class="btn btn-danger mt-2" @if(!$company->ghana_card_document_url && !$company->business_registration_document_url) disabled @endif>
+                        Reject Verification
+                    </button>
+                    @if(!$company->ghana_card_document_url && !$company->business_registration_document_url)
+                    <div class="form-text text-muted">No documents uploaded yet.</div>
+                    @endif
                 </form>
             </div>
         </div>
