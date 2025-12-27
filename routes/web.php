@@ -11,13 +11,13 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\PasswordlessAuthController;
 use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployerProfileController;
 use App\Http\Controllers\Pages\EmployerController;
 use App\Http\Controllers\Pages\HomeController;
 use App\Http\Controllers\Pages\StudentController;
 use App\Http\Controllers\Pages\UniversityController;
-use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\TalentProfileController;
 use App\Http\Controllers\UniversityProfileController;
 use Illuminate\Support\Facades\Route;
@@ -265,6 +265,11 @@ Route::get('/university/{id}', [UniversityProfileController::class, 'public'])->
 
 // Webhook routes (no auth required)
 Route::post('/webhooks/paystack/subscription', [EmployerProfileController::class, 'paymentWebhook'])->name('webhooks.paystack.subscription');
+
+// Test route for Profile V2 UI
+Route::get('/profile/v2/test', function () {
+    return view('pages.profile.v2.show');
+})->name('profile.v2.test');
 
 // Redirect /home to /dashboard for backward compatibility
 Route::get('/home', function () {
