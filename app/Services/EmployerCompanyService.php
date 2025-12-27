@@ -592,6 +592,10 @@ class EmployerCompanyService
                     || $this->isFieldNotEmpty($company->primary_contact_email),
                 'step' => 4,
             ],
+            'subscription' => [
+                'completed' => $company->hasActiveSubscription(),
+                'step' => 5,
+            ],
         ];
 
         // Determine current step (first incomplete step, or last step if all complete)
@@ -613,7 +617,7 @@ class EmployerCompanyService
         }
         $completenessScore = (int) (($completedSteps / count($steps)) * 100);
 
-        // Update wizard_complete flag if all steps are complete
+        // Update wizard_complete flag if all steps are complete (including subscription)
         $allStepsComplete = $completedSteps === count($steps);
         if ($allStepsComplete && ! $company->wizard_complete) {
             try {

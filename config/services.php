@@ -36,6 +36,13 @@ return [
         ],
     ],
 
+    'paystack' => [
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'merchant_email' => env('PAYSTACK_MERCHANT_EMAIL'),
+        'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
+    ],
+
     'smsonlinegh' => [
         'api_key' => env('SMSONLINEGH_API_KEY'),
         'api_url' => env('SMSONLINEGH_API_URL', 'https://api.smsonlinegh.com/api/v1'),

@@ -4,62 +4,62 @@ overview: Integrate subscription selection as a required step in the employer on
 todos:
   - id: "1"
     content: Create Subscription model and migration with UUID primary key, relationships, and all required fields (tier, billing_cycle, status, payment tracking, etc.)
-    status: pending
+    status: completed
   - id: "2"
     content: Create SubscriptionService with methods for creating subscriptions, processing payments, activating subscriptions, and handling upgrades/downgrades
-    status: pending
+    status: completed
     dependencies:
       - "1"
   - id: "3"
     content: Create PaymentService to abstract Paystack integration with methods for initiating payments, verifying payments, and handling webhooks
-    status: pending
+    status: completed
   - id: "4"
     content: Update EmployerCompany model to add subscription relationships (hasOne, hasMany) and helper methods (hasActiveSubscription, currentSubscriptionTier, canPostOpportunity)
-    status: pending
+    status: completed
     dependencies:
       - "1"
   - id: "5"
     content: Update EmployerCompanyService to add subscription step to wizard progress and update wizard completion logic to require all 5 steps
-    status: pending
+    status: completed
     dependencies:
       - "1"
       - "4"
   - id: "6"
     content: Create StoreSubscriptionRequest and ProcessPaymentRequest form request classes with validation rules
-    status: pending
+    status: completed
   - id: "7"
     content: Add subscription routes to web.php (select, store, payment, callback, webhook)
-    status: pending
+    status: completed
   - id: "8"
     content: Add subscription selection methods to EmployerProfileController (selectSubscription, storeSubscription, processSubscriptionPayment, paymentCallback, paymentWebhook)
-    status: pending
+    status: completed
     dependencies:
       - "2"
       - "3"
       - "6"
   - id: "9"
     content: Create subscription-edit.blade.php partial view with tier comparison, pricing display, billing cycle toggle, and payment method selection
-    status: pending
+    status: completed
   - id: "10"
     content: Create payment.blade.php view for payment processing status and Paystack redirect
-    status: pending
+    status: completed
   - id: "11"
     content: Update company show view to display subscription step in wizard progress and show current subscription status
-    status: pending
+    status: completed
     dependencies:
       - "9"
   - id: "12"
     content: Add Paystack configuration to config/services.php and update .env with Paystack credentials
-    status: pending
+    status: completed
   - id: "13"
     content: Implement subscription limits enforcement (check active_postings limit before allowing new postings) and add upgrade prompts
-    status: pending
+    status: completed
     dependencies:
       - "2"
       - "4"
   - id: "14"
     content: Add comprehensive logging throughout SubscriptionService and PaymentService for all subscription and payment operations
-    status: pending
+    status: completed
     dependencies:
       - "2"
       - "3"
@@ -201,20 +201,20 @@ Company Creation → Wizard Steps 1-4 → Subscription Selection (Step 5) → Pa
 
 - **Add Routes**:
   ```php
-        Route::middleware(['auth', 'role:employer'])->group(function () {
-            Route::get('/company/subscription/select', [EmployerProfileController::class, 'selectSubscription'])
-                ->name('employer.subscription.select');
-            Route::post('/company/subscription', [EmployerProfileController::class, 'storeSubscription'])
-                ->name('employer.subscription.store');
-            Route::post('/company/subscription/payment', [EmployerProfileController::class, 'processSubscriptionPayment'])
-                ->name('employer.subscription.payment');
-            Route::get('/company/subscription/payment/callback', [EmployerProfileController::class, 'paymentCallback'])
-                ->name('employer.subscription.payment.callback');
-        });
-        
-        // Webhook route (no auth required)
-        Route::post('/webhooks/paystack/subscription', [EmployerProfileController::class, 'paymentWebhook'])
-            ->name('webhooks.paystack.subscription');
+            Route::middleware(['auth', 'role:employer'])->group(function () {
+                Route::get('/company/subscription/select', [EmployerProfileController::class, 'selectSubscription'])
+                    ->name('employer.subscription.select');
+                Route::post('/company/subscription', [EmployerProfileController::class, 'storeSubscription'])
+                    ->name('employer.subscription.store');
+                Route::post('/company/subscription/payment', [EmployerProfileController::class, 'processSubscriptionPayment'])
+                    ->name('employer.subscription.payment');
+                Route::get('/company/subscription/payment/callback', [EmployerProfileController::class, 'paymentCallback'])
+                    ->name('employer.subscription.payment.callback');
+            });
+            
+            // Webhook route (no auth required)
+            Route::post('/webhooks/paystack/subscription', [EmployerProfileController::class, 'paymentWebhook'])
+                ->name('webhooks.paystack.subscription');
   ```
 
 
@@ -269,12 +269,12 @@ Company Creation → Wizard Steps 1-4 → Subscription Selection (Step 5) → Pa
 - **File**: `config/services.php`
 - **Add**:
   ```php
-        'paystack' => [
-            'public_key' => env('PAYSTACK_PUBLIC_KEY'),
-            'secret_key' => env('PAYSTACK_SECRET_KEY'),
-            'merchant_email' => env('PAYSTACK_MERCHANT_EMAIL'),
-            'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
-        ],
+            'paystack' => [
+                'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+                'secret_key' => env('PAYSTACK_SECRET_KEY'),
+                'merchant_email' => env('PAYSTACK_MERCHANT_EMAIL'),
+                'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
+            ],
   ```
 
 
@@ -364,6 +364,3 @@ PAYSTACK_WEBHOOK_SECRET=
 - Laravel Auditing for subscription changes
 
 ## Notes
-
-- Subscription is REQUIRED during onboarding (but FREE tier is always available)
-- No auto-creation of FREE subscription - only created when selected

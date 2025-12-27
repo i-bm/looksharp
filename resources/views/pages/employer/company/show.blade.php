@@ -21,6 +21,8 @@ $primaryContactComplete = $isFieldNotEmpty($company->primary_contact_name) ||
 $isFieldNotEmpty($company->primary_contact_email);
 $brandingComplete = $isFieldNotEmpty($company->logo_url) || $isFieldNotEmpty($company->company_description) ||
 $company->photos->count() > 0;
+$subscriptionComplete = $company->hasActiveSubscription();
+$currentSubscription = $company->subscription;
 @endphp
 
 @section('content')
@@ -468,6 +470,76 @@ $company->photos->count() > 0;
                     </div>
                     <div class="company-section-edit" style="display: none;">
                         @include('pages.employer.company.partials.primary-contact-edit', ['company' => $company])
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Section -->
+            <div class="company-section-card" data-section="subscription">
+                <div class="company-section-header">
+                    <div class="company-section-title-wrapper">
+                        <span class="company-section-status-icon">
+                            @if($subscriptionComplete)
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            @else
+                            <i class="bi bi-exclamation-circle text-warning"></i>
+                            @endif
+                        </span>
+                        <h3 class="company-section-title">Subscription</h3>
+                    </div>
+                    <div class="company-section-actions">
+                        @if(!$subscriptionComplete)
+                        <a href="{{ route('employer.subscription.select') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-credit-card"></i> Select Plan
+                        </a>
+                        @endif
+                        <button type="button" class="btn btn-sm btn-link btn-toggle-section" data-section="subscription">
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="company-section-content" data-section="subscription">
+                    <div class="company-section-view">
+                        @if($subscriptionComplete && $currentSubscription)
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div><strong>Current Plan</strong></div>
+                                <div>
+                                    <span class="badge bg-primary">{{ ucfirst($currentSubscription->tier) }}</span>
+                                    @if($currentSubscription->billing_cycle)
+                                    <span class="text-muted">({{ ucfirst($currentSubscription->billing_cycle) }})</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div><strong>Status</strong></div>
+                                <div>
+                                    <span class="badge bg-{{ $currentSubscription->status === 'active' ? 'success' : 'warning' }}">
+                                        {{ ucfirst(str_replace('_', ' ', $currentSubscription->status)) }}
+                                    </span>
+                                </div>
+                            </div>
+                            @if($currentSubscription->ends_at)
+                            <div class="col-md-6">
+                                <div><strong>Expires</strong></div>
+                                <div>{{ $currentSubscription->ends_at->format('M d, Y') }}</div>
+                            </div>
+                            @endif
+                            @if($currentSubscription->amount > 0)
+                            <div class="col-md-6">
+                                <div><strong>Amount</strong></div>
+                                <div>GHS {{ number_format($currentSubscription->amount, 2) }}</div>
+                            </div>
+                            @endif
+                        </div>
+                        @else
+                        <div class="alert alert-info" style="font-family: var(--font-suse);">
+                            <p class="mb-0">No active subscription. Please select a subscription plan to continue.</p>
+                            <a href="{{ route('employer.subscription.select') }}" class="btn btn-primary btn-sm mt-2">
+                                Select Subscription Plan
+                            </a>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
