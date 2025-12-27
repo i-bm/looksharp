@@ -11,6 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Paystack (and other external providers) cannot send Laravel CSRF tokens.
+        // Without this, webhook POSTs will fail with 419 (Page Expired).
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/paystack/subscription',
+        ]);
+
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
