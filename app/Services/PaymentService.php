@@ -288,18 +288,28 @@ class PaymentService
 
     /**
      * Verify webhook signature from Paystack.
+     *
+     * This method verifies that incoming webhook requests are authentic by comparing
+     * the provided signature with a computed HMAC-SHA512 hash of the payload using
+     * the Paystack secret key. Paystack uses the same secret key for API calls and
+     * webhook signature verification. Signature verification is mandatory - webhooks
+     * will be rejected if the secret key is not configured.
+     *
+     * @param  string  $signature  The signature from the X-Paystack-Signature header
+     * @param  string  $payload  The raw request body payload
+     * @return bool Returns true if signature is valid, false otherwise
      */
     public function verifyWebhookSignature(string $signature, string $payload): bool
     {
-        $webhookSecret = config('services.paystack.webhook_secret');
+        $secretKey = config('services.paystack.secret_key');
 
-        if (empty($webhookSecret)) {
-            Log::warning('PaymentService: Webhook secret not configured, skipping signature verification');
+        if (empty($secretKey)) {
+            Log::error('PaymentService: Paystack secret key not configured, rejecting webhook for security');
 
-            return true; // Allow if not configured (for development)
+            return false; // Reject if not configured - signature verification is required
         }
 
-        $computedSignature = hash_hmac('sha512', $payload, $webhookSecret);
+        $computedSignature = hash_hmac('sha512', $payload, $secretKey);
 
         return hash_equals($computedSignature, $signature);
     }

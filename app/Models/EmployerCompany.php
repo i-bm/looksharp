@@ -151,19 +151,32 @@ class EmployerCompany extends Model implements Auditable
         return $this->hasMany(Subscription::class);
     }
 
+    /**
+     * Get the active subscription for this company.
+     * This method queries for active subscriptions directly instead of relying on latestOfMany(),
+     * to avoid issues where a pending_payment subscription becomes the latest but an older
+     * active subscription still exists.
+     */
+    public function getActiveSubscription(): ?Subscription
+    {
+        return $this->subscriptions()
+            ->active()
+            ->latest()
+            ->first();
+    }
+
     public function hasActiveSubscription(): bool
     {
-        $subscription = $this->subscription;
+        $subscription = $this->getActiveSubscription();
 
-        return $subscription !== null &&
-            $subscription->isActive();
+        return $subscription !== null;
     }
 
     public function currentSubscriptionTier(): ?SubscriptionTierEnum
     {
-        $subscription = $this->subscription;
+        $subscription = $this->getActiveSubscription();
 
-        if ($subscription === null || ! $subscription->isActive()) {
+        if ($subscription === null) {
             return null;
         }
 
@@ -172,9 +185,9 @@ class EmployerCompany extends Model implements Auditable
 
     public function canPostOpportunity(): bool
     {
-        $subscription = $this->subscription;
+        $subscription = $this->getActiveSubscription();
 
-        if ($subscription === null || ! $subscription->isActive()) {
+        if ($subscription === null) {
             return false;
         }
 

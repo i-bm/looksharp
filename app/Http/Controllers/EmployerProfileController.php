@@ -1133,6 +1133,22 @@ class EmployerProfileController extends Controller
                 ? BillingCycleEnum::from($request->input('billing_cycle'))
                 : null;
 
+            // Validate contact email for paid subscriptions
+            if ($tier !== SubscriptionTierEnum::FREE) {
+                $contactEmail = $company->primary_contact_email ?? $company->official_email;
+
+                if (empty($contactEmail)) {
+                    Log::warning('EmployerProfileController: Company contact email missing for paid subscription', [
+                        'user_id' => $user->id,
+                        'company_id' => $company->id,
+                        'tier' => $tier->value,
+                    ]);
+
+                    return redirect()->route('employer.company.show')
+                        ->with('error', 'Please add a contact email (Primary Contact Email or Official Email) to your company profile before selecting a paid subscription plan. Payment processing requires a valid email address.');
+                }
+            }
+
             $subscription = $this->subscriptionService->createSubscription($company, $tier, $billingCycle);
 
             // If FREE tier, redirect to company show page
@@ -1166,6 +1182,12 @@ class EmployerProfileController extends Controller
                     'trace' => $e->getTraceAsString(),
                 ]);
 
+                // Check if error is about missing email
+                if (str_contains($e->getMessage(), 'Company contact email is required')) {
+                    return redirect()->route('employer.company.show')
+                        ->with('error', 'Please add a contact email (Primary Contact Email or Official Email) to your company profile before selecting a paid subscription plan. Payment processing requires a valid email address.');
+                }
+
                 return redirect()->back()
                     ->withInput()
                     ->with('error', 'Failed to initiate payment: '.$e->getMessage());
@@ -1176,6 +1198,12 @@ class EmployerProfileController extends Controller
                 'company_id' => $company->id,
                 'error' => $e->getMessage(),
             ]);
+
+            // Check if error is about missing email
+            if (str_contains($e->getMessage(), 'Company contact email is required')) {
+                return redirect()->route('employer.company.show')
+                    ->with('error', 'Please add a contact email (Primary Contact Email or Official Email) to your company profile before selecting a paid subscription plan. Payment processing requires a valid email address.');
+            }
 
             return redirect()->back()
                 ->withInput()

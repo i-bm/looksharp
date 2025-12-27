@@ -90,11 +90,13 @@ class Subscription extends Model implements Auditable
      */
     public function scopeExpired($query)
     {
-        return $query->where('status', 'expired')
-            ->orWhere(function ($q) {
-                $q->where('status', 'active')
-                    ->where('ends_at', '<=', now());
-            });
+        return $query->where(function ($q) {
+            $q->where('status', 'expired')
+                ->orWhere(function ($subQ) {
+                    $subQ->where('status', 'active')
+                        ->where('ends_at', '<=', now());
+                });
+        });
     }
 
     /**
