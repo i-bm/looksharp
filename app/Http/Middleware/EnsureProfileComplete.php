@@ -29,6 +29,9 @@ class EnsureProfileComplete
         'employer.company.registration.update',
         'employer.company.primary-contact.update',
         'employer.company.branding.update',
+        'university.profile.show',
+        'university.profile.edit',
+        'university.profile.update',
         'logout',
     ];
 
@@ -61,7 +64,11 @@ class EnsureProfileComplete
             return $this->handleEmployerProfile($request, $next, $user);
         }
 
-        // For other user types (university, admin), allow access
+        if ($user->hasRole(UserRoleEnum::UNIVERSITY->value)) {
+            return $this->handleUniversityProfile($request, $next, $user);
+        }
+
+        // For other user types (admin, etc.), allow access
         return $next($request);
     }
 
@@ -169,6 +176,39 @@ class EnsureProfileComplete
     }
 
     /**
+     * Handle university profile completion check.
+     */
+    protected function handleUniversityProfile(Request $request, Closure $next, $user): Response
+    {
+        $admin = $user->universityAdmin;
+        $completionScore = $admin?->profile_completeness_score ?? 0;
+        $threshold = 70;
+
+        if ($completionScore >= $threshold) {
+            $request->session()->forget('profile_completion_prompted');
+
+            return $next($request);
+        }
+
+        $hasBeenPrompted = $request->session()->get('profile_completion_prompted', false);
+
+        if (! $hasBeenPrompted) {
+            $request->session()->put('profile_completion_prompted', true);
+
+            Log::info('EnsureProfileComplete: redirecting university to profile edit (first time)', [
+                'user_id' => $user->id,
+                'completion_score' => $completionScore,
+                'route' => $request->route()?->getName(),
+            ]);
+
+            return redirect()->route('university.profile.edit')
+                ->with('info', 'Please complete your university profile to unlock partner features.');
+        }
+
+        return $next($request);
+    }
+
+    /**
      * Check if the current route is always allowed (never blocked).
      */
     protected function isAlwaysAllowedRoute(?string $routeName): bool
@@ -198,6 +238,12 @@ class EnsureProfileComplete
             str_starts_with($routeName, 'employer.company.registration.update') ||
             str_starts_with($routeName, 'employer.company.primary-contact.update') ||
             str_starts_with($routeName, 'employer.company.branding.update')) {
+            return true;
+        }
+
+        if (str_starts_with($routeName, 'university.profile.show') ||
+            str_starts_with($routeName, 'university.profile.edit') ||
+            str_starts_with($routeName, 'university.profile.update')) {
             return true;
         }
 

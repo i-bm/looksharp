@@ -225,10 +225,22 @@
                     </div>
                 </div>
                 <div class="dashboard-actions">
-                    <a href="{{ route('talent.profile.edit') }}" class="dashboard-action-item">
-                        <i class="bi bi-person-gear"></i>
-                        <span>Complete Profile</span>
-                    </a>
+                    @if(Auth::check() && Auth::user()->hasRole('talent'))
+                        <a href="{{ route('talent.profile.edit') }}" class="dashboard-action-item">
+                            <i class="bi bi-person-gear"></i>
+                            <span>Complete Profile</span>
+                        </a>
+                    @elseif(Auth::check() && Auth::user()->hasRole('employer'))
+                        <a href="{{ route('employer.company.show') }}" class="dashboard-action-item">
+                            <i class="bi bi-building-gear"></i>
+                            <span>Company Profile</span>
+                        </a>
+                    @elseif(Auth::check() && Auth::user()->hasRole('university'))
+                        <a href="{{ route('university.profile.edit') }}" class="dashboard-action-item">
+                            <i class="bi bi-mortarboard"></i>
+                            <span>Complete University Setup</span>
+                        </a>
+                    @endif
                     <a href="#" class="dashboard-action-item">
                         <i class="bi bi-search"></i>
                         <span>Browse Jobs</span>
