@@ -17,6 +17,7 @@ use App\Models\TalentProfile;
 use App\Models\TalentSkill;
 use App\Models\TalentVolunteerExperience;
 use App\Models\TalentWorkHistory;
+use App\Http\Requests\Profile\StoreVerificationRequest;
 use App\Services\ProfileService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -36,6 +37,103 @@ class TalentProfileController extends Controller
         $this->middleware('auth')->except('public');
         $this->middleware('role:'.UserRoleEnum::TALENT->value)->except('public');
         $this->profileService = $profileService;
+    }
+
+    /**
+     * Show verification page (document upload / student verification).
+     */
+    public function showVerification(): View|RedirectResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profile not found. Please contact support.');
+        }
+
+        return view('pages.profile.verification.show', [
+            'profile' => $profile,
+        ]);
+    }
+
+    /**
+     * Submit student verification (uploads student ID + requests OTP).
+     */
+    public function submitStudentVerification(Request $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profile not found. Please contact support.');
+        }
+
+        $validated = $request->validate([
+            'student_id' => ['required', 'string', 'max:255'],
+            'student_email' => ['required', 'email', 'max:255'],
+            'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB max
+        ]);
+
+        try {
+            $this->profileService->submitStudentVerification(
+                $profile,
+                $validated['student_id'],
+                $validated['student_email'],
+                $request->file('verification_document')
+            );
+
+            // Store session data for resend countdown
+            $request->session()->put('student_verification.otp_sent_at', now()->toIso8601String());
+            $request->session()->put('student_verification.student_email', $validated['student_email']);
+
+            return redirect()->route('talent.profile.verify-student-email.show')
+                ->with('success', 'We sent a verification code to your student email. Please enter it to complete verification.');
+        } catch (\Exception $e) {
+            Log::error('Student verification submission failed: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Submit identity verification document (non-student).
+     */
+    public function submitVerificationDocument(StoreVerificationRequest $request): RedirectResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Profile not found. Please contact support.');
+        }
+
+        try {
+            $this->profileService->uploadVerificationDocument(
+                $profile,
+                $request->file('verification_document'),
+                (string) $request->input('verification_type')
+            );
+
+            return redirect()->route('talent.profile.verification.show')
+                ->with('success', 'Verification document uploaded. Status is now pending review.');
+        } catch (\Exception $e) {
+            Log::error('Verification document submission failed: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Failed to upload verification document. Please try again.']);
+        }
     }
 
     /**

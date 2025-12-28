@@ -399,6 +399,60 @@
     line-height: 1.6;
 }
 
+/* Verification Card */
+.profile-v2-verification-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-v2-verification-help {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.profile-v2-verification-cta {
+    width: 100%;
+}
+
+.profile-v2-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid var(--borders-color);
+    background: var(--white-color);
+    color: var(--title-color);
+}
+
+.profile-v2-pill .material-symbols-outlined {
+    font-size: 16px;
+}
+
+.profile-v2-pill-verified {
+    border-color: rgba(16, 185, 129, 0.30);
+    background: rgba(16, 185, 129, 0.12);
+    color: #065f46;
+}
+
+.profile-v2-pill-pending {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.14);
+    color: #92400e;
+}
+
+.profile-v2-pill-neutral {
+    border-color: rgba(148, 163, 184, 0.60);
+    background: rgba(148, 163, 184, 0.18);
+    color: #334155;
+}
+
 /* Empty States */
 .profile-v2-empty {
     text-align: center;
