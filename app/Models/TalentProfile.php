@@ -159,6 +159,14 @@ class TalentProfile extends Model implements Auditable
     }
 
     /**
+     * Get the projects for the talent profile.
+     */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(TalentProject::class, 'talent_id');
+    }
+
+    /**
      * Get the career interest areas for the talent profile.
      */
     public function careerInterestAreas(): BelongsToMany
@@ -173,6 +181,48 @@ class TalentProfile extends Model implements Auditable
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * Get the current/primary/most recent education record.
+     */
+    public function getCurrentEducationAttribute(): ?TalentEducation
+    {
+        // First try to get current education (where is_current = true)
+        $currentEducation = $this->education()
+            ->where('is_current', true)
+            ->with('institution')
+            ->first();
+
+        if ($currentEducation) {
+            return $currentEducation;
+        }
+
+        // If no current, try primary education
+        $primaryEducation = $this->education()
+            ->where('is_primary', true)
+            ->with('institution')
+            ->first();
+
+        if ($primaryEducation) {
+            return $primaryEducation;
+        }
+
+        // If still no education, get most recent by start_date
+        $recentEducation = $this->education()
+            ->whereNotNull('start_date')
+            ->with('institution')
+            ->orderBy('start_date', 'desc')
+            ->first();
+
+        if ($recentEducation) {
+            return $recentEducation;
+        }
+
+        // Last resort: get any education record
+        return $this->education()
+            ->with('institution')
+            ->first();
     }
 
     /**

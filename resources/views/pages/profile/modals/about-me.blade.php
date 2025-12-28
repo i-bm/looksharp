@@ -5,25 +5,24 @@
         
         <div style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
-                Headline
+                First Name
             </label>
-            <input type="text" name="headline" id="about-me-headline" value="{{ $profile->headline }}" 
-                placeholder="e.g., Software Engineer | Full Stack Developer"
-                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;">
-            <p style="margin-top: 5px; font-size: 12px; color: #666;">A brief professional headline that appears below your name</p>
+            <input type="text" name="first_name" id="about-me-first-name" value="{{ $profile->first_name ?? $profile->user->first_name ?? '' }}" 
+                placeholder="Enter your first name"
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;"
+                required>
+            <p style="margin-top: 5px; font-size: 12px; color: #666;">Your first name</p>
         </div>
 
         <div style="margin-bottom: 20px;">
             <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
-                Public URL
+                Last Name
             </label>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="color: #666; font-size: 14px;">{{ url('/') }}/profile/</span>
-                <input type="text" name="public_url" id="about-me-public-url" value="{{ $profile->public_url }}" 
-                    placeholder="your-unique-slug"
-                    style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;">
-            </div>
-            <p style="margin-top: 5px; font-size: 12px; color: #666;">Create a unique URL for your public profile (letters, numbers, and hyphens only)</p>
+            <input type="text" name="last_name" id="about-me-last-name" value="{{ $profile->last_name ?? $profile->user->last_name ?? '' }}" 
+                placeholder="Enter your last name"
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; font-family: inherit;"
+                required>
+            <p style="margin-top: 5px; font-size: 12px; color: #666;">Your last name</p>
         </div>
         
         <div style="margin-bottom: 20px;">

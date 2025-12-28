@@ -911,21 +911,45 @@ class ProfileService
      */
     public function updateAboutMe(TalentProfile $profile, array $data): TalentProfile
     {
+        Log::info('Updating about me', [
+            'profile_id' => $profile->id,
+            'data_keys' => array_keys($data),
+        ]);
+
         try {
             return DB::transaction(function () use ($profile, $data) {
                 $updateData = [
                     'bio' => $data['bio'] ?? null,
                 ];
 
-                if (isset($data['headline'])) {
-                    $updateData['headline'] = $data['headline'] ?: null;
+                // Handle first_name and last_name
+                if (isset($data['first_name'])) {
+                    $updateData['first_name'] = $data['first_name'] ?: null;
                 }
 
-                if (isset($data['public_url'])) {
-                    $updateData['public_url'] = $data['public_url'] ?: null;
+                if (isset($data['last_name'])) {
+                    $updateData['last_name'] = $data['last_name'] ?: null;
+                }
+
+                // Determine the final first_name and last_name that will be saved
+                $finalFirstName = $updateData['first_name'] ?? $profile->first_name ?? $profile->user->first_name ?? 'user';
+                $finalLastName = $updateData['last_name'] ?? $profile->last_name ?? $profile->user->last_name ?? '';
+
+                // Get current names (fallback to user's names if profile names are null)
+                $currentFirstName = $profile->first_name ?? $profile->user->first_name ?? 'user';
+                $currentLastName = $profile->last_name ?? $profile->user->last_name ?? '';
+
+                // Auto-generate public_url when first_name or last_name changes, or if public_url doesn't exist
+                if ((!empty($finalFirstName) || !empty($finalLastName)) && 
+                    (($finalFirstName !== $currentFirstName || $finalLastName !== $currentLastName) || empty($profile->public_url))) {
+                    $updateData['public_url'] = generatePublicUrlSlug($finalFirstName, $finalLastName, $profile->public_url);
                 }
 
                 $profile->update($updateData);
+
+                Log::info('About me updated successfully', [
+                    'profile_id' => $profile->id,
+                ]);
 
                 $this->calculateCompletenessScore($profile);
 

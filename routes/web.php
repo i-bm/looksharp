@@ -259,7 +259,7 @@ Route::prefix('api/autocomplete')->name('api.autocomplete.')->middleware('thrott
 });
 
 // Public profile routes (accessible without authentication)
-Route::get('/profile/{slug}', [TalentProfileController::class, 'public'])->name('talent.profile.public');
+Route::get('/ls/{slug}', [TalentProfileController::class, 'public'])->name('talent.profile.public');
 Route::get('/company/{id}', [EmployerProfileController::class, 'public'])->name('employer.company.public');
 Route::get('/university/{id}', [UniversityProfileController::class, 'public'])->name('university.profile.public');
 

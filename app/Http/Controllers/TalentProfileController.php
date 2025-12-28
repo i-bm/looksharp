@@ -427,7 +427,7 @@ class TalentProfileController extends Controller
                 ->with('error', 'Profile not found. Please contact support.');
         }
 
-        $profile->load(['education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'careerInterestAreas']);
+        $profile->load(['education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'projects', 'careerInterestAreas']);
         $institutions = Institution::where('is_active', true)->orderBy('name')->get();
         $careerInterestAreas = CareerInterestArea::active()
             ->parents()
@@ -1340,8 +1340,8 @@ class TalentProfileController extends Controller
 
         try {
             $validated = $request->validate([
-                'headline' => ['nullable', 'string', 'max:255'],
-                'public_url' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9-]+$/', Rule::unique('talent_profiles', 'public_url')->ignore($profile->id)],
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['required', 'string', 'max:255'],
                 'bio' => ['nullable', 'string', 'max:1000'],
             ]);
 
