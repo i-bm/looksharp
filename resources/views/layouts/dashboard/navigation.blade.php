@@ -19,6 +19,9 @@ $isEmployerJobs = str_contains($currentRoute, 'employer.job') || str_contains($c
 $isEmployerApplicants = str_contains($currentRoute, 'employer.applicant');
 $isEmployerAnalytics = str_contains($currentRoute, 'employer.analytics') || str_contains($currentRoute, 'analytics');
 
+// University routes
+$isUniversityProfile = str_contains($currentRoute, 'university.profile');
+
 // Settings routes
 $isSettings = str_contains($currentRoute, 'settings') || str_contains($currentRoute, 'account') || str_contains($currentRoute, 'security');
 
@@ -159,6 +162,20 @@ $isSettingsParent = $isSettings;
                 <a href="#" class="dashboard-nav-link">
                     <i class="bi bi-graph-up"></i>
                     <span>Analytics</span>
+                </a>
+            </li>
+            @elseif(Auth::check() && Auth::user()->hasRole('university'))
+            <!-- University Navigation -->
+            <li class="dashboard-nav-item {{ $isUniversityProfile ? 'dashboard-nav-item-active' : '' }}">
+                <a href="{{ route('university.profile.show') }}" class="dashboard-nav-link">
+                    <i class="bi bi-mortarboard"></i>
+                    <span>University Profile</span>
+                </a>
+            </li>
+            <li class="dashboard-nav-item">
+                <a href="{{ route('university.profile.edit') }}" class="dashboard-nav-link">
+                    <i class="bi bi-person-gear"></i>
+                    <span>Onboarding</span>
                 </a>
             </li>
             @endif

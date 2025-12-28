@@ -75,6 +75,11 @@ class User extends Authenticatable implements Auditable
         return $this->hasOne(AdminProfile::class);
     }
 
+    public function universityAdmin(): HasOne
+    {
+        return $this->hasOne(UniversityAdmin::class);
+    }
+
     public function employerCompanies(): BelongsToMany
     {
         return $this->belongsToMany(EmployerCompany::class, 'employer_company_members', 'user_id', 'employer_company_id')
