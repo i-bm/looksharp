@@ -104,6 +104,11 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
         Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
 
+        // Verification routes
+        Route::get('/profile/verification', [TalentProfileController::class, 'showVerification'])->name('profile.verification.show');
+        Route::post('/profile/verification/student', [TalentProfileController::class, 'submitStudentVerification'])->name('profile.verification.student.submit');
+        Route::post('/profile/verification/document', [TalentProfileController::class, 'submitVerificationDocument'])->name('profile.verification.document.submit');
+
         Route::post('/profile/photo', [TalentProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
         Route::post('/profile/resume', [TalentProfileController::class, 'uploadResume'])->name('profile.resume.upload');
 

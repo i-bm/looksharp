@@ -494,6 +494,50 @@
 
             <!-- Sidebar -->
             <div class="profile-v2-sidebar">
+                <!-- Verification -->
+                <section class="profile-v2-section">
+                    <div class="profile-v2-section-header">
+                        <h3 class="profile-v2-section-title profile-v2-section-title-small">
+                            <span class="material-symbols-outlined">verified_user</span>
+                            Verification
+                        </h3>
+                    </div>
+
+                    @php
+                        $isVerified = $profile->verification_status === 'verified';
+                        $hasVerificationDocument = !empty($profile->verification_document_url);
+                    @endphp
+
+                    <div class="profile-v2-verification-body">
+                        @if($isVerified)
+                            <span class="profile-v2-pill profile-v2-pill-verified">
+                                <span class="material-symbols-outlined">check_circle</span>
+                                Verified
+                            </span>
+                            <p class="profile-v2-verification-help">Employers can see your verified badge on your profile.</p>
+                        @elseif($hasVerificationDocument)
+                            <span class="profile-v2-pill profile-v2-pill-pending">
+                                <span class="material-symbols-outlined">hourglass_top</span>
+                                Pending review
+                            </span>
+                            <p class="profile-v2-verification-help">We’ve received your document and we’re reviewing it.</p>
+                        @else
+                            <span class="profile-v2-pill profile-v2-pill-neutral">
+                                <span class="material-symbols-outlined">shield</span>
+                                Not started
+                            </span>
+                            <p class="profile-v2-verification-help">Get verified to build trust and stand out to employers.</p>
+                        @endif
+
+                        @if($isOwner && !$isVerified)
+                            <a href="{{ route('talent.profile.verification.show') }}" class="profile-v2-btn profile-v2-btn-primary profile-v2-verification-cta">
+                                <span class="material-symbols-outlined">upload</span>
+                                Get verified
+                            </a>
+                        @endif
+                    </div>
+                </section>
+
                 <!-- Work Preferences -->
                 <section class="profile-v2-section">
                     <div class="profile-v2-section-header">

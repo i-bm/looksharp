@@ -1,0 +1,219 @@
+/* Talent Verification Page */
+
+.talent-verification-page {
+    padding: 24px 0;
+    background: #f5f5f5;
+    min-height: calc(100vh - 80px);
+}
+
+.talent-verification-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.talent-verification-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.talent-verification-title {
+    margin: 0;
+    font-family: var(--font-bricolageGrotesque);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--title-color);
+}
+
+.talent-verification-subtitle {
+    margin: 6px 0 0 0;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.talent-verification-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--title-color);
+    font-weight: 600;
+    border: 1px solid var(--borders-color);
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--white-color);
+}
+
+.talent-verification-alert {
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid var(--borders-color);
+    background: var(--white-color);
+    font-size: 14px;
+}
+
+.talent-verification-alert-success {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: rgba(16, 185, 129, 0.10);
+    color: #065f46;
+}
+
+.talent-verification-alert-error {
+    border-color: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.10);
+    color: #7f1d1d;
+}
+
+.talent-verification-status-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid var(--borders-color);
+    background: var(--white-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: 18px;
+}
+
+.talent-verification-status-title {
+    font-weight: 700;
+    color: var(--title-color);
+    margin-bottom: 6px;
+}
+
+.talent-verification-muted {
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.talent-verification-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+@media (min-width: 992px) {
+    .talent-verification-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.talent-verification-card {
+    background: var(--white-color);
+    border: 1px solid var(--borders-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 18px;
+}
+
+.talent-verification-card-title {
+    margin: 0;
+    font-family: var(--font-bricolageGrotesque);
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--title-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.talent-verification-card-subtitle {
+    margin: 8px 0 0 0;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.talent-verification-form {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tv-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tv-label {
+    font-weight: 700;
+    color: var(--title-color);
+    font-size: 13px;
+}
+
+.tv-input {
+    width: 100%;
+    border: 1px solid var(--borders-color);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: var(--white-color);
+    color: var(--title-color);
+}
+
+.tv-help {
+    font-size: 12px;
+    color: var(--text-color);
+}
+
+.tv-error {
+    font-size: 12px;
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.tv-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.tv-btn-primary {
+    background: var(--primary-color1);
+    color: var(--white-color);
+}
+
+.tv-btn-primary:hover {
+    background: #c41238;
+}
+
+.tv-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 12px;
+    border: 1px solid var(--borders-color);
+    background: var(--white-color);
+    color: var(--title-color);
+}
+
+.tv-pill-verified {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.12);
+    color: #065f46;
+}
+
+.tv-pill-pending {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.14);
+    color: #92400e;
+}
+
+.tv-pill-neutral {
+    border-color: rgba(148, 163, 184, 0.6);
+    background: rgba(148, 163, 184, 0.18);
+    color: #334155;
+}
+
