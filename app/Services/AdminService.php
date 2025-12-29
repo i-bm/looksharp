@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\EmployerCompanyStatusEnum;
+use App\Enums\EmployerCompanyVerificationStatusEnum;
+use App\Models\EmployerCompany;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +22,18 @@ class AdminService
         Log::info('Fetching admin dashboard statistics');
 
         try {
+            $employerCompanyCountsByStatus = EmployerCompany::query()
+                ->select('status', DB::raw('count(*) as count'))
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->toArray();
+
+            $employerCompanyCountsByVerification = EmployerCompany::query()
+                ->select('verification_status', DB::raw('count(*) as count'))
+                ->groupBy('verification_status')
+                ->pluck('count', 'verification_status')
+                ->toArray();
+
             $stats = [
                 'total_users' => User::count(),
                 'active_users' => User::where('is_active', true)->count(),
@@ -36,6 +51,11 @@ class AdminService
                 'users_created_this_month' => User::whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)
                     ->count(),
+                'employer_companies_by_status' => $employerCompanyCountsByStatus,
+                'employer_companies_submitted' => (int) ($employerCompanyCountsByStatus[EmployerCompanyStatusEnum::SUBMITTED->value] ?? 0),
+                'employer_companies_needs_changes' => (int) ($employerCompanyCountsByStatus[EmployerCompanyStatusEnum::NEEDS_CHANGES->value] ?? 0),
+                'employer_companies_approved' => (int) ($employerCompanyCountsByStatus[EmployerCompanyStatusEnum::APPROVED->value] ?? 0),
+                'employer_companies_verification_pending' => (int) ($employerCompanyCountsByVerification[EmployerCompanyVerificationStatusEnum::PENDING->value] ?? 0),
             ];
 
             Log::info('Admin dashboard statistics retrieved successfully', [

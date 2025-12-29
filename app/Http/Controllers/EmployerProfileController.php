@@ -1097,6 +1097,11 @@ class EmployerProfileController extends Controller
                 ->with('error', 'Please complete company profile setup first.');
         }
 
+        if (! $company->isApproved()) {
+            return redirect()->route('employer.company.show')
+                ->with('error', 'Your company profile must be approved by an admin before you can select a subscription plan.');
+        }
+
         $packages = config('subscriptions.packages', []);
         $currentSubscription = $company->subscription;
 
@@ -1120,6 +1125,11 @@ class EmployerProfileController extends Controller
                 ->with('error', 'Please complete company profile setup first.');
         }
 
+        if (! $company->isApproved()) {
+            return redirect()->route('employer.company.show')
+                ->with('error', 'Your company profile must be approved by an admin before you can select a subscription plan.');
+        }
+
         Log::info('EmployerProfileController: Storing subscription selection', [
             'user_id' => $user->id,
             'company_id' => $company->id,
@@ -1132,6 +1142,19 @@ class EmployerProfileController extends Controller
             $billingCycle = $request->has('billing_cycle') && $request->input('billing_cycle')
                 ? BillingCycleEnum::from($request->input('billing_cycle'))
                 : null;
+
+            // BR-02 / COM-04: require employer verification for paid tiers
+            if ($tier !== SubscriptionTierEnum::FREE && $company->verification_status !== 'verified') {
+                Log::warning('EmployerProfileController: paid subscription blocked - company not verified', [
+                    'user_id' => $user->id,
+                    'company_id' => $company->id,
+                    'tier' => $tier->value,
+                    'verification_status' => $company->verification_status,
+                ]);
+
+                return redirect()->route('employer.company.show')
+                    ->with('error', 'To select a paid plan, your business must be verified first. Please upload verification documents and wait for admin verification.');
+            }
 
             // Validate contact email for paid subscriptions
             if ($tier !== SubscriptionTierEnum::FREE) {

@@ -11,7 +11,9 @@ use App\Services\EmployerCompanyService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployerCompanyController extends Controller
 {
@@ -112,7 +114,7 @@ class EmployerCompanyController extends Controller
 
     public function show(string $id): View
     {
-        $company = EmployerCompany::with(['creator', 'reviewer', 'members'])->findOrFail($id);
+        $company = EmployerCompany::with(['creator', 'reviewer', 'verifier', 'members'])->findOrFail($id);
         $title = 'Company Review';
 
         return view('pages.dashboard.admin.employer-companies.show', compact('company', 'title'));
@@ -168,5 +170,64 @@ class EmployerCompanyController extends Controller
 
         return redirect()->route('admin.employer-companies.show', ['id' => $company->id])
             ->with('success', 'Company suspended.');
+    }
+
+    public function verify(Request $request, string $id): RedirectResponse
+    {
+        $company = EmployerCompany::findOrFail($id);
+        $validated = $request->validate([
+            'verified' => ['required', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $admin = auth()->user();
+
+        Log::info('Employer company verification action requested', [
+            'admin_user_id' => $admin?->id,
+            'company_id' => $company->id,
+            'verified' => (bool) $validated['verified'],
+            'has_notes' => isset($validated['notes']) && trim((string) $validated['notes']) !== '',
+        ]);
+
+        $this->employerCompanyService->adminVerifyCompany(
+            admin: $admin,
+            company: $company,
+            verified: (bool) $validated['verified'],
+            notes: $validated['notes'] ?? null
+        );
+
+        return redirect()->route('admin.employer-companies.show', ['id' => $company->id])
+            ->with('success', (bool) $validated['verified'] ? 'Company verification marked as verified.' : 'Company verification rejected.');
+    }
+
+    public function downloadDocument(string $id, string $type): StreamedResponse
+    {
+        $company = EmployerCompany::findOrFail($id);
+
+        $path = match ($type) {
+            'ghana_card' => $company->ghana_card_document_url,
+            'business_registration' => $company->business_registration_document_url,
+            default => null,
+        };
+
+        if ($path === null || trim((string) $path) === '') {
+            abort(404);
+        }
+
+        if (! Storage::disk('private')->exists($path)) {
+            abort(404);
+        }
+
+        $filenamePrefix = $type === 'ghana_card' ? 'ghana-card' : 'business-registration';
+        $filename = "{$filenamePrefix}-{$company->id}";
+
+        Log::info('Employer company verification document download', [
+            'admin_user_id' => auth()->id(),
+            'company_id' => $company->id,
+            'type' => $type,
+            'path' => $path,
+        ]);
+
+        return Storage::disk('private')->download($path, $filename);
     }
 }
