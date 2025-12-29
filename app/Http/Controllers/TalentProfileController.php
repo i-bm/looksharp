@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\CurrentStatusEnum;
+use App\Enums\AvailabilityEnum;
+use App\Enums\PreferredLocationEnum;
 use App\Enums\UserRoleEnum;
+use App\Http\Requests\Profile\StoreVerificationRequest;
 use App\Models\CareerInterestArea;
 use App\Models\Institution;
-use App\Models\WorkModel;
 use App\Models\TalentCertification;
 use App\Models\TalentEducation;
 use App\Models\TalentGigsFreelance;
@@ -17,7 +18,7 @@ use App\Models\TalentProject;
 use App\Models\TalentSkill;
 use App\Models\TalentVolunteerExperience;
 use App\Models\TalentWorkHistory;
-use App\Http\Requests\Profile\StoreVerificationRequest;
+use App\Models\WorkModel;
 use App\Services\ProfileService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -381,7 +382,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteEducation($education);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Education record removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -408,7 +409,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteSkill($skill);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Skill removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -470,28 +471,6 @@ class TalentProfileController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Welcome modal dismissed.',
-        ]);
-    }
-
-    /**
-     * Show the profile edit page.
-     */
-    public function edit(): View|RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        $profile->load(['education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance']);
-        $institutions = Institution::where('is_active', true)->orderBy('name')->get();
-
-        return view('pages.profile.edit', [
-            'profile' => $profile,
-            'institutions' => $institutions,
         ]);
     }
 
@@ -661,7 +640,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveEducation($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Education record added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -691,7 +670,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveSkill($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Skill added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -816,7 +795,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveWorkHistory($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Work history added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -845,7 +824,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteWorkHistory($workHistory);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Work history removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -873,7 +852,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveLanguage($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Language added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -902,7 +881,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteLanguage($language);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Language removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -980,7 +959,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveCertification($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Certification added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -1009,7 +988,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteCertification($certification);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Certification removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -1092,7 +1071,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveVolunteerExperience($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Volunteer experience added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -1121,7 +1100,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteVolunteerExperience($volunteerExperience);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Volunteer experience removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -1205,7 +1184,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveLeadershipExperience($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Leadership experience added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -1234,7 +1213,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteLeadershipExperience($leadershipExperience);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Leadership experience removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -1318,7 +1297,7 @@ class TalentProfileController extends Controller
 
             $this->profileService->saveGigsFreelance($profile, $validated);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Gigs/Freelance work added successfully!');
         } catch (\Exception $e) {
             return back()
@@ -1347,7 +1326,7 @@ class TalentProfileController extends Controller
         try {
             $this->profileService->deleteGigsFreelance($gigsFreelance);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('success', 'Gigs/Freelance work removed successfully.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -2391,7 +2370,7 @@ class TalentProfileController extends Controller
 
             // Validate and combine start_date if provided
             $startDate = null;
-            if (!empty($validated['start_date_day']) && !empty($validated['start_date_month']) && !empty($validated['start_date_year'])) {
+            if (! empty($validated['start_date_day']) && ! empty($validated['start_date_month']) && ! empty($validated['start_date_year'])) {
                 $startDateValidation = validateDateComponents(
                     $validated['start_date_day'],
                     $validated['start_date_month'],
@@ -2411,7 +2390,7 @@ class TalentProfileController extends Controller
 
             // Validate and combine end_date if provided
             $endDate = null;
-            if (!empty($validated['end_date_day']) && !empty($validated['end_date_month']) && !empty($validated['end_date_year'])) {
+            if (! empty($validated['end_date_day']) && ! empty($validated['end_date_month']) && ! empty($validated['end_date_year'])) {
                 $endDateValidation = validateDateComponents(
                     $validated['end_date_day'],
                     $validated['end_date_month'],

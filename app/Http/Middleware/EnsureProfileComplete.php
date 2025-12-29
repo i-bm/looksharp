@@ -18,7 +18,6 @@ class EnsureProfileComplete
      */
     protected array $alwaysAllowedRoutes = [
         'talent.profile.show',
-        'talent.profile.edit',
         'talent.profile.update',
         'employer.company.show',
         'employer.company.update',
@@ -100,7 +99,7 @@ class EnsureProfileComplete
                 'route' => $request->route()?->getName(),
             ]);
 
-            return redirect()->route('talent.profile.edit')
+            return redirect()->route('talent.profile.show')
                 ->with('info', 'Please complete your profile to get the most out of Looksharp.');
         }
 
@@ -182,9 +181,8 @@ class EnsureProfileComplete
             return true;
         }
 
-        // Allow profile view and edit routes with prefixes
+        // Allow profile view routes with prefixes
         if (str_starts_with($routeName, 'talent.profile.show') ||
-            str_starts_with($routeName, 'talent.profile.edit') ||
             str_starts_with($routeName, 'talent.profile.update')) {
             return true;
         }
