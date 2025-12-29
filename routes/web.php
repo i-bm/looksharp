@@ -150,9 +150,8 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/profile/project', [TalentProfileController::class, 'addProjectAjax'])->name('profile.project.add');
         Route::delete('/profile/project/{id}', [TalentProfileController::class, 'removeProjectAjax'])->name('profile.project.remove');
 
-        // Profile view and edit routes
+        // Profile view routes
         Route::get('/profile', [TalentProfileController::class, 'show'])->name('profile.show');
-        Route::get('/profile/edit', [TalentProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [TalentProfileController::class, 'update'])->name('profile.update');
         Route::patch('/profile', [TalentProfileController::class, 'update']);
         
