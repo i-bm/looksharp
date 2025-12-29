@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\AvailabilityEnum;
 use App\Enums\CurrentStatusEnum;
-use App\Enums\PreferredLocationEnum;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -59,10 +57,6 @@ class TalentProfile extends Model implements Auditable
         'linkedin_url',
         'twitter_url',
         // Work Preferences
-        'availability',
-        'availability_details',
-        'preferred_location',
-        'salary_expectations',
         'job_categories',
     ];
 
@@ -79,9 +73,6 @@ class TalentProfile extends Model implements Auditable
             'profile_completeness_score' => 'integer',
             'is_profile_building_step_completed' => 'boolean',
             'current_status' => CurrentStatusEnum::class,
-            'availability' => AvailabilityEnum::class,
-            'preferred_location' => PreferredLocationEnum::class,
-            'salary_expectations' => 'decimal:2',
             'job_categories' => 'array',
         ];
     }
@@ -172,6 +163,24 @@ class TalentProfile extends Model implements Auditable
     public function careerInterestAreas(): BelongsToMany
     {
         return $this->belongsToMany(CareerInterestArea::class, 'career_interest_area_talent_profile')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the preferred cities for the talent profile.
+     */
+    public function preferredCities(): BelongsToMany
+    {
+        return $this->belongsToMany(City::class, 'preferred_city_talent_profile')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the work models for the talent profile.
+     */
+    public function workModels(): BelongsToMany
+    {
+        return $this->belongsToMany(WorkModel::class, 'talent_profile_work_model')
             ->withTimestamps();
     }
 

@@ -110,8 +110,6 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         // AJAX routes for section updates
         Route::put('/profile/about-me', [TalentProfileController::class, 'updateAboutMe'])->name('profile.about-me.update');
         Route::put('/profile/video-introduction', [TalentProfileController::class, 'updateVideoIntroduction'])->name('profile.video-introduction.update');
-        Route::put('/profile/fun-fact', [TalentProfileController::class, 'updateFunFact'])->name('profile.fun-fact.update');
-        Route::put('/profile/passion', [TalentProfileController::class, 'updatePassion'])->name('profile.passion.update');
         Route::put('/profile/hobbies', [TalentProfileController::class, 'updateHobbies'])->name('profile.hobbies.update');
         Route::put('/profile/social-links', [TalentProfileController::class, 'updateSocialLinks'])->name('profile.social-links.update');
         Route::put('/profile/work-preferences', [TalentProfileController::class, 'updateWorkPreferences'])->name('profile.work-preferences.update');
@@ -272,11 +270,6 @@ Route::get('/university/{id}', [UniversityProfileController::class, 'public'])->
 
 // Webhook routes (no auth required)
 Route::post('/webhooks/paystack/subscription', [EmployerProfileController::class, 'paymentWebhook'])->name('webhooks.paystack.subscription');
-
-// Test route for Profile V2 UI
-Route::get('/profile/v2/test', function () {
-    return view('pages.profile.v2.show');
-})->name('profile.v2.test');
 
 // Redirect /home to /dashboard for backward compatibility
 Route::get('/home', function () {

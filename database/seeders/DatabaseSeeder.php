@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             CountriesSeeder::class,
             RegionsSeeder::class,
             CitiesSeeder::class,
+            WorkModelSeeder::class,
         ]);
     }
 }

@@ -44,13 +44,14 @@
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
                         Institution
                     </label>
-                    <select name="institution_id" id="education-institution-id"
-                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                        <option value="">Select Institution</option>
-                        @foreach($institutions as $institution)
-                        <option value="{{ $institution->id }}">{{ $institution->name }}</option>
-                        @endforeach
-                    </select>
+                    <div class="institution-autocomplete-container" style="position: relative;">
+                        <input type="text" id="education-institution-input" 
+                            placeholder="Type to search institutions..."
+                            autocomplete="off"
+                            style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <input type="hidden" name="institution_id" id="education-institution-id" value="">
+                        <div id="education-institution-suggestions" class="institution-autocomplete-suggestions"></div>
+                    </div>
                 </div>
 
                 <div>

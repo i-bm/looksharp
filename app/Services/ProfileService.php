@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProfileService
 {
@@ -1064,66 +1065,6 @@ class ProfileService
     }
 
     /**
-     * Update fun fact.
-     */
-    public function updateFunFact(TalentProfile $profile, array $data): TalentProfile
-    {
-        try {
-            return DB::transaction(function () use ($profile, $data) {
-                $funFact = $data['fun_fact'] ?? null;
-                // Trim whitespace and convert empty string to null
-                $funFact = $funFact !== null ? trim($funFact) : null;
-                $funFact = $funFact === '' ? null : $funFact;
-
-                $profile->update([
-                    'fun_fact' => $funFact,
-                ]);
-
-                $this->calculateCompletenessScore($profile);
-
-                return $profile->fresh();
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to update fun fact: '.$e->getMessage(), [
-                'profile_id' => $profile->id,
-                'data' => $data,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw new \Exception('Failed to update fun fact. Please try again.');
-        }
-    }
-
-    /**
-     * Update passion.
-     */
-    public function updatePassion(TalentProfile $profile, array $data): TalentProfile
-    {
-        try {
-            return DB::transaction(function () use ($profile, $data) {
-                $passion = $data['passion'] ?? null;
-                // Trim whitespace and convert empty string to null
-                $passion = $passion !== null ? trim($passion) : null;
-                $passion = $passion === '' ? null : $passion;
-
-                $profile->update([
-                    'passion' => $passion,
-                ]);
-
-                $this->calculateCompletenessScore($profile);
-
-                return $profile->fresh();
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to update passion: '.$e->getMessage(), [
-                'profile_id' => $profile->id,
-                'data' => $data,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw new \Exception('Failed to update passion. Please try again.');
-        }
-    }
-
-    /**
      * Update hobbies.
      */
     public function updateHobbies(TalentProfile $profile, array $data): TalentProfile
@@ -1182,34 +1123,90 @@ class ProfileService
      */
     public function updateWorkPreferences(TalentProfile $profile, array $data): TalentProfile
     {
+        Log::info('Updating work preferences', [
+            'profile_id' => $profile->id,
+            'data_keys' => array_keys($data),
+        ]);
+
         try {
             return DB::transaction(function () use ($profile, $data) {
-                // Handle availability - enum or null
-                $availability = $data['availability'] ?? null;
-                $availability = $availability === '' ? null : $availability;
+                // Handle work models - sync the relationship
+                // If the key is set (even as empty array), sync it to clear relationships
+                if (isset($data['work_models'])) {
+                    $workModelIds = is_array($data['work_models'])
+                        ? $data['work_models']
+                        : [];
+                    
+                    // Detach all existing work models
+                    $profile->workModels()->detach();
+                    
+                    // Attach new work models with UUIDs for pivot table
+                    foreach ($workModelIds as $workModelId) {
+                        DB::table('talent_profile_work_model')->insert([
+                            'id' => Str::uuid()->toString(),
+                            'talent_profile_id' => $profile->id,
+                            'work_model_id' => $workModelId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
 
-                // Handle availability_details - trim and convert empty string to null
-                $availabilityDetails = $data['availability_details'] ?? null;
-                $availabilityDetails = $availabilityDetails !== null ? trim($availabilityDetails) : null;
-                $availabilityDetails = $availabilityDetails === '' ? null : $availabilityDetails;
+                    Log::info('Work models synced', [
+                        'profile_id' => $profile->id,
+                        'work_model_count' => count($workModelIds),
+                    ]);
+                }
 
-                // Handle preferred_location - enum or null
-                $preferredLocation = $data['preferred_location'] ?? null;
-                $preferredLocation = $preferredLocation === '' ? null : $preferredLocation;
+                // Handle preferred cities - sync the relationship
+                // If the key is set (even as empty array), sync it to clear relationships
+                if (isset($data['preferred_cities'])) {
+                    $preferredCities = is_array($data['preferred_cities'])
+                        ? $data['preferred_cities']
+                        : [];
+                    
+                    // Process cities - can be IDs (UUIDs) or names (strings)
+                    $preferredCityIds = [];
+                    foreach ($preferredCities as $cityValue) {
+                        // Check if it's a UUID (city ID)
+                        if (is_string($cityValue) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $cityValue)) {
+                            // It's a UUID, verify it exists
+                            $city = \App\Models\City::where('id', $cityValue)
+                                ->where('is_active', true)
+                                ->first();
+                            if ($city) {
+                                $preferredCityIds[] = $city->id;
+                            }
+                        } else {
+                            // It's a name, look it up
+                            $city = \App\Models\City::where('name', $cityValue)
+                                ->where('is_active', true)
+                                ->first();
+                            if ($city) {
+                                $preferredCityIds[] = $city->id;
+                            }
+                        }
+                    }
+                    
+                    // Detach all existing preferred cities
+                    $profile->preferredCities()->detach();
+                    
+                    // Attach new preferred cities with UUIDs for pivot table
+                    foreach ($preferredCityIds as $cityId) {
+                        DB::table('preferred_city_talent_profile')->insert([
+                            'id' => Str::uuid()->toString(),
+                            'talent_profile_id' => $profile->id,
+                            'city_id' => $cityId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
 
-                // Handle salary_expectations - numeric or null
-                $salaryExpectations = $data['salary_expectations'] ?? null;
-                $salaryExpectations = $salaryExpectations === '' ? null : $salaryExpectations;
-                $salaryExpectations = $salaryExpectations !== null ? (float) $salaryExpectations : null;
-
-                $updateData = [
-                    'availability' => $availability,
-                    'availability_details' => $availabilityDetails,
-                    'preferred_location' => $preferredLocation,
-                    'salary_expectations' => $salaryExpectations,
-                ];
-
-                $profile->update($updateData);
+                    Log::info('Preferred cities synced', [
+                        'profile_id' => $profile->id,
+                        'city_input' => $preferredCities,
+                        'city_count' => count($preferredCityIds),
+                    ]);
+                }
 
                 // Handle career interest areas - sync the relationship
                 // If the key is set (even as empty array), sync it to clear relationships
@@ -1218,16 +1215,26 @@ class ProfileService
                         ? $data['career_interest_areas']
                         : [];
                     $profile->careerInterestAreas()->sync($careerInterestAreaIds);
+
+                    Log::info('Career interest areas synced', [
+                        'profile_id' => $profile->id,
+                        'area_count' => count($careerInterestAreaIds),
+                    ]);
                 }
 
                 $this->calculateCompletenessScore($profile);
 
+                Log::info('Work preferences updated successfully', [
+                    'profile_id' => $profile->id,
+                ]);
+
                 return $profile->fresh();
             });
         } catch (\Exception $e) {
-            Log::error('Failed to update work preferences: '.$e->getMessage(), [
+            Log::error('Failed to update work preferences', [
                 'profile_id' => $profile->id,
-                'data' => $data,
+                'error' => $e->getMessage(),
+                'data_keys' => array_keys($data),
                 'trace' => $e->getTraceAsString(),
             ]);
             throw new \Exception('Failed to update work preferences. Please try again.');

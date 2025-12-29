@@ -551,24 +551,48 @@
                         @endif
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 16px;">
-                        @if($profile->preferred_location || $profile->availability)
+                        @if($profile->workModels && $profile->workModels->count() > 0)
                         <div style="display: flex; align-items: start; gap: 12px;">
                             <span class="material-symbols-outlined"
                                 style="color: var(--text-color); margin-top: 2px;">apartment</span>
                             <div>
                                 <p style="font-size: 14px; font-weight: 700; color: var(--title-color); margin: 0;">
-                                    @if($profile->preferred_location)
-                                    {{ ucfirst(str_replace('_', ' ', $profile->preferred_location->value)) }}
-                                    @endif
-                                    @if($profile->availability)
-                                    @if($profile->preferred_location), @endif
-                                    {{ ucfirst(str_replace('_', ' ', $profile->availability->value)) }}
-                                    @endif
-                                </p>
-                                @if($profile->availability_details)
-                                <p style="font-size: 12px; color: var(--text-color); margin: 0;">{{
-                                    $profile->availability_details }}</p>
-                                @endif
+                                    Work Model</p>
+                                <div class="profile-v2-tags" style="margin-top: 4px;">
+                                    @foreach($profile->workModels as $workModel)
+                                    <span class="profile-v2-tag">{{ $workModel->display_name }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        @if($profile->preferredCities && $profile->preferredCities->count() > 0)
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <span class="material-symbols-outlined"
+                                style="color: var(--text-color); margin-top: 2px;">location_on</span>
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: var(--title-color); margin: 0;">
+                                    Preferred Cities</p>
+                                <div class="profile-v2-tags" style="margin-top: 4px;">
+                                    @foreach($profile->preferredCities as $city)
+                                    <span class="profile-v2-tag">{{ $city->name }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        @if($profile->careerInterestAreas && $profile->careerInterestAreas->count() > 0)
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <span class="material-symbols-outlined"
+                                style="color: var(--text-color); margin-top: 2px;">work_outline</span>
+                            <div>
+                                <p style="font-size: 14px; font-weight: 700; color: var(--title-color); margin: 0;">
+                                    Career Interest Areas</p>
+                                <div class="profile-v2-tags" style="margin-top: 4px;">
+                                    @foreach($profile->careerInterestAreas as $area)
+                                    <span class="profile-v2-tag">{{ $area->name }}</span>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                         @endif

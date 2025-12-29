@@ -794,3 +794,215 @@
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     font-size: 20px;
 }
+
+/* Tag-based Input Components */
+.career-interest-tags-container,
+.preferred-city-tags-container {
+    position: relative;
+    width: 100%;
+}
+
+.career-interest-tags-wrapper,
+.preferred-city-tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: var(--white-color);
+    cursor: text;
+}
+
+.career-interest-tags-wrapper:focus-within,
+.preferred-city-tags-wrapper:focus-within {
+    border-color: var(--primary-color1);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(89, 86, 233, 0.1);
+}
+
+.career-interest-tag,
+.preferred-city-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--primary-color1);
+    color: var(--white-color);
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.career-interest-tag-remove,
+.preferred-city-tag-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    color: var(--white-color);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.2s ease;
+}
+
+.career-interest-tag-remove:hover,
+.preferred-city-tag-remove:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.career-interest-input,
+.preferred-city-input {
+    flex: 1;
+    min-width: 200px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    padding: 4px 0;
+    background: transparent;
+    color: var(--title-color);
+}
+
+.career-interest-input::placeholder,
+.preferred-city-input::placeholder {
+    color: #9ca3af;
+}
+
+.career-interest-suggestions,
+.preferred-city-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--white-color);
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.career-interest-suggestions.show,
+.preferred-city-suggestions.show {
+    display: block;
+}
+
+.career-interest-suggestion-item,
+.preferred-city-suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--title-color);
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.career-interest-suggestion-item:last-child,
+.preferred-city-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.career-interest-suggestion-item:hover,
+.preferred-city-suggestion-item:hover {
+    background: #f9fafb;
+}
+
+.career-interest-suggestion-item.selected,
+.preferred-city-suggestion-item.selected {
+    background: #f3f4f6;
+    font-weight: 500;
+}
+
+.suggestions-label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--title-color);
+}
+
+.suggestions-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-tag {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    color: var(--title-color);
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.suggestion-tag:hover {
+    background: #e5e7eb;
+    border-color: var(--primary-color1);
+}
+
+/* Institution Autocomplete Styles */
+.institution-autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+.institution-autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--white-color);
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.institution-autocomplete-suggestions.show {
+    display: block;
+}
+
+.institution-autocomplete-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--title-color);
+    transition: background 0.2s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.institution-autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.institution-autocomplete-item:hover,
+.institution-autocomplete-item.selected {
+    background: #f9fafb;
+    font-weight: 500;
+}
+
+.institution-autocomplete-item.empty {
+    padding: 12px 16px;
+    color: #9ca3af;
+    font-style: italic;
+    cursor: default;
+}

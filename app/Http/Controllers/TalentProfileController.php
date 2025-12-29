@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AvailabilityEnum;
 use App\Enums\CurrentStatusEnum;
-use App\Enums\PreferredLocationEnum;
 use App\Enums\UserRoleEnum;
 use App\Models\CareerInterestArea;
 use App\Models\Institution;
+use App\Models\WorkModel;
 use App\Models\TalentCertification;
 use App\Models\TalentEducation;
 use App\Models\TalentGigsFreelance;
@@ -429,7 +428,7 @@ class TalentProfileController extends Controller
                 ->with('error', 'Profile not found. Please contact support.');
         }
 
-        $profile->load(['education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'projects', 'careerInterestAreas']);
+        $profile->load(['education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'projects', 'careerInterestAreas', 'preferredCities', 'workModels']);
         $institutions = Institution::where('is_active', true)->orderBy('name')->get();
         $careerInterestAreas = CareerInterestArea::active()
             ->parents()
@@ -438,6 +437,7 @@ class TalentProfileController extends Controller
             }])
             ->orderBy('order')
             ->get();
+        $workModels = WorkModel::where('is_active', true)->orderBy('order')->get();
 
         // Check if welcome modal should be shown
         $showWelcomeModal = false;
@@ -455,6 +455,7 @@ class TalentProfileController extends Controller
             'isPublic' => false,
             'institutions' => $institutions,
             'careerInterestAreas' => $careerInterestAreas,
+            'workModels' => $workModels,
             'showWelcomeModal' => $showWelcomeModal,
         ]);
     }
@@ -705,7 +706,7 @@ class TalentProfileController extends Controller
     public function public(string $slug): View
     {
         // Try to find by public_url first, then fall back to UUID
-        $profile = TalentProfile::with(['user', 'education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'careerInterestAreas'])
+        $profile = TalentProfile::with(['user', 'education.institution', 'skills', 'workHistory', 'languages', 'certifications', 'volunteerExperiences', 'leadershipExperiences', 'gigsFreelance', 'careerInterestAreas', 'preferredCities', 'workModels'])
             ->where(function ($query) use ($slug) {
                 $query->where('public_url', $slug)
                     ->orWhere('id', $slug);
@@ -731,6 +732,7 @@ class TalentProfileController extends Controller
                 }])
                 ->orderBy('order')
                 ->get();
+            $data['workModels'] = WorkModel::where('is_active', true)->orderBy('order')->get();
         }
 
         return view('pages.profile.show', $data);
@@ -1386,68 +1388,6 @@ class TalentProfileController extends Controller
     }
 
     /**
-     * Update fun fact (AJAX).
-     */
-    public function updateFunFact(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return response()->json(['success' => false, 'message' => 'Profile not found.'], 404);
-        }
-
-        try {
-            $validated = $request->validate([
-                'fun_fact' => ['nullable', 'string', 'max:1000'],
-            ]);
-
-            $this->profileService->updateFunFact($profile, $validated);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Fun fact updated successfully!',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * Update passion (AJAX).
-     */
-    public function updatePassion(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return response()->json(['success' => false, 'message' => 'Profile not found.'], 404);
-        }
-
-        try {
-            $validated = $request->validate([
-                'passion' => ['nullable', 'string', 'max:1000'],
-            ]);
-
-            $this->profileService->updatePassion($profile, $validated);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Passion updated successfully!',
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
      * Update hobbies (AJAX).
      */
     public function updateHobbies(Request $request): \Illuminate\Http\JsonResponse
@@ -1527,10 +1467,10 @@ class TalentProfileController extends Controller
 
         try {
             $validated = $request->validate([
-                'availability' => ['nullable', Rule::enum(AvailabilityEnum::class)],
-                'availability_details' => ['nullable', 'string', 'max:500'],
-                'preferred_location' => ['nullable', Rule::enum(PreferredLocationEnum::class)],
-                'salary_expectations' => ['nullable', 'numeric', 'min:0'],
+                'work_models' => ['nullable', 'array'],
+                'work_models.*' => ['uuid', 'exists:work_models,id'],
+                'preferred_cities' => ['nullable', 'array'],
+                'preferred_cities.*' => ['nullable'],
                 'career_interest_areas' => ['nullable', 'array'],
                 'career_interest_areas.*' => ['uuid', 'exists:career_interest_areas,id'],
             ]);

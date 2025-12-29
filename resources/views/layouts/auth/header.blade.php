@@ -13,8 +13,6 @@
     <link href="{{ asset('assets/css/bootstrap-icons.css') }}" rel="stylesheet">
     <!-- CSS -->
     <link href="{{ asset('assets/css/animate.min.css') }}" rel="stylesheet">
-    <!-- FancyBox CSS -->
-    <link href="{{ asset('assets/css/jquery.fancybox.min.css') }}" rel="stylesheet">
     <!-- Swiper slider CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/swiper-bundle.min.css') }}">
     <!-- Slick slider CSS -->

@@ -59,17 +59,19 @@
         }
     });
 
-    // FancyBox Js
-    $('[data-fancybox="gallery-01"]').fancybox({
-        buttons: ["close"],
-        loop: false,
-        protect: true,
-    });
-    $('[data-fancybox="video-player"]').fancybox({
-        buttons: ["close"],
-        loop: false,
-        protect: true,
-    });
+    // FancyBox Js (only if fancybox is loaded)
+    if (typeof $.fancybox !== 'undefined') {
+        $('[data-fancybox="gallery-01"]').fancybox({
+            buttons: ["close"],
+            loop: false,
+            protect: true,
+        });
+        $('[data-fancybox="video-player"]').fancybox({
+            buttons: ["close"],
+            loop: false,
+            protect: true,
+        });
+    }
 
     //Counter up
     $(".counter").counterUp({
