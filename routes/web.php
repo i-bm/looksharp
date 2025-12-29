@@ -11,13 +11,13 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Auth\PasswordlessAuthController;
 use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployerProfileController;
 use App\Http\Controllers\Pages\EmployerController;
 use App\Http\Controllers\Pages\HomeController;
 use App\Http\Controllers\Pages\StudentController;
 use App\Http\Controllers\Pages\UniversityController;
-use App\Http\Controllers\AutocompleteController;
 use App\Http\Controllers\TalentProfileController;
 use App\Http\Controllers\UniversityProfileController;
 use Illuminate\Support\Facades\Route;
@@ -99,10 +99,10 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
 
     // Talent-specific profile routes
     Route::middleware('role:talent')->prefix('talent')->name('talent.')->group(function () {
-        // Student email verification routes
-        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email.show');
-        Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
-        Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
+        // Verification routes
+        Route::get('/profile/verification', [TalentProfileController::class, 'showVerification'])->name('profile.verification.show');
+        Route::post('/profile/verification/student', [TalentProfileController::class, 'submitStudentVerification'])->name('profile.verification.student.submit');
+        Route::post('/profile/verification/document', [TalentProfileController::class, 'submitVerificationDocument'])->name('profile.verification.document.submit');
 
         Route::post('/profile/photo', [TalentProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
         Route::post('/profile/resume', [TalentProfileController::class, 'uploadResume'])->name('profile.resume.upload');
@@ -110,8 +110,6 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         // AJAX routes for section updates
         Route::put('/profile/about-me', [TalentProfileController::class, 'updateAboutMe'])->name('profile.about-me.update');
         Route::put('/profile/video-introduction', [TalentProfileController::class, 'updateVideoIntroduction'])->name('profile.video-introduction.update');
-        Route::put('/profile/fun-fact', [TalentProfileController::class, 'updateFunFact'])->name('profile.fun-fact.update');
-        Route::put('/profile/passion', [TalentProfileController::class, 'updatePassion'])->name('profile.passion.update');
         Route::put('/profile/hobbies', [TalentProfileController::class, 'updateHobbies'])->name('profile.hobbies.update');
         Route::put('/profile/social-links', [TalentProfileController::class, 'updateSocialLinks'])->name('profile.social-links.update');
         Route::put('/profile/work-preferences', [TalentProfileController::class, 'updateWorkPreferences'])->name('profile.work-preferences.update');
@@ -148,11 +146,18 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/profile/gigs-freelance', [TalentProfileController::class, 'addGigsFreelanceAjax'])->name('profile.gigs-freelance.add');
         Route::delete('/profile/gigs-freelance/{id}', [TalentProfileController::class, 'removeGigsFreelanceAjax'])->name('profile.gigs-freelance.remove');
 
+        // Project routes (AJAX)
+        Route::post('/profile/project', [TalentProfileController::class, 'addProjectAjax'])->name('profile.project.add');
+        Route::delete('/profile/project/{id}', [TalentProfileController::class, 'removeProjectAjax'])->name('profile.project.remove');
+
         // Profile view and edit routes
         Route::get('/profile', [TalentProfileController::class, 'show'])->name('profile.show');
         Route::get('/profile/edit', [TalentProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [TalentProfileController::class, 'update'])->name('profile.update');
         Route::patch('/profile', [TalentProfileController::class, 'update']);
+        
+        // Welcome modal dismiss route
+        Route::post('/profile/welcome-modal/dismiss', [TalentProfileController::class, 'dismissWelcomeModal'])->name('profile.welcome-modal.dismiss');
     });
 
     // Employer-specific profile routes
@@ -259,7 +264,7 @@ Route::prefix('api/autocomplete')->name('api.autocomplete.')->middleware('thrott
 });
 
 // Public profile routes (accessible without authentication)
-Route::get('/profile/{slug}', [TalentProfileController::class, 'public'])->name('talent.profile.public');
+Route::get('/ls/{slug}', [TalentProfileController::class, 'public'])->name('talent.profile.public');
 Route::get('/company/{id}', [EmployerProfileController::class, 'public'])->name('employer.company.public');
 Route::get('/university/{id}', [UniversityProfileController::class, 'public'])->name('university.profile.public');
 

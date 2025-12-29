@@ -9,6 +9,7 @@ use App\Models\TalentGigsFreelance;
 use App\Models\TalentLanguage;
 use App\Models\TalentLeadershipExperience;
 use App\Models\TalentProfile;
+use App\Models\TalentProject;
 use App\Models\TalentSkill;
 use App\Models\TalentVolunteerExperience;
 use App\Models\TalentWorkHistory;
@@ -16,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProfileService
 {
@@ -907,25 +909,146 @@ class ProfileService
     }
 
     /**
+     * Save project record.
+     */
+    public function saveProject(TalentProfile $profile, array $data, ?UploadedFile $imageFile = null): TalentProject
+    {
+        Log::info('Saving project', [
+            'profile_id' => $profile->id,
+            'data_keys' => array_keys($data),
+        ]);
+
+        try {
+            return DB::transaction(function () use ($profile, $data, $imageFile) {
+                // Handle image upload if provided
+                $imageUrl = null;
+                if ($imageFile) {
+                    $path = $imageFile->store('project-images', 'public');
+                    $imageUrl = $path;
+                }
+
+                // Handle technologies - convert comma-separated string to array
+                $technologies = null;
+                if (!empty($data['technologies'])) {
+                    $techArray = array_map('trim', explode(',', $data['technologies']));
+                    $technologies = array_filter($techArray); // Remove empty values
+                    $technologies = !empty($technologies) ? $technologies : null;
+                }
+
+                $project = TalentProject::create([
+                    'talent_id' => $profile->id,
+                    'title' => $data['title'] ?? null,
+                    'description' => $data['description'] ?? null,
+                    'project_type' => $data['project_type'] ?? null,
+                    'project_url' => $data['project_url'] ?? null,
+                    'image_url' => $imageUrl,
+                    'technologies' => $technologies,
+                    'start_date' => $data['start_date'] ?? null,
+                    'end_date' => $data['end_date'] ?? null,
+                    'is_featured' => $data['is_featured'] ?? false,
+                ]);
+
+                Log::info('Project created successfully', [
+                    'profile_id' => $profile->id,
+                    'project_id' => $project->id,
+                ]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $project;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to save project: '.$e->getMessage(), [
+                'profile_id' => $profile->id,
+                'data' => $data,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to save project. Please try again.');
+        }
+    }
+
+    /**
+     * Delete project record.
+     */
+    public function deleteProject(TalentProject $project): bool
+    {
+        Log::info('Deleting project', [
+            'project_id' => $project->id,
+        ]);
+
+        try {
+            return DB::transaction(function () use ($project) {
+                $profile = $project->talentProfile;
+
+                // Delete image if exists
+                if ($project->image_url) {
+                    Storage::disk('public')->delete($project->image_url);
+                }
+
+                $deleted = $project->delete();
+
+                Log::info('Project deleted successfully', [
+                    'project_id' => $project->id,
+                    'profile_id' => $profile->id,
+                ]);
+
+                $this->calculateCompletenessScore($profile);
+
+                return $deleted;
+            });
+        } catch (\Exception $e) {
+            Log::error('Failed to delete project: '.$e->getMessage(), [
+                'project_id' => $project->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to delete project. Please try again.');
+        }
+    }
+
+    /**
      * Update about me / bio.
      */
     public function updateAboutMe(TalentProfile $profile, array $data): TalentProfile
     {
+        Log::info('Updating about me', [
+            'profile_id' => $profile->id,
+            'data_keys' => array_keys($data),
+        ]);
+
         try {
             return DB::transaction(function () use ($profile, $data) {
                 $updateData = [
                     'bio' => $data['bio'] ?? null,
                 ];
 
-                if (isset($data['headline'])) {
-                    $updateData['headline'] = $data['headline'] ?: null;
+                // Handle first_name and last_name
+                if (isset($data['first_name'])) {
+                    $updateData['first_name'] = $data['first_name'] ?: null;
                 }
 
-                if (isset($data['public_url'])) {
-                    $updateData['public_url'] = $data['public_url'] ?: null;
+                if (isset($data['last_name'])) {
+                    $updateData['last_name'] = $data['last_name'] ?: null;
+                }
+
+                // Determine the final first_name and last_name that will be saved
+                $finalFirstName = $updateData['first_name'] ?? $profile->first_name ?? $profile->user->first_name ?? 'user';
+                $finalLastName = $updateData['last_name'] ?? $profile->last_name ?? $profile->user->last_name ?? '';
+
+                // Get current names (fallback to user's names if profile names are null)
+                $currentFirstName = $profile->first_name ?? $profile->user->first_name ?? 'user';
+                $currentLastName = $profile->last_name ?? $profile->user->last_name ?? '';
+
+                // Auto-generate public_url when first_name or last_name changes, or if public_url doesn't exist
+                if ((!empty($finalFirstName) || !empty($finalLastName)) && 
+                    (($finalFirstName !== $currentFirstName || $finalLastName !== $currentLastName) || empty($profile->public_url))) {
+                    $updateData['public_url'] = generatePublicUrlSlug($finalFirstName, $finalLastName, $profile->public_url);
                 }
 
                 $profile->update($updateData);
+
+                Log::info('About me updated successfully', [
+                    'profile_id' => $profile->id,
+                ]);
 
                 $this->calculateCompletenessScore($profile);
 
@@ -938,66 +1061,6 @@ class ProfileService
                 'trace' => $e->getTraceAsString(),
             ]);
             throw new \Exception('Failed to update about me. Please try again.');
-        }
-    }
-
-    /**
-     * Update fun fact.
-     */
-    public function updateFunFact(TalentProfile $profile, array $data): TalentProfile
-    {
-        try {
-            return DB::transaction(function () use ($profile, $data) {
-                $funFact = $data['fun_fact'] ?? null;
-                // Trim whitespace and convert empty string to null
-                $funFact = $funFact !== null ? trim($funFact) : null;
-                $funFact = $funFact === '' ? null : $funFact;
-
-                $profile->update([
-                    'fun_fact' => $funFact,
-                ]);
-
-                $this->calculateCompletenessScore($profile);
-
-                return $profile->fresh();
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to update fun fact: '.$e->getMessage(), [
-                'profile_id' => $profile->id,
-                'data' => $data,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw new \Exception('Failed to update fun fact. Please try again.');
-        }
-    }
-
-    /**
-     * Update passion.
-     */
-    public function updatePassion(TalentProfile $profile, array $data): TalentProfile
-    {
-        try {
-            return DB::transaction(function () use ($profile, $data) {
-                $passion = $data['passion'] ?? null;
-                // Trim whitespace and convert empty string to null
-                $passion = $passion !== null ? trim($passion) : null;
-                $passion = $passion === '' ? null : $passion;
-
-                $profile->update([
-                    'passion' => $passion,
-                ]);
-
-                $this->calculateCompletenessScore($profile);
-
-                return $profile->fresh();
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to update passion: '.$e->getMessage(), [
-                'profile_id' => $profile->id,
-                'data' => $data,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw new \Exception('Failed to update passion. Please try again.');
         }
     }
 
@@ -1060,34 +1123,90 @@ class ProfileService
      */
     public function updateWorkPreferences(TalentProfile $profile, array $data): TalentProfile
     {
+        Log::info('Updating work preferences', [
+            'profile_id' => $profile->id,
+            'data_keys' => array_keys($data),
+        ]);
+
         try {
             return DB::transaction(function () use ($profile, $data) {
-                // Handle availability - enum or null
-                $availability = $data['availability'] ?? null;
-                $availability = $availability === '' ? null : $availability;
+                // Handle work models - sync the relationship
+                // If the key is set (even as empty array), sync it to clear relationships
+                if (isset($data['work_models'])) {
+                    $workModelIds = is_array($data['work_models'])
+                        ? $data['work_models']
+                        : [];
+                    
+                    // Detach all existing work models
+                    $profile->workModels()->detach();
+                    
+                    // Attach new work models with UUIDs for pivot table
+                    foreach ($workModelIds as $workModelId) {
+                        DB::table('talent_profile_work_model')->insert([
+                            'id' => Str::uuid()->toString(),
+                            'talent_profile_id' => $profile->id,
+                            'work_model_id' => $workModelId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
 
-                // Handle availability_details - trim and convert empty string to null
-                $availabilityDetails = $data['availability_details'] ?? null;
-                $availabilityDetails = $availabilityDetails !== null ? trim($availabilityDetails) : null;
-                $availabilityDetails = $availabilityDetails === '' ? null : $availabilityDetails;
+                    Log::info('Work models synced', [
+                        'profile_id' => $profile->id,
+                        'work_model_count' => count($workModelIds),
+                    ]);
+                }
 
-                // Handle preferred_location - enum or null
-                $preferredLocation = $data['preferred_location'] ?? null;
-                $preferredLocation = $preferredLocation === '' ? null : $preferredLocation;
+                // Handle preferred cities - sync the relationship
+                // If the key is set (even as empty array), sync it to clear relationships
+                if (isset($data['preferred_cities'])) {
+                    $preferredCities = is_array($data['preferred_cities'])
+                        ? $data['preferred_cities']
+                        : [];
+                    
+                    // Process cities - can be IDs (UUIDs) or names (strings)
+                    $preferredCityIds = [];
+                    foreach ($preferredCities as $cityValue) {
+                        // Check if it's a UUID (city ID)
+                        if (is_string($cityValue) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $cityValue)) {
+                            // It's a UUID, verify it exists
+                            $city = \App\Models\City::where('id', $cityValue)
+                                ->where('is_active', true)
+                                ->first();
+                            if ($city) {
+                                $preferredCityIds[] = $city->id;
+                            }
+                        } else {
+                            // It's a name, look it up
+                            $city = \App\Models\City::where('name', $cityValue)
+                                ->where('is_active', true)
+                                ->first();
+                            if ($city) {
+                                $preferredCityIds[] = $city->id;
+                            }
+                        }
+                    }
+                    
+                    // Detach all existing preferred cities
+                    $profile->preferredCities()->detach();
+                    
+                    // Attach new preferred cities with UUIDs for pivot table
+                    foreach ($preferredCityIds as $cityId) {
+                        DB::table('preferred_city_talent_profile')->insert([
+                            'id' => Str::uuid()->toString(),
+                            'talent_profile_id' => $profile->id,
+                            'city_id' => $cityId,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
 
-                // Handle salary_expectations - numeric or null
-                $salaryExpectations = $data['salary_expectations'] ?? null;
-                $salaryExpectations = $salaryExpectations === '' ? null : $salaryExpectations;
-                $salaryExpectations = $salaryExpectations !== null ? (float) $salaryExpectations : null;
-
-                $updateData = [
-                    'availability' => $availability,
-                    'availability_details' => $availabilityDetails,
-                    'preferred_location' => $preferredLocation,
-                    'salary_expectations' => $salaryExpectations,
-                ];
-
-                $profile->update($updateData);
+                    Log::info('Preferred cities synced', [
+                        'profile_id' => $profile->id,
+                        'city_input' => $preferredCities,
+                        'city_count' => count($preferredCityIds),
+                    ]);
+                }
 
                 // Handle career interest areas - sync the relationship
                 // If the key is set (even as empty array), sync it to clear relationships
@@ -1096,16 +1215,26 @@ class ProfileService
                         ? $data['career_interest_areas']
                         : [];
                     $profile->careerInterestAreas()->sync($careerInterestAreaIds);
+
+                    Log::info('Career interest areas synced', [
+                        'profile_id' => $profile->id,
+                        'area_count' => count($careerInterestAreaIds),
+                    ]);
                 }
 
                 $this->calculateCompletenessScore($profile);
 
+                Log::info('Work preferences updated successfully', [
+                    'profile_id' => $profile->id,
+                ]);
+
                 return $profile->fresh();
             });
         } catch (\Exception $e) {
-            Log::error('Failed to update work preferences: '.$e->getMessage(), [
+            Log::error('Failed to update work preferences', [
                 'profile_id' => $profile->id,
-                'data' => $data,
+                'error' => $e->getMessage(),
+                'data_keys' => array_keys($data),
                 'trace' => $e->getTraceAsString(),
             ]);
             throw new \Exception('Failed to update work preferences. Please try again.');
@@ -1113,48 +1242,22 @@ class ProfileService
     }
 
     /**
-     * Validate student email domain matches institution.
-     *
-     * @throws \Exception
-     */
-    public function validateStudentEmailDomain(TalentProfile $profile, string $studentEmail): void
-    {
-        $institution = $profile->getPrimaryInstitution();
-
-        Log::info('Institution found', [
-            'institution' => $institution,
-        ]);
-
-        if (! $institution) {
-            throw new \Exception('Please add your education information first before verifying as a student.');
-        }
-
-        if (empty($institution->student_email_domain)) {
-            throw new \Exception('Your institution does not have a student email domain configured. Please contact support.');
-        }
-
-        $expectedDomain = '@'.$institution->student_email_domain;
-        if (! str_ends_with(strtolower($studentEmail), strtolower($expectedDomain))) {
-            throw new \Exception("Student email must end with {$expectedDomain} for {$institution->name}.");
-        }
-    }
-
-    /**
-     * Submit student verification with OTP.
+     * Submit student verification (document-only).
      *
      * @throws \Exception
      */
     public function submitStudentVerification(
         TalentProfile $profile,
         string $studentId,
-        string $studentEmail,
         UploadedFile $file
-    ): array {
-        try {
-            return DB::transaction(function () use ($profile, $studentId, $studentEmail, $file) {
-                // Validate student email domain
-                $this->validateStudentEmailDomain($profile, $studentEmail);
+    ): TalentProfile {
+        Log::info('Submitting student verification', [
+            'profile_id' => $profile->id,
+            'student_id' => $studentId,
+        ]);
 
+        try {
+            return DB::transaction(function () use ($profile, $studentId, $file) {
                 // Delete old document if exists
                 if ($profile->verification_document_url) {
                     Storage::disk('private')->delete($profile->verification_document_url);
@@ -1167,139 +1270,28 @@ class ProfileService
                 $profile->update([
                     'current_status' => 'student',
                     'student_id' => $studentId,
-                    'student_email' => $studentEmail,
                     'verification_document_url' => $path,
                     'verification_type' => 'student_id',
                     'verification_status' => 'pending',
                 ]);
 
-                // Request OTP for student email (using registration OTP flow since email may not be in users table)
-                $otpResult = $this->authService->requestRegistrationOtp($studentEmail, 'talent');
-
-                $this->calculateCompletenessScore($profile);
-
-                return [
-                    'success' => true,
-                    'expires_at' => $otpResult['expires_at'],
-                    'expiry_minutes' => $otpResult['expiry_minutes'],
-                ];
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to submit student verification: '.$e->getMessage(), [
-                'profile_id' => $profile->id,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Resend student verification OTP.
-     *
-     * @throws \Exception
-     */
-    public function resendStudentVerificationOtp(TalentProfile $profile): array
-    {
-        if (empty($profile->student_email)) {
-            throw new \Exception('Student email not found. Please submit verification again.');
-        }
-
-        try {
-            // Request new OTP for student email
-            $otpResult = $this->authService->requestRegistrationOtp($profile->student_email, 'talent');
-
-            return [
-                'success' => true,
-                'expires_at' => $otpResult['expires_at'],
-                'expiry_minutes' => $otpResult['expiry_minutes'],
-            ];
-        } catch (\Exception $e) {
-            Log::error('Failed to resend student verification OTP: '.$e->getMessage(), [
-                'profile_id' => $profile->id,
-                'student_email' => $profile->student_email,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
-        }
-    }
-
-    /**
-     * Verify student email OTP and mark talent as verified.
-     *
-     * @throws \Exception
-     */
-    public function verifyStudentEmail(TalentProfile $profile, string $otp): TalentProfile
-    {
-        if (empty($profile->student_email)) {
-            throw new \Exception('Student email not found. Please submit verification again.');
-        }
-
-        try {
-            return DB::transaction(function () use ($profile, $otp) {
-                // Verify OTP using AuthService (using verifyRegistrationOtp since we used requestRegistrationOtp)
-                // But we need to verify without creating a user, so we'll use verifyOtp directly
-                $otpToken = \App\Models\OtpToken::where('email', $profile->student_email)
-                    ->where('otp_code', $otp)
-                    ->where('user_type', 'talent')
-                    ->valid()
-                    ->first();
-
-                if (! $otpToken) {
-                    // Increment attempts for existing token if found
-                    $existingToken = \App\Models\OtpToken::where('email', $profile->student_email)
-                        ->where('user_type', 'talent')
-                        ->unverified()
-                        ->first();
-
-                    if ($existingToken) {
-                        $existingToken->incrementAttempts();
-
-                        $maxAttempts = config('passwordless.otp.max_attempts', 5);
-                        if ($existingToken->attempts >= $maxAttempts) {
-                            $existingToken->delete();
-                            throw new \Exception('Maximum verification attempts exceeded. Please request a new OTP.');
-                        }
-                    }
-
-                    throw new \Exception('Invalid or expired OTP code.');
-                }
-
-                // Check if max attempts exceeded
-                $maxAttempts = config('passwordless.otp.max_attempts', 5);
-                if ($otpToken->attempts >= $maxAttempts) {
-                    $otpToken->delete();
-                    throw new \Exception('Maximum verification attempts exceeded. Please request a new OTP.');
-                }
-
-                // Check if expired
-                if ($otpToken->isExpired()) {
-                    $otpToken->delete();
-                    throw new \Exception('OTP has expired. Please request a new one.');
-                }
-
-                // Mark OTP as verified
-                $otpToken->markAsVerified();
-
-                // Update profile verification status
-                $profile->update([
-                    'verification_status' => 'verified',
-                    'verification_verified_at' => now(),
+                Log::info('Student verification document uploaded successfully', [
+                    'profile_id' => $profile->id,
+                    'student_id' => $studentId,
                 ]);
-
-                // Cleanup the verified OTP
-                $otpToken->delete();
 
                 $this->calculateCompletenessScore($profile);
 
                 return $profile->fresh();
             });
         } catch (\Exception $e) {
-            Log::error('Failed to verify student email: '.$e->getMessage(), [
+            Log::error('Failed to submit student verification: '.$e->getMessage(), [
                 'profile_id' => $profile->id,
-                'student_email' => $profile->student_email,
+                'student_id' => $studentId,
                 'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
         }
     }
+
 }

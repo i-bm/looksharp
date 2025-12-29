@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DegreeTypeEnum;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -64,4 +65,33 @@ class TalentEducation extends Model implements Auditable
     {
         return $this->belongsTo(Institution::class);
     }
+
+    public function getRecentEducationAttribute()
+    {
+        $educations = $this->talentProfile->educations ?? collect();
+
+        return $educations->first();
+    }
+    // public function recentEducation(): Attribute
+    // {
+
+    //     $educations = $this->talentProfile->educations ?? collect();
+
+    //     if ($educations->count() === 1) {
+    //         return Attribute::make(
+    //             get: fn () => $educations->first(),
+    //         );
+    //     }
+
+    //     $current = $educations->where('is_current', true)->first();
+    //     if ($current) {
+    //         return Attribute::make(
+    //             get: fn () => $current,
+    //         );
+    //     }
+
+    //     return Attribute::make(
+    //         get: fn () => $educations->where('is_primary', true)->first(),
+    //     );
+    // }
 }

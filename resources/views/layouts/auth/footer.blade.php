@@ -5,16 +5,16 @@
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- Bootstrap Core JS -->
-<script src="{{ asset('assets/js/bootstrap.bundle.min.js')}}"></script>
-
-<!-- Feather Icon JS -->
-<script src="{{ asset('assets/js/feather.min.js')}}"></script>
+<script src="{{ asset('assets/js/popper.min.js')}}"></script>
+<script src="{{ asset('assets/js/bootstrap.min.js')}}"></script>
 
 <!-- Swiper JS -->
 <script src="{{ asset('assets/js/swiper-bundle.min.js')}}"></script>
 
+<!-- FancyBox JS (needed for custom.js) -->
+<script src="{{ asset('assets/js/jquery.fancybox.min.js')}}"></script>
+
 <!-- Custom JS -->
-<script src="{{ asset('assets/js/script.js')}}"></script>
 <script src="{{ asset('assets/js/custom.js')}}"></script>
 <!-- Select Search Component JS -->
 <script src="{{ asset('assets/js/select-search.js')}}"></script>

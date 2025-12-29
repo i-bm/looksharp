@@ -1135,6 +1135,276 @@ function deleteGigsFreelance(id) {
         });
 }
 
+// Add Project
+function submitAddProject(event) {
+    event.preventDefault();
+
+    const form = document.getElementById("add-project-form");
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding...';
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+
+    fetch("/talent/profile/project", {
+        method: "POST",
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            Accept: "application/json",
+        },
+        body: formData,
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                showMessage(
+                    "success",
+                    data.message || "Project added successfully!"
+                );
+                form.reset();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                showMessage("error", data.message || "Failed to add project.");
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showMessage("error", "An error occurred. Please try again.");
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalText;
+        });
+}
+
+// Delete Project
+function deleteProject(id) {
+    if (!confirm("Are you sure you want to remove this project?")) {
+        return;
+    }
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+
+    fetch(`/talent/profile/project/${id}`, {
+        method: "DELETE",
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            Accept: "application/json",
+        },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                showMessage(
+                    "success",
+                    data.message || "Project removed successfully!"
+                );
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                showMessage("error", data.message || "Failed to remove project.");
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showMessage("error", "An error occurred. Please try again.");
+        });
+}
+
+// Institution Autocomplete for Education Modal
+let institutionAutocompleteTimeout = null;
+let selectedInstitutionIndex = -1;
+
+function initInstitutionAutocomplete() {
+    const input = document.getElementById("education-institution-input");
+    const hiddenInput = document.getElementById("education-institution-id");
+    const suggestions = document.getElementById("education-institution-suggestions");
+
+    if (!input || !hiddenInput || !suggestions) return;
+
+    // Clear previous selection when modal opens
+    input.value = "";
+    hiddenInput.value = "";
+
+    // Input event handler with debounce
+    input.addEventListener("input", function (e) {
+        const query = e.target.value.trim();
+        clearTimeout(institutionAutocompleteTimeout);
+        selectedInstitutionIndex = -1;
+
+        if (query.length >= 2) {
+            institutionAutocompleteTimeout = setTimeout(() => {
+                fetchInstitutions(query);
+            }, 300);
+        } else {
+            hideInstitutionSuggestions();
+            hiddenInput.value = "";
+        }
+    });
+
+    // Keydown handler for navigation
+    input.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            selectedInstitutionIndex = Math.min(
+                selectedInstitutionIndex + 1,
+                suggestions.querySelectorAll(".institution-autocomplete-item").length - 1
+            );
+            updateSelectedInstitution();
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            selectedInstitutionIndex = Math.max(selectedInstitutionIndex - 1, -1);
+            updateSelectedInstitution();
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (selectedInstitutionIndex >= 0) {
+                const items = suggestions.querySelectorAll(".institution-autocomplete-item");
+                if (items[selectedInstitutionIndex]) {
+                    items[selectedInstitutionIndex].click();
+                }
+            }
+        } else if (e.key === "Escape") {
+            hideInstitutionSuggestions();
+        }
+    });
+
+    // Click outside to close suggestions
+    document.addEventListener("click", function (e) {
+        const container = document.querySelector(".institution-autocomplete-container");
+        if (container && !container.contains(e.target)) {
+            hideInstitutionSuggestions();
+        }
+    });
+}
+
+async function fetchInstitutions(query) {
+    try {
+        const response = await fetch(
+            `/api/autocomplete/institutions?q=${encodeURIComponent(query)}`
+        );
+        const institutions = await response.json();
+        showInstitutionSuggestions(institutions);
+    } catch (error) {
+        console.error("Error fetching institutions:", error);
+        hideInstitutionSuggestions();
+    }
+}
+
+function showInstitutionSuggestions(institutions) {
+    const suggestions = document.getElementById("education-institution-suggestions");
+    if (!suggestions) return;
+
+    suggestions.innerHTML = "";
+
+    if (institutions.length === 0) {
+        const emptyItem = document.createElement("div");
+        emptyItem.className = "institution-autocomplete-item empty";
+        emptyItem.textContent = "No institutions found";
+        suggestions.appendChild(emptyItem);
+        suggestions.classList.add("show");
+        return;
+    }
+
+    institutions.forEach((institution, index) => {
+        const item = document.createElement("div");
+        item.className = "institution-autocomplete-item";
+        item.textContent = institution.name;
+        item.dataset.id = institution.id;
+        item.dataset.name = institution.name;
+        item.addEventListener("click", function () {
+            selectInstitution(institution.id, institution.name);
+        });
+        suggestions.appendChild(item);
+    });
+
+    suggestions.classList.add("show");
+    selectedInstitutionIndex = -1;
+}
+
+function hideInstitutionSuggestions() {
+    const suggestions = document.getElementById("education-institution-suggestions");
+    if (suggestions) {
+        suggestions.classList.remove("show");
+        selectedInstitutionIndex = -1;
+    }
+}
+
+function updateSelectedInstitution() {
+    const suggestions = document.getElementById("education-institution-suggestions");
+    if (!suggestions) return;
+
+    const items = suggestions.querySelectorAll(".institution-autocomplete-item");
+    items.forEach((item, index) => {
+        if (index === selectedInstitutionIndex) {
+            item.classList.add("selected");
+            item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        } else {
+            item.classList.remove("selected");
+        }
+    });
+}
+
+function selectInstitution(id, name) {
+    const input = document.getElementById("education-institution-input");
+    const hiddenInput = document.getElementById("education-institution-id");
+
+    if (input && hiddenInput) {
+        input.value = name;
+        hiddenInput.value = id;
+        hideInstitutionSuggestions();
+    }
+}
+
+// Initialize autocomplete when education modal opens
+document.addEventListener("DOMContentLoaded", function () {
+    // Watch for education modal opening
+    const educationModal = document.getElementById("education-modal");
+    if (educationModal) {
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (
+                    mutation.type === "attributes" &&
+                    mutation.attributeName === "style"
+                ) {
+                    if (
+                        educationModal.style.display === "block" &&
+                        !educationModal.classList.contains("autocomplete-initialized")
+                    ) {
+                        // Small delay to ensure modal is fully rendered
+                        setTimeout(() => {
+                            initInstitutionAutocomplete();
+                            educationModal.classList.add("autocomplete-initialized");
+                        }, 100);
+                    } else if (educationModal.style.display === "none") {
+                        // Reset when modal closes
+                        educationModal.classList.remove("autocomplete-initialized");
+                        const input = document.getElementById("education-institution-input");
+                        const hiddenInput = document.getElementById("education-institution-id");
+                        if (input) input.value = "";
+                        if (hiddenInput) hiddenInput.value = "";
+                        hideInstitutionSuggestions();
+                    }
+                }
+            });
+        });
+
+        observer.observe(educationModal, {
+            attributes: true,
+            attributeFilter: ["style"],
+        });
+    }
+});
+
 // Toggle end date containers
 function toggleEducationEndDate(checkbox) {
     const container = document.getElementById("education-end-date-container");
@@ -1580,3 +1850,634 @@ function copyPublicUrl(url) {
         }
     );
 }
+
+// Tag-based Input Components
+class CareerInterestTags {
+    constructor(containerId, hiddenInputId, availableOptions = []) {
+        this.container = document.getElementById(containerId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        this.availableOptions = availableOptions; // Array of {id, name}
+        this.selectedTags = [];
+        this.init();
+    }
+
+    init() {
+        if (!this.container) return;
+
+        const wrapper = this.container.querySelector('.career-interest-tags-wrapper');
+        const input = this.container.querySelector('.career-interest-input');
+        const suggestions = this.container.querySelector('.career-interest-suggestions');
+
+        if (!wrapper || !input || !suggestions) return;
+
+        // Load existing tags from hidden input
+        if (this.hiddenInput && this.hiddenInput.value) {
+            try {
+                const ids = JSON.parse(this.hiddenInput.value);
+                ids.forEach(id => {
+                    const option = this.availableOptions.find(opt => opt.id === id);
+                    if (option) {
+                        this.addTag(option.id, option.name);
+                    }
+                });
+            } catch (e) {
+                console.error('Error parsing career interest areas:', e);
+            }
+        }
+
+        // Input event handler
+        input.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (query.length > 0) {
+                this.showSuggestions(query);
+            } else {
+                this.hideSuggestions();
+            }
+        });
+
+        // Keydown handler
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query.length > 0) {
+                    const match = this.findMatch(query);
+                    if (match) {
+                        this.addTag(match.id, match.name);
+                        input.value = '';
+                        this.hideSuggestions();
+                    }
+                }
+            } else if (e.key === 'Backspace' && input.value === '') {
+                // Remove last tag if input is empty
+                if (this.selectedTags.length > 0) {
+                    this.removeTag(this.selectedTags[this.selectedTags.length - 1].id);
+                }
+            }
+        });
+
+        // Click outside to close suggestions
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.hideSuggestions();
+            }
+        });
+    }
+
+    findMatch(query) {
+        const lowerQuery = query.toLowerCase();
+        // Find exact match first
+        let match = this.availableOptions.find(opt => 
+            opt.name.toLowerCase() === lowerQuery && 
+            !this.selectedTags.find(tag => tag.id === opt.id)
+        );
+        if (match) return match;
+
+        // Find partial match
+        match = this.availableOptions.find(opt => 
+            opt.name.toLowerCase().includes(lowerQuery) && 
+            !this.selectedTags.find(tag => tag.id === opt.id)
+        );
+        return match;
+    }
+
+    showSuggestions(query) {
+        const suggestions = this.container.querySelector('.career-interest-suggestions');
+        const lowerQuery = query.toLowerCase();
+        
+        // Filter available options
+        const filtered = this.availableOptions.filter(opt => 
+            opt.name.toLowerCase().includes(lowerQuery) &&
+            !this.selectedTags.find(tag => tag.id === opt.id)
+        );
+
+        // Clear suggestions
+        suggestions.innerHTML = '';
+
+        if (filtered.length === 0) {
+            suggestions.classList.remove('show');
+            return;
+        }
+
+        // Add label
+        const label = document.createElement('div');
+        label.className = 'suggestions-label';
+        label.textContent = 'Suggestions:';
+        suggestions.appendChild(label);
+
+        // Add suggestion tags
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'suggestions-tags';
+        
+        filtered.slice(0, 10).forEach(option => {
+            const tag = document.createElement('span');
+            tag.className = 'suggestion-tag';
+            tag.textContent = option.name;
+            tag.addEventListener('click', () => {
+                this.addTag(option.id, option.name);
+                this.container.querySelector('.career-interest-input').value = '';
+                this.hideSuggestions();
+            });
+            tagsContainer.appendChild(tag);
+        });
+
+        suggestions.appendChild(tagsContainer);
+        suggestions.classList.add('show');
+    }
+
+    hideSuggestions() {
+        const suggestions = this.container.querySelector('.career-interest-suggestions');
+        if (suggestions) {
+            suggestions.classList.remove('show');
+        }
+    }
+
+    addTag(id, name) {
+        if (this.selectedTags.find(tag => tag.id === id)) {
+            return; // Already added
+        }
+
+        const wrapper = this.container.querySelector('.career-interest-tags-wrapper');
+        const input = this.container.querySelector('.career-interest-input');
+
+        const tag = document.createElement('span');
+        tag.className = 'career-interest-tag';
+        tag.dataset.id = id;
+        tag.innerHTML = `
+            ${name}
+            <span class="career-interest-tag-remove" onclick="careerInterestTags.removeTag('${id}')">×</span>
+        `;
+
+        // Insert before input
+        wrapper.insertBefore(tag, input);
+
+        this.selectedTags.push({ id, name });
+        this.updateHiddenInput();
+    }
+
+    removeTag(id) {
+        const tag = this.container.querySelector(`.career-interest-tag[data-id="${id}"]`);
+        if (tag) {
+            tag.remove();
+            this.selectedTags = this.selectedTags.filter(tag => tag.id !== id);
+            this.updateHiddenInput();
+        }
+    }
+
+    updateHiddenInput() {
+        if (this.hiddenInput) {
+            const ids = this.selectedTags.map(tag => tag.id);
+            this.hiddenInput.value = JSON.stringify(ids);
+        }
+    }
+}
+
+class PreferredCityTags {
+    constructor(containerId, hiddenInputId) {
+        this.container = document.getElementById(containerId);
+        this.hiddenInput = document.getElementById(hiddenInputId);
+        this.selectedTags = [];
+        this.autocompleteTimeout = null;
+        this.init();
+    }
+
+    init() {
+        if (!this.container) {
+            console.error('PreferredCityTags: Container not found');
+            return;
+        }
+
+        const wrapper = this.container.querySelector('.preferred-city-tags-wrapper');
+        const input = this.container.querySelector('.preferred-city-input');
+        const suggestions = this.container.querySelector('.preferred-city-suggestions');
+
+        if (!wrapper) {
+            console.error('PreferredCityTags: Wrapper not found');
+            return;
+        }
+        if (!input) {
+            console.error('PreferredCityTags: Input not found');
+            return;
+        }
+        if (!suggestions) {
+            console.error('PreferredCityTags: Suggestions container not found');
+            return;
+        }
+
+        // Load existing tags from hidden input
+        if (this.hiddenInput && this.hiddenInput.value) {
+            try {
+                const data = JSON.parse(this.hiddenInput.value);
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        if (item.id && item.name) {
+                            this.addTag(item.id, item.name);
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing preferred cities:', e);
+            }
+        }
+
+        // Input event handler with debounce for autocomplete
+        input.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(this.autocompleteTimeout);
+            
+            if (query.length >= 2) {
+                this.autocompleteTimeout = setTimeout(() => {
+                    this.fetchCities(query);
+                }, 300);
+            } else {
+                this.hideSuggestions();
+            }
+        });
+
+        // Focus event to show suggestions if there's text
+        input.addEventListener('focus', (e) => {
+            const query = e.target.value.trim();
+            if (query.length >= 2) {
+                this.fetchCities(query);
+            }
+        });
+
+        // Keydown handler
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query.length > 0) {
+                    // Try to add first suggestion if available
+                    const suggestionsEl = this.container.querySelector('.preferred-city-suggestions');
+                    const firstSuggestion = suggestionsEl ? suggestionsEl.querySelector('.suggestion-tag') : null;
+                    if (firstSuggestion) {
+                        firstSuggestion.click();
+                    } else {
+                        // If no suggestions, add as-is (will be looked up by backend)
+                        const tempId = 'temp_' + Date.now();
+                        this.addTag(tempId, query);
+                        input.value = '';
+                        this.hideSuggestions();
+                    }
+                }
+            } else if (e.key === 'Backspace' && input.value === '') {
+                // Remove last tag if input is empty
+                if (this.selectedTags.length > 0) {
+                    this.removeTag(this.selectedTags[this.selectedTags.length - 1].id);
+                }
+            }
+        });
+
+        // Click outside to close suggestions
+        document.addEventListener('click', (e) => {
+            if (!this.container.contains(e.target)) {
+                this.hideSuggestions();
+            }
+        });
+    }
+
+    async fetchCities(query) {
+        try {
+            const response = await fetch(`/api/autocomplete/cities?q=${encodeURIComponent(query)}`);
+            if (!response.ok) {
+                console.error('Autocomplete request failed:', response.status);
+                this.hideSuggestions();
+                return;
+            }
+            const cities = await response.json();
+            if (Array.isArray(cities)) {
+                this.showSuggestions(cities);
+            } else {
+                console.error('Invalid response format from autocomplete:', cities);
+                this.hideSuggestions();
+            }
+        } catch (error) {
+            console.error('Error fetching cities:', error);
+            this.hideSuggestions();
+        }
+    }
+
+    showSuggestions(cities) {
+        const suggestions = this.container.querySelector('.preferred-city-suggestions');
+        
+        // Filter out already selected cities
+        const filtered = cities.filter(city => 
+            !this.selectedTags.find(tag => tag.id === city.id || tag.name.toLowerCase() === city.name.toLowerCase())
+        );
+
+        // Clear suggestions
+        suggestions.innerHTML = '';
+
+        if (filtered.length === 0) {
+            suggestions.classList.remove('show');
+            return;
+        }
+
+        // Add label
+        const label = document.createElement('div');
+        label.className = 'suggestions-label';
+        label.textContent = 'Suggestions:';
+        suggestions.appendChild(label);
+
+        // Add suggestion tags
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'suggestions-tags';
+        
+        filtered.slice(0, 10).forEach(city => {
+            const tag = document.createElement('span');
+            tag.className = 'suggestion-tag';
+            tag.textContent = city.name;
+            tag.addEventListener('click', () => {
+                this.addTag(city.id, city.name);
+                this.container.querySelector('.preferred-city-input').value = '';
+                this.hideSuggestions();
+            });
+            tagsContainer.appendChild(tag);
+        });
+
+        suggestions.appendChild(tagsContainer);
+        suggestions.classList.add('show');
+    }
+
+    hideSuggestions() {
+        const suggestions = this.container.querySelector('.preferred-city-suggestions');
+        if (suggestions) {
+            suggestions.classList.remove('show');
+        }
+    }
+
+    addTag(id, name) {
+        // Check if city with same name already exists
+        if (this.selectedTags.find(tag => tag.name.toLowerCase() === name.toLowerCase())) {
+            return; // Already added
+        }
+
+        const wrapper = this.container.querySelector('.preferred-city-tags-wrapper');
+        const input = this.container.querySelector('.preferred-city-input');
+
+        const tag = document.createElement('span');
+        tag.className = 'preferred-city-tag';
+        tag.dataset.id = id;
+        tag.innerHTML = `
+            ${name}
+            <span class="preferred-city-tag-remove" onclick="preferredCityTags.removeTag('${id}')">×</span>
+        `;
+
+        // Insert before input
+        wrapper.insertBefore(tag, input);
+
+        this.selectedTags.push({ id, name });
+        this.updateHiddenInput();
+    }
+
+    removeTag(id) {
+        const tag = this.container.querySelector(`.preferred-city-tag[data-id="${id}"]`);
+        if (tag) {
+            tag.remove();
+            this.selectedTags = this.selectedTags.filter(tag => tag.id !== id);
+            this.updateHiddenInput();
+        }
+    }
+
+    updateHiddenInput() {
+        if (this.hiddenInput) {
+            this.hiddenInput.value = JSON.stringify(this.selectedTags);
+        }
+    }
+}
+
+// Global instances (will be initialized when modal opens)
+let careerInterestTags = null;
+let preferredCityTags = null;
+
+// Custom form submission for work preferences
+function submitWorkPreferencesForm(event, formId, url, modalId) {
+    event.preventDefault();
+
+    const form = document.getElementById(formId);
+    if (!form) {
+        showMessage("error", "Form not found. Please refresh the page.");
+        return;
+    }
+
+    // Get career interest areas from hidden input
+    const careerInterestAreasInput = document.getElementById('career-interest-areas-hidden');
+    let careerInterestAreas = [];
+    if (careerInterestAreasInput && careerInterestAreasInput.value) {
+        try {
+            careerInterestAreas = JSON.parse(careerInterestAreasInput.value);
+        } catch (e) {
+            console.error('Error parsing career interest areas:', e);
+        }
+    }
+
+    // Get preferred cities from hidden input
+    const preferredCitiesInput = document.getElementById('preferred-cities-hidden');
+    let preferredCities = [];
+    if (preferredCitiesInput && preferredCitiesInput.value) {
+        try {
+            const citiesData = JSON.parse(preferredCitiesInput.value);
+            // Send city IDs if available, otherwise send names
+            preferredCities = citiesData.map(city => {
+                if (typeof city === 'string') {
+                    return city;
+                }
+                // If city has a real ID (not temp), send the ID
+                if (city.id && !city.id.toString().startsWith('temp_')) {
+                    return city.id;
+                }
+                // Otherwise send the name (backend will look it up)
+                return city.name || city;
+            });
+        } catch (e) {
+            console.error('Error parsing preferred cities:', e);
+        }
+    }
+
+    // Get work models - get all checked checkboxes
+    const workModelCheckboxes = form.querySelectorAll('input[name="work_models[]"]:checked');
+    const workModels = Array.from(workModelCheckboxes).map(cb => cb.value);
+
+    const data = {
+        career_interest_areas: careerInterestAreas,
+        preferred_cities: preferredCities,
+        work_models: workModels,
+    };
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+
+    // Disable submit button
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+    // Add CSRF token
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+
+    if (!csrfToken) {
+        showMessage(
+            "error",
+            "Security token missing. Please refresh the page."
+        );
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalText;
+        return;
+    }
+
+    fetch(url, {
+        method: "PUT",
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+        },
+        body: JSON.stringify(data),
+    })
+        .then((response) => {
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                return response.text().then((text) => {
+                    throw new Error("Server returned non-JSON response");
+                });
+            }
+
+            return response.json().then((data) => {
+                return { status: response.status, data: data };
+            });
+        })
+        .then(({ status, data }) => {
+            if (status === 200 && data && data.success) {
+                showMessage(
+                    "success",
+                    data.message || "Changes saved successfully!"
+                );
+                closeModal(modalId);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                let errorMessage =
+                    data?.message ||
+                    "Failed to save changes. Please try again.";
+
+                if (data?.errors) {
+                    const firstError = Object.values(data.errors)[0];
+                    if (Array.isArray(firstError)) {
+                        errorMessage = firstError[0];
+                    } else {
+                        errorMessage = firstError;
+                    }
+                } else if (data?.message) {
+                    errorMessage = data.message;
+                }
+
+                showMessage("error", errorMessage);
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        })
+        .catch((error) => {
+            showMessage("error", "An error occurred. Please try again.");
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalText;
+        });
+}
+
+// Initialize tag components when work preferences modal opens
+document.addEventListener('DOMContentLoaded', function() {
+    // Watch for modal opening - check both style.display and class changes
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            const modal = document.getElementById('work-preferences-modal');
+            if (!modal) return;
+
+            // Check if modal is visible (either by style.display or show class)
+            const isVisible = modal.style.display === 'block' || 
+                            modal.classList.contains('show') ||
+                            window.getComputedStyle(modal).display !== 'none';
+
+            if (isVisible && !careerInterestTags) {
+                // Get available career interest areas from the page
+                const availableOptions = [];
+                document.querySelectorAll('.category-child').forEach(checkbox => {
+                    if (checkbox.value) {
+                        const name = checkbox.getAttribute('data-name') || 
+                                    (checkbox.nextElementSibling ? checkbox.nextElementSibling.textContent.trim() : '');
+                        if (name) {
+                            availableOptions.push({
+                                id: checkbox.value,
+                                name: name
+                            });
+                        }
+                    }
+                });
+
+                // Initialize components
+                careerInterestTags = new CareerInterestTags(
+                    'career-interest-tags-container',
+                    'career-interest-areas-hidden',
+                    availableOptions
+                );
+
+                preferredCityTags = new PreferredCityTags(
+                    'preferred-city-tags-container',
+                    'preferred-cities-hidden'
+                );
+            } else if (!isVisible && careerInterestTags) {
+                // Reset components when modal closes
+                careerInterestTags = null;
+                preferredCityTags = null;
+            }
+        });
+    });
+
+    const modal = document.getElementById('work-preferences-modal');
+    if (modal) {
+        // Observe both style and class changes
+        observer.observe(modal, { 
+            attributes: true, 
+            attributeFilter: ['style', 'class'],
+            subtree: false
+        });
+    }
+
+    // Also check on modal open function call
+    const originalOpenModal = window.openModal;
+    if (typeof originalOpenModal === 'function') {
+        window.openModal = function(modalId) {
+            originalOpenModal(modalId);
+            // Small delay to ensure DOM is updated
+            setTimeout(function() {
+                if (modalId === 'work-preferences-modal' && !careerInterestTags) {
+                    const availableOptions = [];
+                    document.querySelectorAll('.category-child').forEach(checkbox => {
+                        if (checkbox.value) {
+                            const name = checkbox.getAttribute('data-name') || 
+                                        (checkbox.nextElementSibling ? checkbox.nextElementSibling.textContent.trim() : '');
+                            if (name) {
+                                availableOptions.push({
+                                    id: checkbox.value,
+                                    name: name
+                                });
+                            }
+                        }
+                    });
+
+                    careerInterestTags = new CareerInterestTags(
+                        'career-interest-tags-container',
+                        'career-interest-areas-hidden',
+                        availableOptions
+                    );
+
+                    preferredCityTags = new PreferredCityTags(
+                        'preferred-city-tags-container',
+                        'preferred-cities-hidden'
+                    );
+                }
+            }, 100);
+        };
+    }
+});

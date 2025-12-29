@@ -3,23 +3,8 @@
 $user = Auth::user();
 // Check for admin profile first, then talent profile
 $profile = $user->adminProfile ?? $user->talentProfile;
-$fullName = $profile ? $profile->full_name : ($user->full_name ?? 'User');
-$initials = '';
-if ($profile) {
-$firstInitial = substr($profile->first_name ?? '', 0, 1);
-$lastInitial = substr($profile->last_name ?? '', 0, 1);
-$initials = strtoupper($firstInitial . $lastInitial);
-} elseif ($user->first_name || $user->last_name) {
-$firstInitial = substr($user->first_name ?? '', 0, 1);
-$lastInitial = substr($user->last_name ?? '', 0, 1);
-$initials = strtoupper($firstInitial . $lastInitial);
-} elseif ($user->name) {
-$nameParts = explode(' ', $user->name);
-$initials = strtoupper(substr($nameParts[0] ?? '', 0, 1) . substr($nameParts[1] ?? '', 0, 1));
-}
-if (empty($initials)) {
-$initials = 'U';
-}
+$fullName = $profile->first_name && $profile->last_name ? $profile->full_name : ($profile->user->first_name . ' ' . $profile->user->last_name);
+$initials = strtoupper(substr($fullName, 0, 1) . substr($fullName, -1, 1));
 @endphp
 <div class="dashboard-top-header">
     <!-- Mobile Header: Logo + Hamburger -->
