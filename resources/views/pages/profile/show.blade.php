@@ -494,6 +494,7 @@
 
             <!-- Sidebar -->
             <div class="profile-v2-sidebar">
+                @if(!($isPublic ?? false))
                 <!-- Verification -->
                 <section class="profile-v2-section">
                     <div class="profile-v2-section-header">
@@ -520,7 +521,7 @@
                                 <span class="material-symbols-outlined">hourglass_top</span>
                                 Pending review
                             </span>
-                            <p class="profile-v2-verification-help">We’ve received your document and we’re reviewing it.</p>
+                            <p class="profile-v2-verification-help">We've received your document and we're reviewing it.</p>
                         @else
                             <span class="profile-v2-pill profile-v2-pill-neutral">
                                 <span class="material-symbols-outlined">shield</span>
@@ -537,6 +538,7 @@
                         @endif
                     </div>
                 </section>
+                @endif
 
                 <!-- Work Preferences -->
                 <section class="profile-v2-section">
@@ -731,8 +733,12 @@
 
 @if($isOwner)
 <!-- Include Modals -->
+@if($showWelcomeModal ?? false)
+@include('pages.profile.modals.welcome')
+@endif
 @include('pages.profile.modals.about-me')
 @include('pages.profile.modals.video-introduction')
+@include('pages.profile.modals.projects')
 @include('pages.profile.modals.education')
 @include('pages.profile.modals.work-history')
 @include('pages.profile.modals.skills')
@@ -766,6 +772,16 @@
             linkElement.textContent = 'Show more';
         }
     }
+
+    // Auto-open welcome modal on page load if needed
+    @if($isOwner && ($showWelcomeModal ?? false))
+    document.addEventListener('DOMContentLoaded', function() {
+        // Small delay to ensure page is fully loaded
+        setTimeout(function() {
+            openModal('welcome-modal');
+        }, 500);
+    });
+    @endif
 </script>
 @endpush
 @endsection

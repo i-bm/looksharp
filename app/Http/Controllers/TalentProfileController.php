@@ -14,6 +14,7 @@ use App\Models\TalentGigsFreelance;
 use App\Models\TalentLanguage;
 use App\Models\TalentLeadershipExperience;
 use App\Models\TalentProfile;
+use App\Models\TalentProject;
 use App\Models\TalentSkill;
 use App\Models\TalentVolunteerExperience;
 use App\Models\TalentWorkHistory;
@@ -58,7 +59,7 @@ class TalentProfileController extends Controller
     }
 
     /**
-     * Submit student verification (uploads student ID + requests OTP).
+     * Submit student verification (uploads student ID document for review).
      */
     public function submitStudentVerification(Request $request): RedirectResponse
     {
@@ -72,7 +73,6 @@ class TalentProfileController extends Controller
 
         $validated = $request->validate([
             'student_id' => ['required', 'string', 'max:255'],
-            'student_email' => ['required', 'email', 'max:255'],
             'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB max
         ]);
 
@@ -80,16 +80,11 @@ class TalentProfileController extends Controller
             $this->profileService->submitStudentVerification(
                 $profile,
                 $validated['student_id'],
-                $validated['student_email'],
                 $request->file('verification_document')
             );
 
-            // Store session data for resend countdown
-            $request->session()->put('student_verification.otp_sent_at', now()->toIso8601String());
-            $request->session()->put('student_verification.student_email', $validated['student_email']);
-
-            return redirect()->route('talent.profile.verify-student-email.show')
-                ->with('success', 'We sent a verification code to your student email. Please enter it to complete verification.');
+            return redirect()->route('talent.profile.verification.show')
+                ->with('success', 'Student ID document uploaded successfully. Your verification is pending review.');
         } catch (\Exception $e) {
             Log::error('Student verification submission failed: '.$e->getMessage(), [
                 'profile_id' => $profile->id,
@@ -133,97 +128,6 @@ class TalentProfileController extends Controller
             return back()
                 ->withInput()
                 ->withErrors(['error' => 'Failed to upload verification document. Please try again.']);
-        }
-    }
-
-    /**
-     * Show student email verification page.
-     */
-    public function showVerifyStudentEmail(): View|RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        if (empty($profile->student_email)) {
-            return redirect()->route('talent.profile.edit')
-                ->with('error', 'Please submit your student verification first.');
-        }
-
-        $otpSentAt = request()->session()->get('student_verification.otp_sent_at');
-        $countdownSeconds = config('passwordless.resend.countdown_seconds', 60);
-
-        return view('pages.profile.steps.verify-student-email', [
-            'profile' => $profile,
-            'studentEmail' => $profile->student_email,
-            'otpSentAt' => $otpSentAt,
-            'countdownSeconds' => $countdownSeconds,
-        ]);
-    }
-
-    /**
-     * Verify student email OTP.
-     */
-    public function verifyStudentEmail(Request $request): RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        $validated = $request->validate([
-            'otp' => ['required', 'string', 'size:6', 'regex:/^[0-9]{6}$/'],
-        ]);
-
-        try {
-            $this->profileService->verifyStudentEmail($profile, $validated['otp']);
-
-            // Clear session data
-            $request->session()->forget(['student_verification.otp_sent_at', 'student_verification.student_email']);
-
-            $profile->is_profile_building_step_completed = 1;
-            $profile->save();
-
-            return redirect()->route('talent.profile.show')
-                ->with('success', 'Your student email has been verified successfully! Your profile is now verified.');
-        } catch (\Exception $e) {
-            return back()
-                ->withInput()
-                ->withErrors(['otp' => $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Resend student verification OTP.
-     */
-    public function resendStudentVerificationOtp(Request $request): RedirectResponse
-    {
-        $user = Auth::user();
-        $profile = $user->talentProfile;
-
-        if (! $profile) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Profile not found. Please contact support.');
-        }
-
-        try {
-            $otpResult = $this->profileService->resendStudentVerificationOtp($profile);
-
-            // Update session with new OTP sent timestamp
-            $request->session()->put('student_verification.otp_sent_at', now()->toIso8601String());
-
-            return back()
-                ->with('success', 'OTP has been resent to your student email address.');
-        } catch (\Exception $e) {
-            return back()
-                ->withErrors(['error' => $e->getMessage()]);
         }
     }
 
@@ -535,12 +439,36 @@ class TalentProfileController extends Controller
             ->orderBy('order')
             ->get();
 
+        // Check if welcome modal should be shown
+        $showWelcomeModal = false;
+        if (! session()->has('talent_welcome_modal_shown')) {
+            // Show if profile completeness is low (< 30%) or if it's a new profile
+            $completenessScore = $profile->profile_completeness_score ?? 0;
+            if ($completenessScore < 30) {
+                $showWelcomeModal = true;
+            }
+        }
+
         return view('pages.profile.show', [
             'profile' => $profile,
             'isOwner' => true,
             'isPublic' => false,
             'institutions' => $institutions,
             'careerInterestAreas' => $careerInterestAreas,
+            'showWelcomeModal' => $showWelcomeModal,
+        ]);
+    }
+
+    /**
+     * Dismiss welcome modal (set session flag).
+     */
+    public function dismissWelcomeModal(): \Illuminate\Http\JsonResponse
+    {
+        session()->put('talent_welcome_modal_shown', true);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Welcome modal dismissed.',
         ]);
     }
 
@@ -2485,6 +2413,156 @@ class TalentProfileController extends Controller
                 'message' => 'Gigs/Freelance work removed successfully.',
             ]);
         } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Add project record (AJAX).
+     */
+    public function addProjectAjax(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return response()->json(['success' => false, 'message' => 'Profile not found.'], 404);
+        }
+
+        try {
+            $validated = $request->validate([
+                'title' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string', 'max:2000'],
+                'project_type' => ['nullable', 'string', 'max:255'],
+                'project_url' => ['nullable', 'url', 'max:500'],
+                'technologies' => ['nullable', 'string', 'max:500'],
+                'start_date_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+                'start_date_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+                'start_date_year' => ['nullable', 'integer', 'min:'.(date('Y') - 20), 'max:'.(date('Y') + 5)],
+                'end_date_day' => ['nullable', 'integer', 'min:1', 'max:31'],
+                'end_date_month' => ['nullable', 'integer', 'min:1', 'max:12'],
+                'end_date_year' => ['nullable', 'integer', 'min:'.(date('Y') - 20), 'max:'.(date('Y') + 5)],
+                'is_featured' => ['boolean'],
+                'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif', 'max:5120'], // 5MB max
+            ]);
+
+            // Validate and combine start_date if provided
+            $startDate = null;
+            if (!empty($validated['start_date_day']) && !empty($validated['start_date_month']) && !empty($validated['start_date_year'])) {
+                $startDateValidation = validateDateComponents(
+                    $validated['start_date_day'],
+                    $validated['start_date_month'],
+                    $validated['start_date_year']
+                );
+
+                if (! $startDateValidation['valid']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $startDateValidation['error'],
+                    ], 422);
+                }
+
+                $startDate = $startDateValidation['date'];
+            }
+            unset($validated['start_date_day'], $validated['start_date_month'], $validated['start_date_year']);
+
+            // Validate and combine end_date if provided
+            $endDate = null;
+            if (!empty($validated['end_date_day']) && !empty($validated['end_date_month']) && !empty($validated['end_date_year'])) {
+                $endDateValidation = validateDateComponents(
+                    $validated['end_date_day'],
+                    $validated['end_date_month'],
+                    $validated['end_date_year']
+                );
+
+                if (! $endDateValidation['valid']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $endDateValidation['error'],
+                    ], 422);
+                }
+
+                $endDate = $endDateValidation['date'];
+
+                // Validate end_date is after start_date if both are provided
+                if ($startDate) {
+                    $startDateObj = Carbon::createFromFormat('Y-m-d', $startDate);
+                    $endDateObj = Carbon::createFromFormat('Y-m-d', $endDate);
+
+                    if ($endDateObj->lte($startDateObj)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'End date must be after start date.',
+                        ], 422);
+                    }
+                }
+            }
+            unset($validated['end_date_day'], $validated['end_date_month'], $validated['end_date_year']);
+
+            $data = [
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'project_type' => $validated['project_type'] ?? null,
+                'project_url' => $validated['project_url'] ?? null,
+                'technologies' => $validated['technologies'] ?? null,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'is_featured' => $validated['is_featured'] ?? false,
+            ];
+
+            $imageFile = $request->hasFile('image') ? $request->file('image') : null;
+
+            $this->profileService->saveProject($profile, $data, $imageFile);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Project added successfully!',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to add project: '.$e->getMessage(), [
+                'profile_id' => $profile->id ?? null,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove project record (AJAX).
+     */
+    public function removeProjectAjax(string $id): \Illuminate\Http\JsonResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            return response()->json(['success' => false, 'message' => 'Profile not found.'], 404);
+        }
+
+        $project = TalentProject::where('id', $id)
+            ->where('talent_id', $profile->id)
+            ->firstOrFail();
+
+        try {
+            $this->profileService->deleteProject($project);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Project removed successfully.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to remove project: '.$e->getMessage(), [
+                'project_id' => $id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

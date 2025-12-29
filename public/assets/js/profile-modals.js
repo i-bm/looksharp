@@ -1135,6 +1135,92 @@ function deleteGigsFreelance(id) {
         });
 }
 
+// Add Project
+function submitAddProject(event) {
+    event.preventDefault();
+
+    const form = document.getElementById("add-project-form");
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding...';
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+
+    fetch("/talent/profile/project", {
+        method: "POST",
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            Accept: "application/json",
+        },
+        body: formData,
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                showMessage(
+                    "success",
+                    data.message || "Project added successfully!"
+                );
+                form.reset();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                showMessage("error", data.message || "Failed to add project.");
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showMessage("error", "An error occurred. Please try again.");
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalText;
+        });
+}
+
+// Delete Project
+function deleteProject(id) {
+    if (!confirm("Are you sure you want to remove this project?")) {
+        return;
+    }
+
+    const csrfToken = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+
+    fetch(`/talent/profile/project/${id}`, {
+        method: "DELETE",
+        headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            Accept: "application/json",
+        },
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.success) {
+                showMessage(
+                    "success",
+                    data.message || "Project removed successfully!"
+                );
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                showMessage("error", data.message || "Failed to remove project.");
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            showMessage("error", "An error occurred. Please try again.");
+        });
+}
+
 // Toggle end date containers
 function toggleEducationEndDate(checkbox) {
     const container = document.getElementById("education-end-date-container");

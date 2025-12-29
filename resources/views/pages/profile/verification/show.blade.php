@@ -72,7 +72,7 @@
                     <h2 class="talent-verification-card-title">
                         <i class="bi bi-mortarboard"></i> Student verification
                     </h2>
-                    <p class="talent-verification-card-subtitle">Upload your student ID and verify your student email via OTP.</p>
+                    <p class="talent-verification-card-subtitle">Upload your student ID document for verification.</p>
                 </div>
 
                 <form method="POST" action="{{ route('talent.profile.verification.student.submit') }}" enctype="multipart/form-data" class="talent-verification-form">
@@ -85,12 +85,6 @@
                     </div>
 
                     <div class="tv-field">
-                        <label class="tv-label" for="student_email">Student email</label>
-                        <input class="tv-input" type="email" id="student_email" name="student_email" value="{{ old('student_email', $profile->student_email) }}" placeholder="name@your-school.edu">
-                        @error('student_email')<div class="tv-error">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="tv-field">
                         <label class="tv-label" for="student_verification_document">Student ID document</label>
                         <input class="tv-input" type="file" id="student_verification_document" name="verification_document" accept=".pdf,.jpg,.jpeg,.png">
                         <div class="tv-help">Accepted: PDF/JPG/PNG (max 5MB)</div>
@@ -98,7 +92,7 @@
                     </div>
 
                     <button type="submit" class="tv-btn tv-btn-primary">
-                        Send OTP
+                        Submit
                     </button>
                 </form>
             </section>
@@ -132,7 +126,7 @@
                     </div>
 
                     <button type="submit" class="tv-btn tv-btn-primary">
-                        Upload for review
+                        Submit
                     </button>
                 </form>
             </section>

@@ -24,9 +24,9 @@
             @csrf
             <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 20px; color: var(--title-color);">{{ $profile->languages->count() > 0 ? 'Add Another Language' : 'Add Languages' }}</h3>
 
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
-                <div>
-                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
+            <div class="row g-4">
+                <div class="col-md-6 ">
+                    <label class="" style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
                         Language <span style="color: #F53003;">*</span>
                     </label>
                     <input type="text" name="language_name" id="language-name" required
@@ -34,7 +34,7 @@
                         style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                 </div>
 
-                <div>
+                <div class="col-md-6">
                     <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--title-color);">
                         Proficiency Level <span style="color: #F53003;">*</span>
                     </label>
@@ -50,7 +50,7 @@
             </div>
 
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 25px;">
-                <button type="button" onclick="closeModal('languages-modal')" 
+                <button type="button" onclick="closeModal('languages-modal')"
                     style="padding: 10px 20px; border: 2px solid #ddd; border-radius: 4px; background: white; color: var(--text-color); cursor: pointer; font-size: 14px;">
                     Close
                 </button>

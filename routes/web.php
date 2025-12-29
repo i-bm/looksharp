@@ -99,11 +99,6 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
 
     // Talent-specific profile routes
     Route::middleware('role:talent')->prefix('talent')->name('talent.')->group(function () {
-        // Student email verification routes
-        Route::get('/profile/verify-student-email', [TalentProfileController::class, 'showVerifyStudentEmail'])->name('profile.verify-student-email.show');
-        Route::post('/profile/verify-student-email', [TalentProfileController::class, 'verifyStudentEmail'])->name('profile.verify-student-email');
-        Route::post('/profile/resend-student-verification-otp', [TalentProfileController::class, 'resendStudentVerificationOtp'])->name('profile.resend-student-verification-otp');
-
         // Verification routes
         Route::get('/profile/verification', [TalentProfileController::class, 'showVerification'])->name('profile.verification.show');
         Route::post('/profile/verification/student', [TalentProfileController::class, 'submitStudentVerification'])->name('profile.verification.student.submit');
@@ -153,11 +148,18 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/profile/gigs-freelance', [TalentProfileController::class, 'addGigsFreelanceAjax'])->name('profile.gigs-freelance.add');
         Route::delete('/profile/gigs-freelance/{id}', [TalentProfileController::class, 'removeGigsFreelanceAjax'])->name('profile.gigs-freelance.remove');
 
+        // Project routes (AJAX)
+        Route::post('/profile/project', [TalentProfileController::class, 'addProjectAjax'])->name('profile.project.add');
+        Route::delete('/profile/project/{id}', [TalentProfileController::class, 'removeProjectAjax'])->name('profile.project.remove');
+
         // Profile view and edit routes
         Route::get('/profile', [TalentProfileController::class, 'show'])->name('profile.show');
         Route::get('/profile/edit', [TalentProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [TalentProfileController::class, 'update'])->name('profile.update');
         Route::patch('/profile', [TalentProfileController::class, 'update']);
+        
+        // Welcome modal dismiss route
+        Route::post('/profile/welcome-modal/dismiss', [TalentProfileController::class, 'dismissWelcomeModal'])->name('profile.welcome-modal.dismiss');
     });
 
     // Employer-specific profile routes
