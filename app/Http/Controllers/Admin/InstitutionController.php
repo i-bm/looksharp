@@ -62,7 +62,7 @@ class InstitutionController extends Controller
 
             $title = 'Institutions';
 
-            return view('admin.institutions.index', compact('institutions', 'title'));
+            return view('pages.dashboard.admin.institutions.index', compact('institutions', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load institutions', [
                 'user_id' => $user->id,
@@ -86,7 +86,7 @@ class InstitutionController extends Controller
 
         $title = 'Create Institution';
 
-        return view('admin.institutions.create', compact('title'));
+        return view('pages.dashboard.admin.institutions.create', compact('title'));
     }
 
     /**
@@ -169,7 +169,7 @@ class InstitutionController extends Controller
             $institution = Institution::withCount(['users', 'education'])->findOrFail($id);
             $title = 'Institution Details';
 
-            return view('admin.institutions.show', compact('institution', 'title'));
+            return view('pages.dashboard.admin.institutions.show', compact('institution', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load institution', [
                 'user_id' => $user->id,
@@ -197,7 +197,7 @@ class InstitutionController extends Controller
             $institution = Institution::findOrFail($id);
             $title = 'Edit Institution';
 
-            return view('admin.institutions.edit', compact('institution', 'title'));
+            return view('pages.dashboard.admin.institutions.edit', compact('institution', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load institution for editing', [
                 'user_id' => $user->id,

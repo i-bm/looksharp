@@ -98,6 +98,83 @@
     </div>
 
     <div class="dashboard-card mt-3">
+        <h3 class="h5 mb-3">Verification Status</h3>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="text-muted small">Verification Status</div>
+                <div class="fw-semibold">
+                    @if($company->verification_status === 'verified')
+                        <span class="badge bg-success">Verified</span>
+                    @elseif($company->verification_status === 'rejected')
+                        <span class="badge bg-danger">Rejected</span>
+                    @else
+                        <span class="badge bg-warning">Pending</span>
+                    @endif
+                </div>
+            </div>
+            @if($company->verified_at)
+            <div class="col-md-6">
+                <div class="text-muted small">Verified at</div>
+                <div class="fw-semibold">{{ $company->verified_at->format('Y-m-d H:i') }}</div>
+            </div>
+            @endif
+            @if($company->verifier)
+            <div class="col-md-6">
+                <div class="text-muted small">Verified by</div>
+                <div class="fw-semibold">{{ $company->verifier->email }}</div>
+            </div>
+            @endif
+        </div>
+
+        @if($company->ghana_card_document_url || $company->business_registration_document_url)
+        <hr>
+        <div>
+            <div class="text-muted small mb-2">Verification Documents</div>
+            <div class="d-flex gap-2 flex-wrap">
+                @if($company->ghana_card_document_url)
+                <a href="{{ asset('storage/'.$company->ghana_card_document_url) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-pdf"></i> View Ghana Card
+                </a>
+                @endif
+                @if($company->business_registration_document_url)
+                <a href="{{ asset('storage/'.$company->business_registration_document_url) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-pdf"></i> View Business Registration
+                </a>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        @if($company->verification_status !== 'verified')
+        <hr>
+        <div>
+            <h6 class="mb-2">Verification Actions</h6>
+            <div class="row g-3">
+                @if($company->verification_status === 'pending')
+                <div class="col-lg-6">
+                    <form method="POST" action="{{ route('admin.employer-companies.verify', ['id' => $company->id]) }}">
+                        @csrf
+                        <label class="form-label">Verify Company (optional notes)</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Optional verification notes">{{ old('notes') }}</textarea>
+                        <button type="submit" class="btn btn-success mt-2">Verify Company</button>
+                    </form>
+                </div>
+                @endif
+
+                <div class="col-lg-6">
+                    <form method="POST" action="{{ route('admin.employer-companies.reject-verification', ['id' => $company->id]) }}">
+                        @csrf
+                        <label class="form-label">Reject Verification (reason required)</label>
+                        <textarea name="reason" class="form-control" rows="2" placeholder="Reason for rejection" required>{{ old('reason') }}</textarea>
+                        <button type="submit" class="btn btn-danger mt-2">Reject Verification</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endif
+    </div>
+
+    <div class="dashboard-card mt-3">
         <h3 class="h5 mb-3">Review actions</h3>
 
         <div class="row g-3">

@@ -54,10 +54,24 @@ $isSettingsParent = $isSettings;
 
             @if(Auth::check() && Auth::user()->hasRole('talent'))
             <!-- Talent Navigation -->
+            @php
+                $talentProfile = Auth::user()->talentProfile;
+                $isTalentVerified = $talentProfile && $talentProfile->isVerified();
+                $talentVerificationStatus = $talentProfile ? $talentProfile->verification_status : null;
+            @endphp
             <li class="dashboard-nav-item {{ $isTalentProfile ? 'dashboard-nav-item-active' : '' }}">
                 <a href="{{ route('talent.profile.show') }}" class="dashboard-nav-link">
                     <i class="bi bi-person-badge"></i>
                     <span>Profile</span>
+                    @if($talentProfile && !$isTalentVerified && $talentVerificationStatus === 'pending')
+                        <span class="badge bg-warning ms-2" title="Verification pending">!</span>
+                    @elseif($talentProfile && !$isTalentVerified && $talentVerificationStatus === 'rejected')
+                        <span class="badge bg-danger ms-2" title="Verification rejected">!</span>
+                    @elseif($talentProfile && $isTalentVerified)
+                        <span class="badge bg-success ms-2" title="Verified">✓</span>
+                    @elseif($talentProfile && !$isTalentVerified)
+                        <span class="badge bg-secondary ms-2" title="Verification required">!</span>
+                    @endif
                 </a>
 
             </li>
@@ -66,19 +80,30 @@ $isSettingsParent = $isSettings;
                 <a href="#" class="dashboard-nav-link dashboard-nav-link-toggle">
                     <i class="bi bi-briefcase"></i>
                     <span>Opportunities</span>
+                    @if($talentProfile && !$isTalentVerified)
+                        <span class="badge bg-warning ms-2" title="Verification required to apply">!</span>
+                    @endif
                     <i class="bi bi-chevron-down dashboard-nav-arrow"></i>
                 </a>
                 <ul class="dashboard-nav-submenu">
                     <li class="dashboard-nav-item {{ $isOpportunities ? 'dashboard-nav-item-active' : '' }}">
-                        <a href="#" class="dashboard-nav-link">
+                        <a href="#" class="dashboard-nav-link {{ $talentProfile && !$isTalentVerified ? 'text-muted' : '' }}" 
+                           @if($talentProfile && !$isTalentVerified) title="Verification required to apply for jobs" @endif>
                             <i class="bi bi-search"></i>
                             <span>Browse Jobs</span>
+                            @if($talentProfile && !$isTalentVerified)
+                                <span class="badge bg-warning ms-2" title="Verification required">!</span>
+                            @endif
                         </a>
                     </li>
                     <li class="dashboard-nav-item {{ $isApplications ? 'dashboard-nav-item-active' : '' }}">
-                        <a href="#" class="dashboard-nav-link">
+                        <a href="#" class="dashboard-nav-link {{ $talentProfile && !$isTalentVerified ? 'text-muted' : '' }}"
+                           @if($talentProfile && !$isTalentVerified) title="Verification required to apply for jobs" @endif>
                             <i class="bi bi-file-check"></i>
                             <span>My Applications</span>
+                            @if($talentProfile && !$isTalentVerified)
+                                <span class="badge bg-warning ms-2" title="Verification required">!</span>
+                            @endif
                         </a>
                     </li>
                     <li class="dashboard-nav-item">
@@ -105,10 +130,22 @@ $isSettingsParent = $isSettings;
             </li>
             @elseif(Auth::check() && Auth::user()->hasRole('employer'))
             <!-- Employer Navigation -->
+            @php
+                $company = Auth::user()->employerCompany();
+                $isVerified = $company && $company->isVerified();
+                $verificationStatus = $company ? $company->verification_status : null;
+            @endphp
             <li class="dashboard-nav-item dashboard-nav-item-parent {{ $isCompanyParent ? 'active' : '' }}">
                 <a href="#" class="dashboard-nav-link dashboard-nav-link-toggle">
                     <i class="bi bi-building"></i>
                     <span>Company</span>
+                    @if($company && !$isVerified && $verificationStatus === 'pending')
+                        <span class="badge bg-warning ms-2" title="Verification pending">!</span>
+                    @elseif($company && !$isVerified && $verificationStatus === 'rejected')
+                        <span class="badge bg-danger ms-2" title="Verification rejected">!</span>
+                    @elseif($company && $isVerified)
+                        <span class="badge bg-success ms-2" title="Verified">✓</span>
+                    @endif
                     <i class="bi bi-chevron-down dashboard-nav-arrow"></i>
                 </a>
                 <ul class="dashboard-nav-submenu">
@@ -135,9 +172,13 @@ $isSettingsParent = $isSettings;
                 </a>
                 <ul class="dashboard-nav-submenu">
                     <li class="dashboard-nav-item {{ $isEmployerJobs ? 'dashboard-nav-item-active' : '' }}">
-                        <a href="#" class="dashboard-nav-link">
+                        <a href="#" class="dashboard-nav-link {{ $company && !$isVerified ? 'text-muted' : '' }}" 
+                           @if($company && !$isVerified) title="Company verification required for paid features" @endif>
                             <i class="bi bi-plus-circle"></i>
                             <span>Post Job</span>
+                            @if($company && !$isVerified)
+                                <span class="badge bg-warning ms-2" title="Verification required">!</span>
+                            @endif
                         </a>
                     </li>
                     <li class="dashboard-nav-item {{ $isEmployerJobs ? 'dashboard-nav-item-active' : '' }}">

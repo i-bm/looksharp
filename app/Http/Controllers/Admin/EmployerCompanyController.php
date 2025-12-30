@@ -27,12 +27,17 @@ class EmployerCompanyController extends Controller
         ]);
 
         $status = $request->string('status')->toString();
+        $verificationStatus = $request->string('verification_status')->toString();
         $query = EmployerCompany::query()->with(['creator', 'reviewer']);
 
         if ($status !== '') {
             $query->where('status', $status);
         } else {
             $query->where('status', EmployerCompanyStatusEnum::SUBMITTED->value);
+        }
+
+        if ($verificationStatus !== '') {
+            $query->where('verification_status', $verificationStatus);
         }
 
         if ($request->filled('search')) {
@@ -168,5 +173,78 @@ class EmployerCompanyController extends Controller
 
         return redirect()->route('admin.employer-companies.show', ['id' => $company->id])
             ->with('success', 'Company suspended.');
+    }
+
+    public function verify(Request $request, string $id): RedirectResponse
+    {
+        $user = auth()->user();
+
+        Log::info('Company verification requested', [
+            'user_id' => $user?->id,
+            'company_id' => $id,
+        ]);
+
+        $company = EmployerCompany::findOrFail($id);
+        $validated = $request->validate([
+            'notes' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        try {
+            $this->employerCompanyService->adminVerifyCompany(
+                $user,
+                $company,
+                true,
+                $validated['notes'] ?? null
+            );
+
+            return redirect()->route('admin.employer-companies.show', ['id' => $company->id])
+                ->with('success', 'Company verified successfully.');
+        } catch (\Exception $e) {
+            Log::error('Company verification failed', [
+                'user_id' => $user?->id,
+                'company_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function rejectVerification(Request $request, string $id): RedirectResponse
+    {
+        $user = auth()->user();
+
+        Log::info('Company verification rejection requested', [
+            'user_id' => $user?->id,
+            'company_id' => $id,
+        ]);
+
+        $company = EmployerCompany::findOrFail($id);
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:5000'],
+        ]);
+
+        try {
+            $this->employerCompanyService->adminRejectVerification(
+                $user,
+                $company,
+                $validated['reason']
+            );
+
+            return redirect()->route('admin.employer-companies.show', ['id' => $company->id])
+                ->with('success', 'Company verification rejected.');
+        } catch (\Exception $e) {
+            Log::error('Company verification rejection failed', [
+                'user_id' => $user?->id,
+                'company_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        }
     }
 }

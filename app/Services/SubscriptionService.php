@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\BillingCycleEnum;
+use App\Enums\EmployerCompanyStatusEnum;
+use App\Enums\EmployerCompanyVerificationStatusEnum;
 use App\Enums\PaymentMethodEnum;
 use App\Enums\SubscriptionTierEnum;
 use App\Models\EmployerCompany;
@@ -35,6 +37,27 @@ class SubscriptionService
 
         try {
             return DB::transaction(function () use ($company, $tier, $billingCycle) {
+                // For paid tiers, check company approval and verification
+                if ($tier !== SubscriptionTierEnum::FREE) {
+                    if ($company->status !== EmployerCompanyStatusEnum::APPROVED->value) {
+                        Log::warning('SubscriptionService: Company not approved for paid subscription', [
+                            'company_id' => $company->id,
+                            'status' => $company->status,
+                            'tier' => $tier->value,
+                        ]);
+                        throw new \Exception('Your company must be approved before subscribing to paid plans.');
+                    }
+
+                    if ($company->verification_status !== EmployerCompanyVerificationStatusEnum::VERIFIED->value) {
+                        Log::warning('SubscriptionService: Company not verified for paid subscription', [
+                            'company_id' => $company->id,
+                            'verification_status' => $company->verification_status,
+                            'tier' => $tier->value,
+                        ]);
+                        throw new \Exception('Your company must be verified before subscribing to paid plans. Please complete verification first.');
+                    }
+                }
+
                 // Get package configuration
                 $packageConfig = config("subscriptions.packages.{$tier->value}");
 
@@ -288,6 +311,29 @@ class SubscriptionService
 
         try {
             return DB::transaction(function () use ($current, $newTier, $billingCycle) {
+                $company = $current->employerCompany;
+
+                // For paid tiers, check company approval and verification
+                if ($newTier !== SubscriptionTierEnum::FREE) {
+                    if ($company->status !== EmployerCompanyStatusEnum::APPROVED->value) {
+                        Log::warning('SubscriptionService: Company not approved for paid subscription upgrade', [
+                            'company_id' => $company->id,
+                            'status' => $company->status,
+                            'new_tier' => $newTier->value,
+                        ]);
+                        throw new \Exception('Your company must be approved before upgrading to paid plans.');
+                    }
+
+                    if ($company->verification_status !== EmployerCompanyVerificationStatusEnum::VERIFIED->value) {
+                        Log::warning('SubscriptionService: Company not verified for paid subscription upgrade', [
+                            'company_id' => $company->id,
+                            'verification_status' => $company->verification_status,
+                            'new_tier' => $newTier->value,
+                        ]);
+                        throw new \Exception('Your company must be verified before upgrading to paid plans. Please complete verification first.');
+                    }
+                }
+
                 // Get new package configuration
                 $packageConfig = config("subscriptions.packages.{$newTier->value}");
 

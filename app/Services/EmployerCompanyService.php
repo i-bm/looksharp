@@ -365,6 +365,18 @@ class EmployerCompanyService
                     $payload['approved_at'] = now();
                     $payload['rejected_at'] = null;
                     $payload['suspended_at'] = null;
+
+                    // Auto-verify if both verification documents are present
+                    if (! empty($company->ghana_card_document_url) && ! empty($company->business_registration_document_url)) {
+                        $payload['verification_status'] = EmployerCompanyVerificationStatusEnum::VERIFIED->value;
+                        $payload['verified_at'] = now();
+                        $payload['verified_by_user_id'] = $admin->id;
+
+                        Log::info('EmployerCompanyService: Auto-verifying company on approval', [
+                            'company_id' => $company->id,
+                            'admin_user_id' => $admin->id,
+                        ]);
+                    }
                 }
 
                 if ($status === EmployerCompanyStatusEnum::REJECTED) {
@@ -1092,6 +1104,7 @@ class EmployerCompanyService
             'admin_user_id' => $admin->id,
             'company_id' => $company->id,
             'verified' => $verified,
+            'notes' => $notes ? 'provided' : 'none',
         ]);
 
         if (! $admin->hasRole(UserRoleEnum::ADMIN->value)) {
@@ -1099,23 +1112,40 @@ class EmployerCompanyService
         }
 
         try {
-            return DB::transaction(function () use ($admin, $company, $verified) {
+            return DB::transaction(function () use ($admin, $company, $verified, $notes) {
                 $status = $verified
                     ? EmployerCompanyVerificationStatusEnum::VERIFIED->value
                     : EmployerCompanyVerificationStatusEnum::REJECTED->value;
 
-                $company->update([
+                $updateData = [
                     'verification_status' => $status,
                     'verified_at' => $verified ? now() : null,
                     'verified_by_user_id' => $admin->id,
-                ]);
+                ];
+
+                // Store verification notes if provided
+                if ($notes !== null) {
+                    $updateData['review_notes'] = $notes;
+                }
+
+                $company->update($updateData);
 
                 Log::info('EmployerCompanyService: company verification updated', [
                     'company_id' => $company->id,
                     'status' => $status,
+                    'admin_user_id' => $admin->id,
                 ]);
 
-                return $company->fresh();
+                $updatedCompany = $company->fresh();
+
+                // Send notification
+                if ($verified) {
+                    $this->notificationService->notifyCompanyVerified($updatedCompany);
+                } else {
+                    $this->notificationService->notifyCompanyVerificationRejected($updatedCompany, $notes ?? '');
+                }
+
+                return $updatedCompany;
             });
         } catch (\Exception $e) {
             Log::error('EmployerCompanyService: adminVerifyCompany failed', [
@@ -1126,5 +1156,18 @@ class EmployerCompanyService
             ]);
             throw new \Exception('Failed to update company verification. Please try again.');
         }
+    }
+
+    /**
+     * Admin: Reject company verification.
+     */
+    public function adminRejectVerification(User $admin, EmployerCompany $company, string $reason): EmployerCompany
+    {
+        Log::info('EmployerCompanyService: adminRejectVerification started', [
+            'admin_user_id' => $admin->id,
+            'company_id' => $company->id,
+        ]);
+
+        return $this->adminVerifyCompany($admin, $company, false, $reason);
     }
 }

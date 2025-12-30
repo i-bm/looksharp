@@ -153,19 +153,7 @@
             <!-- Main Content -->
             <div class="profile-v2-main-content">
                 <!-- About Section -->
-                {{-- <section class="profile-v2-section">
-                    <div class="profile-v2-section-header">
-                        <h3 class="profile-v2-section-title">About</h3>
-                        @if($isOwner)
-                        <button type="button" onclick="openModal('about-me-modal')" class="profile-v2-edit-btn">
-                            <span class="material-symbols-outlined">edit</span>
-                        </button>
-                        @endif
-                    </div>
-                    <p class="profile-v2-section-content">
-                        {{ $profile->bio ?: 'Tell employers a little about yourself! Click edit to add your bio.' }}
-                    </p>
-                </section> --}}
+
 
                 <!-- Projects and Portfolio Section -->
                 <section class="profile-v2-section">
@@ -507,6 +495,7 @@
                     @php
                         $isVerified = $profile->verification_status === 'verified';
                         $hasVerificationDocument = !empty($profile->verification_document_url);
+                        $verificationStatus = $profile->verification_status ?? 'not_started';
                     @endphp
 
                     <div class="profile-v2-verification-body">
@@ -516,6 +505,23 @@
                                 Verified
                             </span>
                             <p class="profile-v2-verification-help">Employers can see your verified badge on your profile.</p>
+                            @if($profile->verification_verified_at)
+                                <p class="profile-v2-verification-help" style="font-size: 12px; margin-top: 8px; color: var(--text-color);">
+                                    Verified on {{ $profile->verification_verified_at->format('M d, Y') }}
+                                </p>
+                            @endif
+                        @elseif($verificationStatus === 'rejected')
+                            <span class="profile-v2-pill profile-v2-pill-rejected" style="background: #fee2e2; color: #991b1b;">
+                                <span class="material-symbols-outlined">cancel</span>
+                                Rejected
+                            </span>
+                            <p class="profile-v2-verification-help">Your verification was rejected. Please submit a new document.</p>
+                            @if($isOwner)
+                                <a href="{{ route('talent.profile.verification.show') }}" class="profile-v2-btn profile-v2-btn-primary profile-v2-verification-cta">
+                                    <span class="material-symbols-outlined">upload</span>
+                                    Resubmit verification
+                                </a>
+                            @endif
                         @elseif($hasVerificationDocument)
                             <span class="profile-v2-pill profile-v2-pill-pending">
                                 <span class="material-symbols-outlined">hourglass_top</span>
@@ -527,13 +533,13 @@
                                 <span class="material-symbols-outlined">shield</span>
                                 Not started
                             </span>
-                            <p class="profile-v2-verification-help">Get verified to build trust and stand out to employers.</p>
+                            <p class="profile-v2-verification-help">Get verified to build trust and stand out to employers. Verification is required to apply for jobs.</p>
                         @endif
 
-                        @if($isOwner && !$isVerified)
+                        @if($isOwner && !$isVerified && $verificationStatus !== 'rejected')
                             <a href="{{ route('talent.profile.verification.show') }}" class="profile-v2-btn profile-v2-btn-primary profile-v2-verification-cta">
                                 <span class="material-symbols-outlined">upload</span>
-                                Get verified
+                                {{ $hasVerificationDocument ? 'Update verification' : 'Get verified' }}
                             </a>
                         @endif
                     </div>

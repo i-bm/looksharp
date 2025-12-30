@@ -23,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'ensure.profile.complete' => \App\Http\Middleware\EnsureProfileComplete::class,
             'ensure.user.type.checked' => \App\Http\Middleware\EnsureUserTypeChecked::class,
+            'require.company.verification' => \App\Http\Middleware\RequireCompanyVerification::class,
+            'require.talent.verification' => \App\Http\Middleware\RequireTalentVerification::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -42,7 +42,7 @@ class UserManagementController extends Controller
             $users = $this->adminService->getUserList($filters);
             $title = 'User Management';
 
-            return view('admin.users.index', compact('users', 'filters', 'title'));
+            return view('pages.dashboard.admin.users.index', compact('users', 'filters', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load user management page', [
                 'user_id' => $user->id,
@@ -69,7 +69,7 @@ class UserManagementController extends Controller
             $targetUser = User::with(['adminProfile', 'talentProfile'])->findOrFail($id);
             $title = 'User Details';
 
-            return view('admin.users.show', compact('targetUser', 'title'));
+            return view('pages.dashboard.admin.users.show', compact('targetUser', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load user details', [
                 'admin_user_id' => $user->id,

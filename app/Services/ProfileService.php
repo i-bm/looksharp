@@ -305,26 +305,79 @@ class ProfileService
     /**
      * Upload and save verification document.
      */
-    public function uploadVerificationDocument(TalentProfile $profile, UploadedFile $file, string $verificationType): TalentProfile
+    public function uploadVerificationDocument(TalentProfile $profile, UploadedFile $file, string $verificationType, ?string $idNumber = null): TalentProfile
     {
+        Log::info('Uploading identity verification document', [
+            'profile_id' => $profile->id,
+            'verification_type' => $verificationType,
+            'id_number' => $idNumber,
+        ]);
+
         try {
-            return DB::transaction(function () use ($profile, $file, $verificationType) {
-                // Delete old document if exists
+            return DB::transaction(function () use ($profile, $file, $verificationType, $idNumber) {
+                // Delete old identity document if exists
                 if ($profile->verification_document_url) {
                     Storage::disk('private')->delete($profile->verification_document_url);
                 }
 
-                // Store new document in private storage
+                // Store new identity document in private storage
                 $path = $file->store('verification-documents', 'private');
-                $profile->update([
+
+                // Update profile with identity verification information
+                $updateData = [
                     'verification_document_url' => $path,
                     'verification_type' => $verificationType,
-                    'verification_status' => 'pending',
+                ];
+
+                // Add ID number if provided (for Ghana Card/Passport number)
+                if ($idNumber !== null && $idNumber !== '') {
+                    $updateData['identity_document_number'] = $idNumber;
+                    Log::info('Identity document ID number will be saved', [
+                        'profile_id' => $profile->id,
+                        'id_number' => $idNumber,
+                        'verification_type' => $verificationType,
+                    ]);
+                }
+
+                // Check if both verifications are now complete
+                $hasStudentDocument = ! empty($profile->student_verification_document_url);
+                $currentStatus = $profile->verification_status ?: 'not_started';
+
+                if ($hasStudentDocument) {
+                    // Both documents exist, set status to pending (allows resubmission from 'rejected' status)
+                    $updateData['verification_status'] = 'pending';
+                } else {
+                    // Only identity verification submitted
+                    // If status was 'rejected', keep it as 'rejected' to allow editing the other section
+                    // Otherwise, set to null (which represents 'not_started' in the application)
+                    if ($currentStatus === 'rejected') {
+                        $updateData['verification_status'] = 'rejected';
+                    } else {
+                        $updateData['verification_status'] = null;
+                    }
+                }
+
+                $profile->update($updateData);
+
+                Log::info('Identity verification document uploaded successfully', [
+                    'profile_id' => $profile->id,
+                    'verification_type' => $verificationType,
+                    'has_both_documents' => $hasStudentDocument,
                 ]);
 
                 $this->calculateCompletenessScore($profile);
 
-                return $profile->fresh();
+                $updatedProfile = $profile->fresh();
+
+                // Notify admins only when both verifications are complete
+                if ($hasStudentDocument) {
+                    Log::info('Both verifications complete, notifying admins', [
+                        'profile_id' => $profile->id,
+                    ]);
+                    $this->notifyAdminsTalentVerificationSubmitted($updatedProfile);
+                }
+
+                return $updatedProfile;
             });
         } catch (\Exception $e) {
             Log::error('Failed to upload verification document: '.$e->getMessage(), [
@@ -929,10 +982,10 @@ class ProfileService
 
                 // Handle technologies - convert comma-separated string to array
                 $technologies = null;
-                if (!empty($data['technologies'])) {
+                if (! empty($data['technologies'])) {
                     $techArray = array_map('trim', explode(',', $data['technologies']));
                     $technologies = array_filter($techArray); // Remove empty values
-                    $technologies = !empty($technologies) ? $technologies : null;
+                    $technologies = ! empty($technologies) ? $technologies : null;
                 }
 
                 $project = TalentProject::create([
@@ -1030,6 +1083,11 @@ class ProfileService
                     $updateData['last_name'] = $data['last_name'] ?: null;
                 }
 
+                // Handle phone_number - save to talent_profiles table
+                if (isset($data['phone_number'])) {
+                    $updateData['phone_number'] = $data['phone_number'] ?: null;
+                }
+
                 // Determine the final first_name and last_name that will be saved
                 $finalFirstName = $updateData['first_name'] ?? $profile->first_name ?? $profile->user->first_name ?? 'user';
                 $finalLastName = $updateData['last_name'] ?? $profile->last_name ?? $profile->user->last_name ?? '';
@@ -1039,12 +1097,17 @@ class ProfileService
                 $currentLastName = $profile->last_name ?? $profile->user->last_name ?? '';
 
                 // Auto-generate public_url when first_name or last_name changes, or if public_url doesn't exist
-                if ((!empty($finalFirstName) || !empty($finalLastName)) && 
+                if ((! empty($finalFirstName) || ! empty($finalLastName)) &&
                     (($finalFirstName !== $currentFirstName || $finalLastName !== $currentLastName) || empty($profile->public_url))) {
                     $updateData['public_url'] = generatePublicUrlSlug($finalFirstName, $finalLastName, $profile->public_url);
                 }
 
                 $profile->update($updateData);
+
+                Log::info('Phone number updated in talent profile', [
+                    'profile_id' => $profile->id,
+                    'phone_number' => $updateData['phone_number'] ?? null,
+                ]);
 
                 Log::info('About me updated successfully', [
                     'profile_id' => $profile->id,
@@ -1136,10 +1199,10 @@ class ProfileService
                     $workModelIds = is_array($data['work_models'])
                         ? $data['work_models']
                         : [];
-                    
+
                     // Detach all existing work models
                     $profile->workModels()->detach();
-                    
+
                     // Attach new work models with UUIDs for pivot table
                     foreach ($workModelIds as $workModelId) {
                         DB::table('talent_profile_work_model')->insert([
@@ -1163,7 +1226,7 @@ class ProfileService
                     $preferredCities = is_array($data['preferred_cities'])
                         ? $data['preferred_cities']
                         : [];
-                    
+
                     // Process cities - can be IDs (UUIDs) or names (strings)
                     $preferredCityIds = [];
                     foreach ($preferredCities as $cityValue) {
@@ -1186,10 +1249,10 @@ class ProfileService
                             }
                         }
                     }
-                    
+
                     // Detach all existing preferred cities
                     $profile->preferredCities()->detach();
-                    
+
                     // Attach new preferred cities with UUIDs for pivot table
                     foreach ($preferredCityIds as $cityId) {
                         DB::table('preferred_city_talent_profile')->insert([
@@ -1249,40 +1312,76 @@ class ProfileService
     public function submitStudentVerification(
         TalentProfile $profile,
         string $studentId,
-        UploadedFile $file
+        UploadedFile $file,
+        ?string $studentEmail = null
     ): TalentProfile {
         Log::info('Submitting student verification', [
             'profile_id' => $profile->id,
             'student_id' => $studentId,
+            'student_email' => $studentEmail,
         ]);
 
         try {
-            return DB::transaction(function () use ($profile, $studentId, $file) {
-                // Delete old document if exists
-                if ($profile->verification_document_url) {
-                    Storage::disk('private')->delete($profile->verification_document_url);
+            return DB::transaction(function () use ($profile, $studentId, $file, $studentEmail) {
+                // Delete old student document if exists
+                if ($profile->student_verification_document_url) {
+                    Storage::disk('private')->delete($profile->student_verification_document_url);
                 }
 
-                // Store new document in private storage
+                // Store new student document in private storage
                 $path = $file->store('verification-documents', 'private');
 
                 // Update profile with student information
-                $profile->update([
+                $updateData = [
                     'current_status' => 'student',
                     'student_id' => $studentId,
-                    'verification_document_url' => $path,
-                    'verification_type' => 'student_id',
-                    'verification_status' => 'pending',
-                ]);
+                    'student_verification_document_url' => $path,
+                ];
+
+                // Add student email if provided
+                if ($studentEmail !== null) {
+                    $updateData['student_email'] = $studentEmail;
+                }
+
+                // Check if both verifications are now complete
+                $hasIdentityDocument = ! empty($profile->verification_document_url);
+                $currentStatus = $profile->verification_status ?: 'not_started';
+
+                if ($hasIdentityDocument) {
+                    // Both documents exist, set status to pending (allows resubmission from 'rejected' status)
+                    $updateData['verification_status'] = 'pending';
+                } else {
+                    // Only student verification submitted
+                    // If status was 'rejected', keep it as 'rejected' to allow editing the other section
+                    // Otherwise, set to null (which represents 'not_started' in the application)
+                    if ($currentStatus === 'rejected') {
+                        $updateData['verification_status'] = 'rejected';
+                    } else {
+                        $updateData['verification_status'] = null;
+                    }
+                }
+
+                $profile->update($updateData);
 
                 Log::info('Student verification document uploaded successfully', [
                     'profile_id' => $profile->id,
                     'student_id' => $studentId,
+                    'has_both_documents' => $hasIdentityDocument,
                 ]);
 
                 $this->calculateCompletenessScore($profile);
 
-                return $profile->fresh();
+                $updatedProfile = $profile->fresh();
+
+                // Notify admins only when both verifications are complete
+                if ($hasIdentityDocument) {
+                    Log::info('Both verifications complete, notifying admins', [
+                        'profile_id' => $profile->id,
+                    ]);
+                    $this->notifyAdminsTalentVerificationSubmitted($updatedProfile);
+                }
+
+                return $updatedProfile;
             });
         } catch (\Exception $e) {
             Log::error('Failed to submit student verification: '.$e->getMessage(), [
@@ -1294,4 +1393,139 @@ class ProfileService
         }
     }
 
+    /**
+     * Admin: Verify talent profile.
+     *
+     * @throws \Exception
+     */
+    public function adminVerifyTalent(\App\Models\User $admin, TalentProfile $profile, ?string $notes = null): TalentProfile
+    {
+        Log::info('ProfileService: adminVerifyTalent started', [
+            'admin_user_id' => $admin->id,
+            'profile_id' => $profile->id,
+            'notes' => $notes ? 'provided' : 'none',
+        ]);
+
+        if (! $admin->hasRole(\App\Enums\UserRoleEnum::ADMIN->value)) {
+            throw new \Exception('Unauthorized.');
+        }
+
+        try {
+            return DB::transaction(function () use ($admin, $profile) {
+                $profile->update([
+                    'verification_status' => 'verified',
+                    'verification_verified_at' => now(),
+                    'verified_by_user_id' => $admin->id,
+                ]);
+
+                Log::info('ProfileService: talent verification updated', [
+                    'profile_id' => $profile->id,
+                    'admin_user_id' => $admin->id,
+                    'status' => 'verified',
+                ]);
+
+                $updatedProfile = $profile->fresh();
+
+                // Send notification
+                $this->notificationService->notifyTalentVerified($updatedProfile);
+
+                return $updatedProfile;
+            });
+        } catch (\Exception $e) {
+            Log::error('ProfileService: adminVerifyTalent failed', [
+                'admin_user_id' => $admin->id,
+                'profile_id' => $profile->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to update talent verification. Please try again.');
+        }
+    }
+
+    /**
+     * Admin: Reject talent verification.
+     *
+     * @throws \Exception
+     */
+    public function adminRejectVerification(\App\Models\User $admin, TalentProfile $profile, string $reason): TalentProfile
+    {
+        Log::info('ProfileService: adminRejectVerification started', [
+            'admin_user_id' => $admin->id,
+            'profile_id' => $profile->id,
+        ]);
+
+        if (! $admin->hasRole(\App\Enums\UserRoleEnum::ADMIN->value)) {
+            throw new \Exception('Unauthorized.');
+        }
+
+        try {
+            return DB::transaction(function () use ($admin, $profile, $reason) {
+                $profile->update([
+                    'verification_status' => 'rejected',
+                    'verification_verified_at' => null,
+                    'verified_by_user_id' => $admin->id,
+                ]);
+
+                Log::info('ProfileService: talent verification rejected', [
+                    'profile_id' => $profile->id,
+                    'admin_user_id' => $admin->id,
+                    'status' => 'rejected',
+                ]);
+
+                $updatedProfile = $profile->fresh();
+
+                // Send notification
+                $this->notificationService->notifyTalentVerificationRejected($updatedProfile, $reason);
+
+                return $updatedProfile;
+            });
+        } catch (\Exception $e) {
+            Log::error('ProfileService: adminRejectVerification failed', [
+                'admin_user_id' => $admin->id,
+                'profile_id' => $profile->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw new \Exception('Failed to reject talent verification. Please try again.');
+        }
+    }
+
+    /**
+     * Notify admins when talent submits verification document.
+     */
+    private function notifyAdminsTalentVerificationSubmitted(TalentProfile $profile): void
+    {
+        try {
+            $adminEmails = \App\Models\User::role(\App\Enums\UserRoleEnum::ADMIN->value)->pluck('email')->filter()->all();
+
+            if (empty($adminEmails)) {
+                Log::warning('ProfileService: No admin emails found for notification', [
+                    'profile_id' => $profile->id,
+                ]);
+
+                return;
+            }
+
+            $subject = 'New talent verification submission';
+            $content = view('emails.talent-verification-submitted', [
+                'profile' => $profile,
+                'user' => $profile->user,
+            ])->render();
+
+            foreach ($adminEmails as $email) {
+                $this->notificationService->sendEmail($email, $subject, $content);
+            }
+
+            Log::info('ProfileService: Admin notification sent for talent verification submission', [
+                'profile_id' => $profile->id,
+                'admin_count' => count($adminEmails),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('ProfileService: Failed to notify admins of talent verification submission', [
+                'profile_id' => $profile->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't throw - notification failure shouldn't break submission
+        }
+    }
 }

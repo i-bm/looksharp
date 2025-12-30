@@ -25,9 +25,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class TalentProfileController extends Controller
 {
@@ -71,8 +73,17 @@ class TalentProfileController extends Controller
                 ->with('error', 'Profile not found. Please contact support.');
         }
 
+        // Check if verification can be edited - allow editing when status is 'not_started' or 'rejected'
+        // When status is 'rejected', user should be able to resubmit individual sections independently
+        $status = $profile->verification_status ?: 'not_started';
+        if (! in_array($status, [null, 'not_started', 'rejected'])) {
+            return redirect()->route('talent.profile.verification.show')
+                ->with('error', 'Verification is already submitted and cannot be edited.');
+        }
+
         $validated = $request->validate([
             'student_id' => ['required', 'string', 'max:255'],
+            'student_email' => ['nullable', 'email', 'max:255'],
             'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB max
         ]);
 
@@ -80,11 +91,21 @@ class TalentProfileController extends Controller
             $this->profileService->submitStudentVerification(
                 $profile,
                 $validated['student_id'],
-                $request->file('verification_document')
+                $request->file('verification_document'),
+                $validated['student_email'] ?? null
             );
 
+            // Check if both verifications are now complete
+            $profile->refresh();
+            $hasBoth = ! empty($profile->student_verification_document_url) && ! empty($profile->verification_document_url);
+
+            if ($hasBoth) {
+                return redirect()->route('talent.profile.verification.show')
+                    ->with('success', 'Student verification submitted successfully. Both verifications are now complete and pending review.');
+            }
+
             return redirect()->route('talent.profile.verification.show')
-                ->with('success', 'Student ID document uploaded successfully. Your verification is pending review.');
+                ->with('success', 'Student verification submitted successfully. Please also submit your identity verification to complete the process.');
         } catch (\Exception $e) {
             Log::error('Student verification submission failed: '.$e->getMessage(), [
                 'profile_id' => $profile->id,
@@ -98,7 +119,7 @@ class TalentProfileController extends Controller
     }
 
     /**
-     * Submit identity verification document (non-student).
+     * Submit identity verification document (Ghana Card or Passport).
      */
     public function submitVerificationDocument(StoreVerificationRequest $request): RedirectResponse
     {
@@ -110,15 +131,35 @@ class TalentProfileController extends Controller
                 ->with('error', 'Profile not found. Please contact support.');
         }
 
+        // Check if verification can be edited - allow editing when status is 'not_started' or 'rejected'
+        // When status is 'rejected', user should be able to resubmit individual sections independently
+        $status = $profile->verification_status ?: 'not_started';
+        if (! in_array($status, [null, 'not_started', 'rejected'])) {
+            return redirect()->route('talent.profile.verification.show')
+                ->with('error', 'Verification is already submitted and cannot be edited.');
+        }
+
         try {
+            $validated = $request->validated();
+
             $this->profileService->uploadVerificationDocument(
                 $profile,
                 $request->file('verification_document'),
-                (string) $request->input('verification_type')
+                (string) $validated['verification_type'],
+                $validated['identity_document_number'] ?? null
             );
 
+            // Check if both verifications are now complete
+            $profile->refresh();
+            $hasBoth = ! empty($profile->student_verification_document_url) && ! empty($profile->verification_document_url);
+
+            if ($hasBoth) {
+                return redirect()->route('talent.profile.verification.show')
+                    ->with('success', 'Identity verification submitted successfully. Both verifications are now complete and pending review.');
+            }
+
             return redirect()->route('talent.profile.verification.show')
-                ->with('success', 'Verification document uploaded. Status is now pending review.');
+                ->with('success', 'Identity verification submitted successfully. Please also submit your student verification to complete the process.');
         } catch (\Exception $e) {
             Log::error('Verification document submission failed: '.$e->getMessage(), [
                 'profile_id' => $profile->id,
@@ -128,6 +169,64 @@ class TalentProfileController extends Controller
             return back()
                 ->withInput()
                 ->withErrors(['error' => 'Failed to upload verification document. Please try again.']);
+        }
+    }
+
+    /**
+     * Download verification document (student or identity).
+     */
+    public function downloadVerificationDocument(string $type): BinaryFileResponse
+    {
+        $user = Auth::user();
+        $profile = $user->talentProfile;
+
+        if (! $profile) {
+            abort(404, 'Profile not found.');
+        }
+
+        $documentPath = null;
+        if ($type === 'student') {
+            $documentPath = $profile->student_verification_document_url;
+        } elseif ($type === 'identity') {
+            $documentPath = $profile->verification_document_url;
+        } else {
+            abort(404, 'Invalid document type.');
+        }
+
+        if (! $documentPath) {
+            abort(404, 'Document not found.');
+        }
+
+        $normalizedPath = ltrim($documentPath, '/');
+
+        if (! Storage::disk('private')->exists($normalizedPath)) {
+            Log::error('Verification document file not found on disk', [
+                'user_id' => $user->id,
+                'profile_id' => $profile->id,
+                'document_path' => $normalizedPath,
+                'type' => $type,
+            ]);
+            abort(404, 'Document file not found.');
+        }
+
+        try {
+            $filePath = Storage::disk('private')->path($normalizedPath);
+            $mimeType = mime_content_type($filePath) ?: 'application/octet-stream';
+
+            return response()->file($filePath, [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'inline; filename="verification-document-'.$type.'"',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to serve verification document', [
+                'user_id' => $user->id,
+                'profile_id' => $profile->id,
+                'document_path' => $normalizedPath,
+                'type' => $type,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            abort(500, 'Failed to serve document.');
         }
     }
 
@@ -1349,6 +1448,7 @@ class TalentProfileController extends Controller
             $validated = $request->validate([
                 'first_name' => ['required', 'string', 'max:255'],
                 'last_name' => ['required', 'string', 'max:255'],
+                'phone_number' => ['nullable', 'string', 'max:20'],
                 'bio' => ['nullable', 'string', 'max:1000'],
             ]);
 
