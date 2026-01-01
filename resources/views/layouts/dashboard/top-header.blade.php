@@ -3,7 +3,17 @@
 $user = Auth::user();
 // Check for admin profile first, then talent profile
 $profile = $user->adminProfile ?? $user->talentProfile;
-$fullName = $profile->first_name && $profile->last_name ? $profile->full_name : ($profile->user->first_name . ' ' . $profile->user->last_name);
+
+// Safely get full name with proper fallback
+if ($profile && $profile->first_name && $profile->last_name) {
+    $fullName = $profile->full_name;
+} elseif ($profile && $profile->user) {
+    $fullName = trim($profile->user->first_name . ' ' . $profile->user->last_name);
+} else {
+    // Use user's full_name accessor which handles all fallback logic
+    $fullName = $user->full_name;
+}
+
 $initials = strtoupper(substr($fullName, 0, 1) . substr($fullName, -1, 1));
 @endphp
 <div class="dashboard-top-header">
