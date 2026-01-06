@@ -30,7 +30,7 @@
                         Language <span style="color: #F53003;">*</span>
                     </label>
                     <input type="text" name="language_name" id="language-name" required
-                        placeholder="e.g., English, Twi, French"
+                        placeholder="e.g., English"
                         style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
                 </div>
 
