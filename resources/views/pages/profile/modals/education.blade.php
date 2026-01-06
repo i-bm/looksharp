@@ -45,7 +45,7 @@
                         Institution
                     </label>
                     <div class="institution-autocomplete-container" style="position: relative;">
-                        <input type="text" id="education-institution-input" 
+                        <input type="text" id="education-institution-input"
                             placeholder="Type to search institutions..."
                             autocomplete="off"
                             style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
@@ -152,7 +152,7 @@
                 </button>
                 <button type="submit" class="primary-btn1 btn-hover"
                     style="padding: 10px 20px; border: none; cursor: pointer; font-size: 14px;">
-                    <i class="bi bi-plus-circle"></i> Add Education
+                    <i class="bi bi-plus-circle"></i> Save Education
                 </button>
             </div>
         </form>

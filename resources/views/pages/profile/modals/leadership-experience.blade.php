@@ -103,13 +103,13 @@
             </div>
 
             <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 25px;">
-                <button type="button" onclick="closeModal('leadership-experience-modal')" 
+                <button type="button" onclick="closeModal('leadership-experience-modal')"
                     style="padding: 10px 20px; border: 2px solid #ddd; border-radius: 4px; background: white; color: var(--text-color); cursor: pointer; font-size: 14px;">
                     Close
                 </button>
                 <button type="submit" class="primary-btn1 btn-hover"
                     style="padding: 10px 20px; border: none; cursor: pointer; font-size: 14px;">
-                    <i class="bi bi-plus-circle"></i> Add Leadership Experience
+                    <i class="bi bi-plus-circle"></i> Save Leadership Experience
                 </button>
             </div>
         </form>
