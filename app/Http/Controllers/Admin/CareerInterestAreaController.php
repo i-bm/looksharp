@@ -53,7 +53,7 @@ class CareerInterestAreaController extends Controller
 
             $title = 'Career Interest Areas';
 
-            return view('admin.career-interest-areas.index', compact('careerInterestAreas', 'parentCategories', 'title'));
+            return view('pages.dashboard.admin.career-interest-areas.index', compact('careerInterestAreas', 'parentCategories', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load career interest areas', [
                 'user_id' => $user->id,
@@ -78,7 +78,7 @@ class CareerInterestAreaController extends Controller
         $parentCategories = CareerInterestArea::parents()->orderBy('order')->get();
         $title = 'Create Career Interest Area';
 
-        return view('admin.career-interest-areas.create', compact('parentCategories', 'title'));
+        return view('pages.dashboard.admin.career-interest-areas.create', compact('parentCategories', 'title'));
     }
 
     /**
@@ -152,7 +152,7 @@ class CareerInterestAreaController extends Controller
             $careerInterestArea = CareerInterestArea::with(['parent', 'children'])->findOrFail($id);
             $title = 'Career Interest Area Details';
 
-            return view('admin.career-interest-areas.show', compact('careerInterestArea', 'title'));
+            return view('pages.dashboard.admin.career-interest-areas.show', compact('careerInterestArea', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load career interest area', [
                 'user_id' => $user->id,
@@ -181,7 +181,7 @@ class CareerInterestAreaController extends Controller
             $parentCategories = CareerInterestArea::parents()->orderBy('order')->get();
             $title = 'Edit Career Interest Area';
 
-            return view('admin.career-interest-areas.edit', compact('careerInterestArea', 'parentCategories', 'title'));
+            return view('pages.dashboard.admin.career-interest-areas.edit', compact('careerInterestArea', 'parentCategories', 'title'));
         } catch (\Exception $e) {
             Log::error('Failed to load career interest area for editing', [
                 'user_id' => $user->id,

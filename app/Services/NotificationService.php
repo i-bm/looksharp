@@ -217,4 +217,206 @@ class NotificationService
             ];
         }
     }
+
+    /**
+     * Send notification when company is verified.
+     *
+     * @param  \App\Models\EmployerCompany  $company  The company that was verified
+     * @return array Response array with 'success' and 'message' keys
+     */
+    public function notifyCompanyVerified(\App\Models\EmployerCompany $company): array
+    {
+        try {
+            $email = $company->primary_contact_email ?? $company->official_email;
+
+            if (empty($email)) {
+                Log::warning('NotificationService: Cannot send verification email, no email address', [
+                    'company_id' => $company->id,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'No email address found for company',
+                ];
+            }
+
+            $subject = 'Company Verification Approved - '.config('app.name');
+            $content = view('emails.company-verified', [
+                'company' => $company,
+            ])->render();
+
+            $result = $this->sendEmail($email, $subject, $content);
+
+            Log::info('NotificationService: Company verification email sent', [
+                'company_id' => $company->id,
+                'email' => $email,
+                'success' => $result['success'] ?? false,
+            ]);
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('NotificationService: Failed to send company verification notification', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Send notification when company verification is rejected.
+     *
+     * @param  \App\Models\EmployerCompany  $company  The company that was rejected
+     * @param  string  $reason  Reason for rejection
+     * @return array Response array with 'success' and 'message' keys
+     */
+    public function notifyCompanyVerificationRejected(\App\Models\EmployerCompany $company, string $reason): array
+    {
+        try {
+            $email = $company->primary_contact_email ?? $company->official_email;
+
+            if (empty($email)) {
+                Log::warning('NotificationService: Cannot send verification rejection email, no email address', [
+                    'company_id' => $company->id,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'No email address found for company',
+                ];
+            }
+
+            $subject = 'Company Verification Rejected - '.config('app.name');
+            $content = view('emails.company-verification-rejected', [
+                'company' => $company,
+                'reason' => $reason,
+            ])->render();
+
+            $result = $this->sendEmail($email, $subject, $content);
+
+            Log::info('NotificationService: Company verification rejection email sent', [
+                'company_id' => $company->id,
+                'email' => $email,
+                'success' => $result['success'] ?? false,
+            ]);
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('NotificationService: Failed to send company verification rejection notification', [
+                'company_id' => $company->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Send notification when talent is verified.
+     *
+     * @param  \App\Models\TalentProfile  $profile  The talent profile that was verified
+     * @return array Response array with 'success' and 'message' keys
+     */
+    public function notifyTalentVerified(\App\Models\TalentProfile $profile): array
+    {
+        try {
+            $user = $profile->user;
+
+            if (! $user || empty($user->email)) {
+                Log::warning('NotificationService: Cannot send verification email, no user or email address', [
+                    'profile_id' => $profile->id,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'No email address found for talent',
+                ];
+            }
+
+            $subject = 'Profile Verification Approved - '.config('app.name');
+            $content = view('emails.talent-verified', [
+                'profile' => $profile,
+                'user' => $user,
+            ])->render();
+
+            $result = $this->sendEmail($user->email, $subject, $content);
+
+            Log::info('NotificationService: Talent verification email sent', [
+                'profile_id' => $profile->id,
+                'email' => $user->email,
+                'success' => $result['success'] ?? false,
+            ]);
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('NotificationService: Failed to send talent verification notification', [
+                'profile_id' => $profile->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Send notification when talent verification is rejected.
+     *
+     * @param  \App\Models\TalentProfile  $profile  The talent profile that was rejected
+     * @param  string  $reason  Reason for rejection
+     * @return array Response array with 'success' and 'message' keys
+     */
+    public function notifyTalentVerificationRejected(\App\Models\TalentProfile $profile, string $reason): array
+    {
+        try {
+            $user = $profile->user;
+
+            if (! $user || empty($user->email)) {
+                Log::warning('NotificationService: Cannot send verification rejection email, no user or email address', [
+                    'profile_id' => $profile->id,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'No email address found for talent',
+                ];
+            }
+
+            $subject = 'Profile Verification Rejected - '.config('app.name');
+            $content = view('emails.talent-verification-rejected', [
+                'profile' => $profile,
+                'user' => $user,
+                'reason' => $reason,
+            ])->render();
+
+            $result = $this->sendEmail($user->email, $subject, $content);
+
+            Log::info('NotificationService: Talent verification rejection email sent', [
+                'profile_id' => $profile->id,
+                'email' => $user->email,
+                'success' => $result['success'] ?? false,
+            ]);
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('NotificationService: Failed to send talent verification rejection notification', [
+                'profile_id' => $profile->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 }

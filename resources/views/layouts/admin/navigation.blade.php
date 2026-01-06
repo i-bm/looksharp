@@ -68,6 +68,26 @@
                 <a href="{{ route('admin.employer-companies.index') }}" class="dashboard-nav-link">
                     <i class="bi bi-buildings"></i>
                     <span>Employer Companies</span>
+                    @php
+                        $pendingVerifications = \App\Models\EmployerCompany::where('verification_status', 'pending')->count();
+                    @endphp
+                    @if($pendingVerifications > 0)
+                        <span class="badge bg-warning ms-2">{{ $pendingVerifications }}</span>
+                    @endif
+                </a>
+            </li>
+
+            <li
+                class="dashboard-nav-item {{ request()->routeIs('admin.talent-verifications.*') ? 'dashboard-nav-item-active' : '' }}">
+                <a href="{{ route('admin.talent-verifications.index') }}" class="dashboard-nav-link">
+                    <i class="bi bi-person-check"></i>
+                    <span>Talent Verifications</span>
+                    @php
+                        $pendingTalentVerifications = \App\Models\TalentProfile::where('verification_status', 'pending')->count();
+                    @endphp
+                    @if($pendingTalentVerifications > 0)
+                        <span class="badge bg-danger ms-2">{{ $pendingTalentVerifications }}</span>
+                    @endif
                 </a>
             </li>
 

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\EmployerCompanyStatusEnum;
+use App\Enums\EmployerCompanyVerificationStatusEnum;
 use App\Enums\SubscriptionTierEnum;
+use App\Services\SubscriptionGateService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -141,6 +143,18 @@ class EmployerCompany extends Model implements Auditable
         return $this->status === EmployerCompanyStatusEnum::APPROVED->value;
     }
 
+    public function isVerified(): bool
+    {
+        return $this->verification_status === EmployerCompanyVerificationStatusEnum::VERIFIED->value;
+    }
+
+    public function canAccessPaidFeatures(): bool
+    {
+        $gateService = app(SubscriptionGateService::class);
+
+        return $gateService->canAccessPaidFeatures($this);
+    }
+
     public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class)->latestOfMany();
@@ -185,29 +199,8 @@ class EmployerCompany extends Model implements Auditable
 
     public function canPostOpportunity(): bool
     {
-        $subscription = $this->getActiveSubscription();
+        $gateService = app(SubscriptionGateService::class);
 
-        if ($subscription === null) {
-            return false;
-        }
-
-        $tier = $subscription->getTierEnum();
-        $packageConfig = config("subscriptions.packages.{$tier->value}");
-
-        if ($packageConfig === null) {
-            return false;
-        }
-
-        $activePostingsLimit = $packageConfig['limits']['active_postings'] ?? null;
-
-        // If limit is null, it means unlimited
-        if ($activePostingsLimit === null) {
-            return true;
-        }
-
-        // TODO: Check actual active postings count
-        // For now, return true if subscription is active
-        // This will be implemented when opportunity posting is added
-        return true;
+        return $gateService->canPostOpportunity($this);
     }
 }

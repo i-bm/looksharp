@@ -103,6 +103,7 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::get('/profile/verification', [TalentProfileController::class, 'showVerification'])->name('profile.verification.show');
         Route::post('/profile/verification/student', [TalentProfileController::class, 'submitStudentVerification'])->name('profile.verification.student.submit');
         Route::post('/profile/verification/document', [TalentProfileController::class, 'submitVerificationDocument'])->name('profile.verification.document.submit');
+        Route::get('/profile/verification/document/{type}', [TalentProfileController::class, 'downloadVerificationDocument'])->name('profile.verification.document.download');
 
         Route::post('/profile/photo', [TalentProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
         Route::post('/profile/resume', [TalentProfileController::class, 'uploadResume'])->name('profile.resume.upload');
@@ -186,9 +187,11 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/company/testimonial', [EmployerProfileController::class, 'storeTestimonial'])->name('company.testimonial.store');
         Route::delete('/company/testimonial/{testimonialId}', [EmployerProfileController::class, 'deleteTestimonial'])->name('company.testimonial.delete');
 
-        // Subscription routes
+        // Subscription routes (require verification for paid tiers)
         Route::get('/company/subscription/select', [EmployerProfileController::class, 'selectSubscription'])->name('subscription.select');
-        Route::post('/company/subscription', [EmployerProfileController::class, 'storeSubscription'])->name('subscription.store');
+        Route::middleware('require.company.verification')->group(function () {
+            Route::post('/company/subscription', [EmployerProfileController::class, 'storeSubscription'])->name('subscription.store');
+        });
         Route::get('/company/subscription/payment/callback', [EmployerProfileController::class, 'paymentCallback'])->name('subscription.payment.callback');
     });
 
@@ -250,6 +253,15 @@ Route::middleware(['auth', 'ensure.user.type.checked'])->group(function () {
         Route::post('/employer-companies/{id}/needs-changes', [AdminEmployerCompanyController::class, 'needsChanges'])->name('employer-companies.needs-changes');
         Route::post('/employer-companies/{id}/reject', [AdminEmployerCompanyController::class, 'reject'])->name('employer-companies.reject');
         Route::post('/employer-companies/{id}/suspend', [AdminEmployerCompanyController::class, 'suspend'])->name('employer-companies.suspend');
+        Route::post('/employer-companies/{id}/verify', [AdminEmployerCompanyController::class, 'verify'])->name('employer-companies.verify');
+        Route::post('/employer-companies/{id}/reject-verification', [AdminEmployerCompanyController::class, 'rejectVerification'])->name('employer-companies.reject-verification');
+
+        // Talent Verifications
+        Route::get('/talent-verifications', [\App\Http\Controllers\Admin\TalentVerificationController::class, 'index'])->name('talent-verifications.index');
+        Route::get('/talent-verifications/{id}', [\App\Http\Controllers\Admin\TalentVerificationController::class, 'show'])->name('talent-verifications.show');
+        Route::get('/talent-verifications/{id}/document', [\App\Http\Controllers\Admin\TalentVerificationController::class, 'document'])->name('talent-verifications.document');
+        Route::post('/talent-verifications/{id}/verify', [\App\Http\Controllers\Admin\TalentVerificationController::class, 'verify'])->name('talent-verifications.verify');
+        Route::post('/talent-verifications/{id}/reject', [\App\Http\Controllers\Admin\TalentVerificationController::class, 'reject'])->name('talent-verifications.reject');
     });
 });
 

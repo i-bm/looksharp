@@ -27,10 +27,11 @@ class RegistrationService
                 // $publicUrl = generatePublicUrlSlug($firstName, $lastName);
 
                 // Create new talent profile with default values
+                // verification_status defaults to null (which represents 'not_started')
                 $talentProfile = TalentProfile::create([
                     'user_id' => $user->id,
                     // 'public_url' => $publicUrl,
-                    'verification_status' => 'pending',
+                    'verification_status' => null, // null = 'not_started' (handled in views/controllers)
                     'profile_completeness_score' => 0,
                 ]);
 

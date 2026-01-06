@@ -41,10 +41,13 @@ class TalentProfile extends Model implements Auditable
         'current_status',
         'student_id',
         'student_email',
+        'student_verification_document_url',
         'verification_status',
         'verification_type',
+        'identity_document_number',
         'verification_document_url',
         'verification_verified_at',
+        'verified_by_user_id',
         'profile_completeness_score',
         // Additional Details
         'fun_fact',
@@ -83,6 +86,14 @@ class TalentProfile extends Model implements Auditable
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the admin user who verified this profile.
+     */
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by_user_id');
     }
 
     /**
@@ -266,5 +277,30 @@ class TalentProfile extends Model implements Auditable
             ->first();
 
         return $recentEducation?->institution;
+    }
+
+    /**
+     * Check if the talent profile is verified.
+     */
+    public function isVerified(): bool
+    {
+        return $this->verification_status === 'verified';
+    }
+
+    /**
+     * Check if the talent can access premium features.
+     */
+    public function canAccessPremiumFeatures(): bool
+    {
+        return $this->isVerified();
+    }
+
+    /**
+     * Check if the talent can apply to jobs.
+     * Verification is required for job applications.
+     */
+    public function canApplyToJobs(): bool
+    {
+        return $this->isVerified();
     }
 }

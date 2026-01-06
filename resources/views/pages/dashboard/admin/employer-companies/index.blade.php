@@ -39,7 +39,7 @@
                     <label class="form-label">Search</label>
                     <input type="text" name="search" class="form-control" value="{{ request('search') }}" placeholder="Company name or email">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-select">
                         <option value="" {{ request('status', $status ?? '') === '' ? 'selected' : '' }}>Submitted (default)</option>
@@ -51,6 +51,16 @@
                         <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
                     </select>
                 </div>
+                <div class="col-md-3">
+                    <label class="form-label">Verification Status</label>
+                    <select name="verification_status" class="form-select">
+                        <option value="" {{ request('verification_status') === '' ? 'selected' : '' }}>All</option>
+                        <option value="pending" {{ request('verification_status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="verified" {{ request('verification_status') === 'verified' ? 'selected' : '' }}>Verified</option>
+                        <option value="rejected" {{ request('verification_status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
                 <div class="col-md-4 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary">Filter</button>
                     <a href="{{ route('admin.employer-companies.index') }}" class="btn btn-outline-secondary">Reset</a>
@@ -66,6 +76,7 @@
                     <tr>
                         <th>Company</th>
                         <th>Status</th>
+                        <th>Verification</th>
                         <th>Submitted</th>
                         <th>Official Email</th>
                         <th></th>
@@ -79,6 +90,15 @@
                             <div class="text-muted small">ID: {{ $company->id }}</div>
                         </td>
                         <td>{{ $company->status }}</td>
+                        <td>
+                            @if($company->verification_status === 'verified')
+                                <span class="badge bg-success">Verified</span>
+                            @elseif($company->verification_status === 'rejected')
+                                <span class="badge bg-danger">Rejected</span>
+                            @else
+                                <span class="badge bg-warning">Pending</span>
+                            @endif
+                        </td>
                         <td>{{ optional($company->submitted_at)->format('Y-m-d H:i') ?? '—' }}</td>
                         <td>{{ $company->official_email ?? '—' }}</td>
                         <td class="text-end">
@@ -87,7 +107,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="text-center text-muted py-4">No companies found.</td>
+                        <td colspan="6" class="text-center text-muted py-4">No companies found.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -25,7 +25,8 @@ class StoreVerificationRequest extends FormRequest
     {
         return [
             'verification_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'], // 5MB max
-            'verification_type' => ['required', Rule::in(['ghana_card', 'student_id', 'passport'])],
+            'verification_type' => ['required', Rule::in(['ghana_card', 'passport'])],
+            'identity_document_number' => ['nullable', 'string', 'max:255'], // ID number for identity document (Ghana Card/Passport number)
         ];
     }
 }
